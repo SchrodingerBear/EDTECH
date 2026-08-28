@@ -106,7 +106,7 @@ $organizationsUrl = org_url($inst['slug'], 'assets/scenes');
 <div class="ia-card">
   <div class="table-responsive">
     <table class="table table-ia">
-      <thead><tr><th>Scene</th><th>Location</th><th>Equirect</th><th>Featured</th><th>Start</th><th class="text-end">Actions</th></tr></thead>
+      <thead><tr><th>Scene</th><th>Location</th><th>Equirect</th><th>Featured</th><th>Hotspots</th><th>Start</th><th class="text-end">Actions</th></tr></thead>
       <tbody>
         <?php foreach ($scenes as $sc):
             $loc = array_filter([$sc['building_name'], $sc['room_name']]);
@@ -119,9 +119,20 @@ $organizationsUrl = org_url($inst['slug'], 'assets/scenes');
             <td style="color:var(--ia-muted)"><?= $loc ? h(implode(' · ', $loc)) : '—' ?></td>
             <td><?= $sc['equirect_path'] ? '<span class="badge badge-live">set</span>' : '<span class="badge badge-draft">missing</span>' ?></td>
             <td><?= $sc['featured_image_path'] ? '<span class="badge badge-live">set</span>' : '<span class="badge badge-draft">missing</span>' ?></td>
+            <td>
+              <?php
+              $hsCount = (int) $pdo->prepare("SELECT COUNT(*) FROM scene_hotspots WHERE from_scene_id=? AND institution_id=?")->execute([$sc['id'],$iid]) ? $pdo->query("SELECT FOUND_ROWS()")->fetchColumn() : 0;
+              // Simple count query
+              $hcStmt = $pdo->prepare("SELECT COUNT(*) FROM scene_hotspots WHERE from_scene_id=? AND institution_id=?");
+              $hcStmt->execute([(int)$sc['id'], $iid]);
+              $hsCount = (int) $hcStmt->fetchColumn();
+              ?>
+              <a href="tour-studio?scene=<?= (int)$sc['id'] ?>" class="badge <?= $hsCount ? 'badge-live' : 'badge-draft' ?>"><?= $hsCount ?> hs</a>
+            </td>
             <td><?= (int) $sc['is_landing_start'] === 1 ? '<span class="badge badge-live">start</span>' : '—' ?></td>
             <td class="text-end">
               <div class="d-inline-flex gap-1">
+                <a class="btn btn-sm btn-grad" href="tour-studio?scene=<?= (int)$sc['id'] ?>" title="Hotspot Studio"><?= ia_icon('camera', 13) ?> Studio</a>
                 <button class="btn btn-sm btn-outline-ia" data-bs-toggle="modal" data-bs-target="#scene-modal"
                   data-mode="edit" data-id="<?= (int) $sc['id'] ?>" data-title="<?= h($sc['title'], ENT_QUOTES) ?>"
                   data-building="<?= (int) $sc['building_id'] ?>" data-room="<?= (int) $sc['room_id'] ?>"

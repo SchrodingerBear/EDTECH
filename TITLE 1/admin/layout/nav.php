@@ -74,10 +74,8 @@ function role_nav(string $role): array
                 ['Audit Logs', '/admin/owner/logs', 'clock', 'owner.logs'],
                 ['File Manager', '/admin/owner/files', 'folder', 'owner.files'],
                 ['Archive & Restore', '/admin/owner/archive', 'refresh', 'owner.archive'],
-                ['Advanced Manager', '/manager/', 'move3d', 'owner.manager'],
             ]],
             ['title' => 'Help', 'items' => array_merge($systemHelp, [['Roles & Features', '/admin/help/roles', 'shield']])],
-        ],
         'system_admin' => [
             ['title' => 'Overview', 'items' => [
                 ['System Dashboard', '/admin/system/dashboard', 'home', 'system.dashboard'],
