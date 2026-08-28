@@ -69,7 +69,9 @@ a-scene { width: 100%; height: 100%; }
 
 /* floor plan stage: strict aspect via object-fit, markers in % */
 .fp-stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--ia-bg); }
-#fp-image { max-width: 100vw; max-height: 100vh; object-fit: contain; width: 100%; height: 100%; user-select: none; }
+/* fp-wrap: sized to the actual rendered image rectangle, markers positioned within it */
+.fp-wrap { position: relative; flex-shrink: 0; }
+.fp-wrap img { display: block; max-width: 100vw; max-height: 100vh; width: auto; height: auto; user-select: none; }
 .fp-markers { position: absolute; inset: 0; pointer-events: none; }
 .fp-marker {
   pointer-events: auto; position: absolute; transform: translate(-50%, -50%);

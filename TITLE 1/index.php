@@ -180,23 +180,26 @@ $featureLoop = array_merge($features, $features);
 
   <?php 
   $whyBg = $landing['why_bg'] ?? ''; 
-  $whyStyle = $whyBg ? "background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('" . h(url($whyBg)) . "') center/cover no-repeat; color: white;" : '';
+  $whyStyle = $whyBg ? "background: linear-gradient(rgba(11,13,22,0.82), rgba(11,13,22,0.92)), url('" . h(url($whyBg)) . "') center/cover no-repeat; color: #fff;" : '';
+  
+  $quoteBg = $landing['quote_bg'] ?? '';
+  $quoteStyle = $quoteBg ? "background: linear-gradient(rgba(11,13,22,0.78), rgba(11,13,22,0.88)), url('" . h(url($quoteBg)) . "') center/cover no-repeat; color: #fff; border: 1px solid rgba(255,255,255,0.18);" : '';
   ?>
   <section id="about" class="about section" style="<?= $whyStyle ?>">
     <div class="wrap about-grid">
-      <div style="<?= $whyBg ? 'color: white' : '' ?>">
-        <p class="eyebrow" style="<?= $whyBg ? 'color: rgba(255,255,255,0.8)' : '' ?>">Why schools choose Innovatech</p>
-        <h2 class="section-title">Make a great first impression, at any scale.</h2>
+      <div style="<?= $whyBg ? 'color: #fff;' : '' ?>">
+        <p class="eyebrow" style="<?= $whyBg ? 'color: var(--cyan-300);' : '' ?>">Why schools choose Innovatech</p>
+        <h2 class="section-title" style="<?= $whyBg ? 'color: #fff;' : '' ?>">Make a great first impression, at any scale.</h2>
         <div class="why-grid">
           <?php foreach ($why as [$title, $desc]): ?>
             <div>
-              <h3><?= h($title) ?></h3>
-              <p style="<?= $whyBg ? 'color: rgba(255,255,255,0.8)' : '' ?>"><?= h($desc) ?></p>
+              <h3 style="<?= $whyBg ? 'color: #fff;' : '' ?>"><?= h($title) ?></h3>
+              <p style="<?= $whyBg ? 'color: rgba(255,255,255,0.8);' : '' ?>"><?= h($desc) ?></p>
             </div>
           <?php endforeach; ?>
         </div>
       </div>
-      <div class="quote-card">
+      <div class="quote-card" style="<?= $quoteStyle ?>">
         <?= icon('message', 30) ?>
         <blockquote><?= h($landing['quote'] ?? '"Innovatech helps us give prospective students a real sense of belonging before they even set foot on campus."') ?></blockquote>
         <div class="quote-person">
@@ -217,14 +220,14 @@ $featureLoop = array_merge($features, $features);
   <section id="contact" class="wrap section">
     <?php 
     $ctaBg = $landing['cta_bg'] ?? ''; 
-    $ctaStyle = $ctaBg ? "background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('" . h(url($ctaBg)) . "') center/cover no-repeat; color: white;" : '';
+    $ctaStyle = $ctaBg ? "background: linear-gradient(rgba(11,13,22,0.8), rgba(11,13,22,0.92)), url('" . h(url($ctaBg)) . "') center/cover no-repeat; color: #fff; border: 1px solid rgba(255,255,255,0.18);" : '';
     ?>
     <div class="cta-box" style="<?= $ctaStyle ?>">
       <div class="cta-inner">
         <div>
-          <p class="eyebrow" style="<?= $ctaBg ? 'color: rgba(255,255,255,0.8)' : '' ?>"><?= h($landing['cta']['headline'] ?? 'Your next chapter starts here') ?></p>
-          <h2>Bring your campus online.</h2>
-          <p class="lede" style="<?= $ctaBg ? 'color: rgba(255,255,255,0.8)' : '' ?>"><?= h($landing['cta']['sub'] ?? 'Talk to our team about creating an experience your students will remember.') ?></p>
+          <p class="eyebrow" style="<?= $ctaBg ? 'color: var(--cyan-300);' : '' ?>"><?= h($landing['cta']['headline'] ?? 'Your next chapter starts here') ?></p>
+          <h2 style="<?= $ctaBg ? 'color: #fff;' : '' ?>">Bring your campus online.</h2>
+          <p class="lede" style="<?= $ctaBg ? 'color: rgba(255,255,255,0.85);' : '' ?>"><?= h($landing['cta']['sub'] ?? 'Talk to our team about creating an experience your students will remember.') ?></p>
         </div>
         <a class="btn btn-cyan" href="mailto:<?= h($email) ?>"><?= h($landing['cta']['btn_text'] ?? 'Contact support') ?> <?= icon('arrow-up-right', 16) ?></a>
       </div>

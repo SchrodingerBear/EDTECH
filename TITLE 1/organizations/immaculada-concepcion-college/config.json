@@ -54,5 +54,6 @@
         "accent": "#38b2ac",
         "popup_animation": "fade",
         "marker_glow": false
-    }
+    },
+    "scenes": []
 }

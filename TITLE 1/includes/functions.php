@@ -774,6 +774,51 @@ function sync_institution_config(int $iid): void
         ];
     }
 
+    // All scenes with their hotspots
+    $scenesStmt = $pdo->prepare("SELECT * FROM tour_scenes WHERE institution_id = ? AND deleted_at IS NULL ORDER BY sort_order, id");
+    $scenesStmt->execute([$iid]);
+    $scenesList = $scenesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $cfg['scenes'] = [];
+    foreach ($scenesList as $sc) {
+        $hsStmt = $pdo->prepare(
+            "SELECT sh.*, ts.equirect_path AS to_scene_equirect, ts.title AS to_scene_title, ts.initial_yaw AS to_scene_yaw, ts.initial_pitch AS to_scene_pitch
+             FROM scene_hotspots sh
+             LEFT JOIN tour_scenes ts ON ts.id = sh.to_scene_id
+             WHERE sh.from_scene_id = ? AND sh.institution_id = ?"
+        );
+        $hsStmt->execute([(int)$sc['id'], $iid]);
+        $hotspots = $hsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $hsData = array_map(function($h) {
+            $out = [
+                'id'            => (int) $h['id'],
+                'label'         => $h['label'],
+                'hotspot_type'  => $h['hotspot_type'],
+                'yaw'           => (float) $h['yaw'],
+                'pitch'         => (float) $h['pitch'],
+                'body_html'     => $h['body_html'] ?? '',
+            ];
+            if (!empty($h['to_scene_id'])) {
+                $out['to_scene_id']      = (int) $h['to_scene_id'];
+                $out['to_scene_title']   = $h['to_scene_title'] ?? '';
+                $out['to_scene_equirect'] = $h['to_scene_equirect'] ?? '';
+                $out['to_scene_yaw']     = (float) ($h['to_scene_yaw'] ?? 0);
+                $out['to_scene_pitch']   = (float) ($h['to_scene_pitch'] ?? 0);
+            }
+            return $out;
+        }, $hotspots);
+
+        $cfg['scenes'][(int)$sc['id']] = [
+            'id'            => (int) $sc['id'],
+            'title'         => $sc['title'],
+            'equirect_path' => $sc['equirect_path'] ?? '',
+            'initial_yaw'   => (float) ($sc['initial_yaw'] ?? 0),
+            'initial_pitch' => (float) ($sc['initial_pitch'] ?? 0),
+            'hotspots'      => $hsData
+        ];
+    }
+
     // Starting 360 scene (for 360_rotation landing)
     if (!empty($inst['starting_scene_id'])) {
         $scene = crud()->get('tour_scenes', $inst['starting_scene_id']);

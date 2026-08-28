@@ -76,6 +76,7 @@ function role_nav(string $role): array
                 ['Archive & Restore', '/admin/owner/archive', 'refresh', 'owner.archive'],
             ]],
             ['title' => 'Help', 'items' => array_merge($systemHelp, [['Roles & Features', '/admin/help/roles', 'shield']])],
+        ],
         'system_admin' => [
             ['title' => 'Overview', 'items' => [
                 ['System Dashboard', '/admin/system/dashboard', 'home', 'system.dashboard'],

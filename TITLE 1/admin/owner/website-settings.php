@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../includes/auth.php';
 require_owner();
 require_page('owner.website');
@@ -28,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $why_bg = handle_media_picker('why_bg', 'public');
     $cta_bg = handle_media_picker('cta_bg', 'public');
+    $quote_bg = handle_media_picker('quote_bg', 'public');
 
     // Editable landing content stored as JSON in landing_html column
     $lj = [
@@ -56,6 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($cta_bg) $lj['cta_bg'] = $cta_bg;
     elseif (isset($landingJson['cta_bg'])) $lj['cta_bg'] = $landingJson['cta_bg'];
+
+    if ($quote_bg) $lj['quote_bg'] = $quote_bg;
+    elseif (isset($landingJson['quote_bg'])) $lj['quote_bg'] = $landingJson['quote_bg'];
 
     for ($i = 0; $i < 6; $i++) {
         $feature_icon = handle_media_picker('feature' . $i . '_icon', 'public/assets') ?: trim($_POST["feature{$i}_icon_sel"] ?? '');
@@ -193,6 +197,15 @@ $hero = !empty($s['hero_image_path']) ? url($s['hero_image_path']) : url('public
           <!-- Quote -->
           <hr>
           <h5 style="font-weight:700">Testimonial quote</h5>
+          <div>
+            <?php
+            $pickerName = 'quote_bg';
+            $pickerValue = $landingJson['quote_bg'] ?? '';
+            $pickerLabel = 'Quote Card Background Image';
+            $pickerHelp = 'Optional background image for the testimonial quote card. A dark scrim overlay will be applied automatically.';
+            require __DIR__ . '/../layout/media-picker.php';
+            ?>
+          </div>
           <div><label class="form-label">Quote text</label><textarea class="form-control" name="quote_text" rows="3"><?= h($landingJson['quote'] ?? '"Innovatech helps us give prospective students a real sense of belonging before they even set foot on campus."') ?></textarea></div>
           <div class="row g-3">
             <div class="col-md-6"><label class="form-label">Person name</label><input class="form-control" name="quote_name" value="<?= h($landingJson['quote_name'] ?? 'Maria Angela Reyes') ?>"></div>
