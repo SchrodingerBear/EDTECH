@@ -116,4 +116,126 @@
     function openFloorPlan(imagePath, markers, title, pushStack) {
       if (pushStack !== false) {
         // save current state to stack for back navigation
-        fpStack.push({ imagePath: $('#fp-image').src, markers: currentMarkers, title: $('#
+        fpStack.push({ imagePath: $('#fp-image').src, markers: currentMarkers, title: $('#fp-title').textContent });
+      }
+      currentMarkers = markers;
+      $('#fp-image').src = imagePath;
+      $('#fp-title').textContent = title || 'ICC';
+      renderMarkers(markers);
+      activate('floor');
+    }
+
+    let currentMarkers = [];
+
+    function renderMarkers(markers) {
+      const box = $('#fp-markers');
+      box.innerHTML = '';
+      (markers || []).forEach((m) => {
+        const b = document.createElement('button');
+        b.className = 'fp-marker';
+        b.style.left = m.x + '%';
+        b.style.top  = m.y + '%';
+        b.style.width  = (m.size_percent || 4) + 'vmin';
+        b.style.height = (m.size_percent || 4) + 'vmin';
+        b.setAttribute('aria-label', m.label);
+        b.title = m.label;
+
+        // Label chip under the dot
+        const chip = document.createElement('span');
+        chip.className = 'fp-marker-label';
+        chip.textContent = m.label;
+        b.appendChild(chip);
+
+        b.addEventListener('click', () => handleMarkerClick(m));
+        box.appendChild(b);
+      });
+    }
+
+    function handleMarkerClick(m) {
+      if (m.target_type === 'scene' && m.scene_equirect) {
+        openScene({
+          title:         m.scene_title || m.label,
+          equirect_path: m.scene_equirect,
+          initial_yaw:   m.scene_yaw || 0,
+          initial_pitch: m.scene_pitch || 0,
+        });
+      } else if (m.target_type === 'floor_plan' && m.sub_fp_image) {
+        openFloorPlan(m.sub_fp_image, m.sub_markers || [], m.sub_fp_title || m.label, true);
+      } else {
+        // popup (or fallback for non-linked markers)
+        openPopup(m);
+      }
+    }
+
+    // ─── 360 scene ───────────────────────────────────────────────────────────
+    function openScene(scene) {
+      const panoEl = $('#pano');
+      const skyEl  = $('#sky');
+      const hintEl = $('#scene-hint');
+
+      panoEl.onload = () => {
+        skyEl.setAttribute('src', '#pano');
+        skyEl.setAttribute('rotation', `0 ${scene.initial_yaw || 0} 0`);
+        activate('360');
+      };
+      panoEl.src = scene.equirect_path;
+      hintEl.textContent = scene.title ? `${scene.title} — drag to look around` : 'Drag to look around';
+
+      if (!panoEl.complete) {
+        // trigger load; onload fires when img loads
+      } else {
+        activate('360');
+      }
+    }
+
+    // ─── info popup ──────────────────────────────────────────────────────────
+    function openPopup(m) {
+      $('#info-title').textContent = m.popup_title || m.label || 'Location';
+      const body = $('#info-body');
+      body.innerHTML = m.popup_html || '<p style="color:#aab;font-size:14px">No additional info.</p>';
+      $('#info-panel').classList.remove('hidden');
+    }
+
+    // ─── back navigation ─────────────────────────────────────────────────────
+    $('#info-close') && $('#info-close').addEventListener('click', () => {
+      $('#info-panel').classList.add('hidden');
+    });
+
+    // Back from 360 → floor plan (or root)
+    $('#btn-360-back') && $('#btn-360-back').addEventListener('click', () => {
+      if (config.landing_mode === 'floor_plan') {
+        // return to the floor plan we came from
+        openFloorPlan(
+          config.starting_floor_plan.image_path,
+          config.floor_plan_markers || [],
+          config.short_name || 'ICC',
+          false
+        );
+        fpStack = [];
+      } else {
+        window.history.back();
+      }
+    });
+
+    // Back from floor plan → previous floor plan or homepage
+    $('#btn-fp-back') && $('#btn-fp-back').addEventListener('click', () => {
+      if (fpStack.length > 0) {
+        const prev = fpStack.pop();
+        currentMarkers = prev.markers;
+        $('#fp-image').src = prev.imagePath;
+        $('#fp-title').textContent = prev.title;
+        renderMarkers(prev.markers);
+      } else {
+        // If we're at root floor plan, back goes to parent page if any
+        window.history.back();
+      }
+    });
+
+    // ─── hide loader ─────────────────────────────────────────────────────────
+    window.addEventListener('load', () => setTimeout(() => els.loader.classList.add('hidden'), 350));
+
+    boot();
+  })();
+  </script>
+</body>
+</html>

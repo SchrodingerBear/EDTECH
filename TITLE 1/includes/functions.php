@@ -845,6 +845,20 @@ function sync_institution_config(int $iid): void
     }
 
     file_put_contents($configPath, json_encode($cfg, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+    // Regenerate index.html from template (with name substitutions)
+    $tplPath    = ROOT_PATH . '/templates/org_pack/index.html';
+    $tplCssPath = ROOT_PATH . '/templates/org_pack/assets/style.css';
+    $orgDir     = ROOT_PATH . '/' . ltrim($inst['folder_path'], '/');
+    if (is_file($tplPath)) {
+        $html = file_get_contents($tplPath);
+        $html = str_replace('{{NAME}}', htmlspecialchars($inst['name'], ENT_QUOTES), $html);
+        $html = str_replace('{{SHORT}}', htmlspecialchars($inst['short_name'] ?: $inst['name'], ENT_QUOTES), $html);
+        file_put_contents($orgDir . '/index.html', $html);
+    }
+    if (is_file($tplCssPath)) {
+        copy($tplCssPath, $orgDir . '/assets/style.css');
+    }
 }
 /**
  * Handle universal media picker uploads.

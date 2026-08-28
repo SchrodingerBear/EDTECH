@@ -72,17 +72,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($label === '') throw new RuntimeException('Marker label required.');
             $pdo->prepare(
                 "INSERT INTO floor_plan_markers (institution_id, floor_plan_id, label, x_percent, y_percent, size_percent,
-                        target_room_id, target_building_id, target_facility_id, popup_title, popup_html, sort_order)
-                 VALUES (:iid,:plan,:label,:x,:y,4,:tr,:tb,:tf,:pt,:ph,0)"
+                        target_room_id, target_building_id, target_facility_id, target_scene_id, target_floor_plan_id, popup_title, popup_html, sort_order)
+                 VALUES (:iid,:plan,:label,:x,:y,4,:tr,:tb,:tf,:ts,:tfp,:pt,:ph,0)"
             )->execute([
                 'iid' => $iid, 'plan' => $planId, 'label' => $label,
                 'x' => (float) ($_POST['x'] ?? 50), 'y' => (float) ($_POST['y'] ?? 50),
-                'tr' => (int) ($_POST['target_room_id'] ?? 0) ?: null,
-                'tb' => (int) ($_POST['target_building_id'] ?? 0) ?: null,
-                'tf' => (int) ($_POST['target_facility_id'] ?? 0) ?: null,
+                'tr'  => (int) ($_POST['target_room_id'] ?? 0) ?: null,
+                'tb'  => (int) ($_POST['target_building_id'] ?? 0) ?: null,
+                'tf'  => (int) ($_POST['target_facility_id'] ?? 0) ?: null,
+                'ts'  => (int) ($_POST['target_scene_id'] ?? 0) ?: null,
+                'tfp' => (int) ($_POST['target_floor_plan_id'] ?? 0) ?: null,
                 'pt' => trim($_POST['popup_title'] ?? '') ?: null,
                 'ph' => trim($_POST['popup_html'] ?? '') ?: null,
             ]);
+            sync_institution_config($iid);
             flash('success', 'Marker added. Drag it into place in the studio.');
         }
 
@@ -107,12 +110,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->prepare("DELETE FROM floor_plan_markers WHERE id=:id AND institution_id=:iid")
                     ->execute(['id' => (int) $_POST['marker_delete'], 'iid' => $iid]);
             }
+            sync_institution_config($iid);
             flash('success', 'Marker positions saved.');
         }
 
         if ($action === 'marker-delete') {
             $pdo->prepare("DELETE FROM floor_plan_markers WHERE id=:id AND institution_id=:iid")
                 ->execute(['id' => (int) ($_POST['id'] ?? 0), 'iid' => $iid]);
+            sync_institution_config($iid);
             flash('success', 'Marker removed.');
         }
     } catch (Throwable $e) {
@@ -251,7 +256,10 @@ $floorPlansList->execute([$iid, $studioPlanId ?: 0]);
               <select class="form-select" name="target_floor_plan_id"><option value="">— none —</option><?php foreach ($floorPlansList->fetchAll() as $fp): ?><option value="<?= (int) $fp['id'] ?>"><?= h($fp['name']) ?></option><?php endforeach; ?></select>
             </div>
           </div>
-          <div><label class="form-label">Popup title</label><input class="form-control" name="popup_title" placeholder="Library hours & info"></div>
+          <div class="form-text mb-1">
+            <strong>Click action priority:</strong> 360 Tour &gt; Sub-Floor Plan &gt; Popup. Set only one target for clean behavior.
+          </div>
+          <div><label class="form-label">Popup title</label><input class="form-control" name="popup_title" placeholder="Library hours &amp; info"></div>
           <div><label class="form-label">Popup content (HTML)</label><textarea class="form-control" name="popup_html" rows="3" placeholder="Open Mon–Fri 8am–6pm"></textarea></div>
         </div>
         <div class="modal-footer"><button class="btn btn-grad px-4" type="submit" disabled id="marker-add-go">Add marker</button></div>
