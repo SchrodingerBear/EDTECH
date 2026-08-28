@@ -1,0 +1,58 @@
+{
+    "institution_id": 1,
+    "name": "Immaculada Concepcion College",
+    "short_name": "ICC",
+    "landing_mode": "floor_plan",
+    "require_landscape_mobile": true,
+    "starting_scene": {
+        "title": "Starting Point",
+        "equirect_path": "assets/panos/example.jpg",
+        "initial_yaw": 100,
+        "initial_pitch": 10
+    },
+    "starting_floor_plan": {
+        "id": 1,
+        "title": "Campus",
+        "image_path": "assets/floorplans/6b43b2c37796.png",
+        "object_fit": "contain"
+    },
+    "floor_plan_markers": [
+        {
+            "id": 1,
+            "label": "Gymnasium",
+            "x": 65.3051,
+            "y": 21.0029,
+            "size_percent": 4,
+            "popup_title": "",
+            "popup_html": "This is Gymnasium",
+            "target_type": "popup"
+        },
+        {
+            "id": 2,
+            "label": "Main Building",
+            "x": 32.4806,
+            "y": 31.392,
+            "size_percent": 4,
+            "popup_title": "",
+            "popup_html": "This is main building",
+            "target_type": "popup"
+        },
+        {
+            "id": 3,
+            "label": "Entrance",
+            "x": 51.7585,
+            "y": 67.9936,
+            "size_percent": 4,
+            "popup_title": "",
+            "popup_html": "This is entrance",
+            "target_type": "popup"
+        }
+    ],
+    "theme": {
+        "primary": "#1a365d",
+        "secondary": "#ed8936",
+        "accent": "#38b2ac",
+        "popup_animation": "fade",
+        "marker_glow": false
+    }
+}

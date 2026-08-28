@@ -1,0 +1,33 @@
+# Disable directory listing
+Options -Indexes
+
+# Deny access to .htaccess itself
+<Files .htaccess>
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Allow access to specific files
+<Files "example.pdf">
+    Order allow,deny
+    Allow from all
+</Files>
+<Files "report.docx">
+    Order allow,deny
+    Allow from all
+</Files>
+
+# begin VFM rules
+# <Files "*.php">
+# SetHandler none
+# SetHandler default-handler
+# Options -ExecCGI
+# RemoveHandler .php
+# </Files>
+# <IfModule mod_php5.c>
+# php_flag engine off
+# </IfModule>
+# Order Deny,Allow
+# Deny from all
+# Options -Indexes
+# end VFM rules
