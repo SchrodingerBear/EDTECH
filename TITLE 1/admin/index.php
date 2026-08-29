@@ -142,7 +142,7 @@ try {
 <div class="login-wrap">
   <div class="login-brand">
     <div class="brand">
-      <div class="logo">IP</div>
+      <div class="logo"><img src="<?= url('assets/logo2.webp') ?>" alt="Innovatech PH" style="width:100%;height:100%;object-fit:contain;border-radius:14px;"></div>
       <span><?= h(APP_NAME) ?></span>
     </div>
     <div class="tagline">

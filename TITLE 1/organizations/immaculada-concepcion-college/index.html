@@ -64,7 +64,7 @@
     <p>Immaculada Concepcion College</p>
   </div>
 
-  <script src="assets/aframe.min.js"></script>
+  <!-- A-Frame loaded lazily in openScene() to prevent blocking floor plan -->
   <script>
   (() => {
     const $ = (s) => document.querySelector(s);
@@ -186,6 +186,10 @@
 
     // ─── 360 scene ───────────────────────────────────────────────────────────
     function openScene(scene) {
+      // Lazily load A-Frame before activating 360 mode
+      loadAFrame(() => _doOpenScene(scene));
+    }
+    function _doOpenScene(scene) {
       const panoEl = $('#pano');
       const skyEl  = $('#sky');
       const hintEl = $('#scene-hint');
@@ -299,8 +303,19 @@
       }
     });
 
-    // ─── hide loader ─────────────────────────────────────────────────────────
-    window.addEventListener('load', () => setTimeout(() => els.loader.classList.add('hidden'), 350));
+    // ─── lazy A-Frame loader (only injects when 360 mode is needed) ──────────
+    let aframeReady = false;
+    let aframeCallbacks = [];
+    function loadAFrame(cb) {
+      if (aframeReady) { cb(); return; }
+      aframeCallbacks.push(cb);
+      if (document.getElementById('aframe-script')) return;
+      const s = document.createElement('script');
+      s.id = 'aframe-script';
+      s.src = 'assets/aframe.min.js';
+      s.onload = () => { aframeReady = true; aframeCallbacks.forEach(fn => fn()); aframeCallbacks = []; };
+      document.head.appendChild(s);
+    }
 
     boot();
   })();
