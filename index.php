@@ -6,104 +6,64 @@
  */
 
 if (!function_exists('h')) {
-    function h(?string $str): string {
-        return htmlspecialchars((string) $str, ENT_QUOTES, 'UTF-8');
-    }
+  function h(?string $str): string
+  {
+    return htmlspecialchars((string) $str, ENT_QUOTES, 'UTF-8');
+  }
 }
 
 $systems = [
-    [
-        'id' => 'ar-navigation',
-        'index' => '01',
-        'shortTitle' => 'AR Campus Navigation',
-        'officialTitle' => 'AI-Assisted AR 360° Virtual Campus Navigation and Information System for Educational Institutions',
-        'client' => 'Innovatech PH',
-        'clientNote' => 'Software Development / Information Technology Department',
-        'framework' => 'Web-Based Software-as-a-Service (SaaS) Platform using Three-Tier Architecture (Client-Side, Application Server, Database Server)',
-        'locale' => 'Innovatech PH',
-        'accent' => 'brand',
-        'folder' => 'TITLE 1',
-        'portalUrl' => 'TITLE 1/',
-        'adminUrl' => 'TITLE 1/admin/index.php',
-        'summary' => 'A multi-tenant SaaS platform that transforms standardized smartphone-captured panoramas into interactive 360° augmented-reality campus navigation experiences, enabling educational institutions to deploy independent branded virtual tours.',
-        'domains' => [
-            ['title' => 'AI-Integrated Panoramic Processing & Cubemap Stitching', 'desc' => 'Algorithmic conversion of standardized smartphone-captured flat projections into mathematical 360° cubic spherical environments.'],
-            ['title' => 'Semantic Interactive Spatial Hotspots', 'desc' => 'Dynamic metadata binding on visual targets to execute database queries rendering room specifications, occupancy, and physical descriptors.'],
-            ['title' => 'Markerless Augmented Reality Overlay Protocol', 'desc' => 'Real-time spatial tracking utilizing web-browser cameras to project digital navigation labels and geographic overlays over the live physical environment.'],
-            ['title' => 'Topological 2D Floorplan Mapping & Point-to-Point Routing', 'desc' => 'A dynamic cartographic database calculating pathfinding vectors and projecting active "You Are Here" orientation nodes synchronized with the user\'s spatial perspective.'],
-            ['title' => 'Natural Language Processing Facility Description Generator', 'desc' => 'Administrative AI subsystem using OpenAI API to synthesize spatial parameters and automate semantic summary generation for campus facilities.'],
-            ['title' => 'Multi-School Configuration Interface (Multi-Tenant SaaS Engine)', 'desc' => 'Multi-tenant database architecture partitioning school data to allow separate institutions to deploy independent branded instances.']
-        ]
-    ],
-    [
-        'id' => 'kd-building',
-        'index' => '02',
-        'shortTitle' => 'KD Building Property Management',
-        'officialTitle' => 'AI-Integrated Multi-Building Property and Tenant Management System for KDBuilding',
-        'client' => 'KDBuilding',
-        'clientNote' => 'KD Residence, Compostela, Cebu',
-        'framework' => 'Centralized Web-Based Enterprise Resource Planning (ERP) System',
-        'locale' => 'KDBuilding — Compostela, Cebu',
-        'accent' => 'emerald',
-        'folder' => 'TITLE 2',
-        'portalUrl' => 'TITLE 2/',
-        'adminUrl' => 'TITLE 2/admin/',
-        'summary' => 'A centralized ERP system unifying property administration, automated utility billing, tenant complaint lifecycle management, and AI-driven maintenance forecasting for multi-building residential operations.',
-        'domains' => [
-            ['title' => 'Centralized Multi-Property Real-Time Administrative Ledger', 'desc' => 'Spatial database managing buildings, unit layouts, occupancy logs, and owner-tenant relational mapping.'],
-            ['title' => 'Automated Revenue Reconciliation & Utility Billing', 'desc' => 'Financial engine automating utility logging (power and water), calculating dynamic billing, generating ledgers, and tracking digital collections.'],
-            ['title' => 'Tenant Complaint Lifecycle Management & Maintenance Ticketing', 'desc' => 'Automated ticketing pipeline prioritizing, assigning, and routing structural complaints to maintenance teams, while computing resource costs.'],
-            ['title' => 'Visitor Access Control & Security Logistics Log', 'desc' => 'Security module maintaining real-time databases of physical entrants, shift schedules of security personnel, and active facility logs.'],
-            ['title' => 'AI Analytical Engine & Notification Delivery Subsystem', 'desc' => 'Machine learning forecasting to predict maintenance needs based on historical ticket frequencies, paired with SMS/Email protocols for automated bill and complaint reminders.']
-        ]
-    ],
-    [
-        'id' => 'lgu-emergency',
-        'index' => '03',
-        'shortTitle' => 'LGU Emergency Response',
-        'officialTitle' => 'AI-Assisted Emergency Response and Disaster Risk Navigation System for Local Government Units',
-        'client' => 'Innovatech PH',
-        'clientNote' => 'Reusable product deployed for Local Government Units',
-        'framework' => 'IoT-Enabled Cloud Platform utilizing Real-Time Protocols (MQTT/WebSockets) and Predictive Modeling Subsystems',
-        'locale' => 'Innovatech PH (for LGUs)',
-        'accent' => 'rose',
-        'folder' => 'TITLE 3',
-        'portalUrl' => 'TITLE 3/',
-        'adminUrl' => 'TITLE 3/admin/',
-        'summary' => 'A reusable cloud platform equipping Local Government Units with AI-assisted disaster risk navigation, real-time emergency response coordination, and predictive hazard modeling.',
-        'domains' => [
-            ['title' => 'AI-Assisted Emergency Response Coordination', 'desc' => 'Real-time dispatch and resource-allocation engine routing emergency incidents to the nearest response units with predictive priority scoring.'],
-            ['title' => 'Disaster Risk Navigation & Hazard Mapping', 'desc' => 'Dynamic geospatial mapping of flood, fire, and seismic risk zones with evacuation routing integrated into live incident overlays.'],
-            ['title' => 'Predictive Hazard Modeling Subsystem', 'desc' => 'Machine learning regression models analyzing historical disaster data, weather telemetry, and sensor feeds to forecast risk severity and response demand.'],
-            ['title' => 'Inter-Agency Coordination & Incident Lifecycle Pipeline', 'desc' => 'Centralized incident workflow routing alerts across LGU departments, response teams, and auxiliary agencies with audit-grade logging.'],
-            ['title' => 'Automated Public Alert & Notification Delivery', 'desc' => 'Multi-channel SMS, email, and push notification subsystem triggering automated risk advisories and evacuation directives to registered constituents.'],
-            ['title' => 'Constituent Registry & Shelter Management', 'desc' => 'Population database tracking resident vulnerability profiles, shelter capacity, and evacuation compliance during active disaster events.']
-        ]
+  [
+    'id' => 'ar-navigation',
+    'index' => '01',
+    'shortTitle' => 'AR Campus Navigation',
+    'officialTitle' => 'AI-Assisted AR 360° Virtual Campus Navigation and Information System for Educational Institutions',
+    'client' => 'Innovatech PH',
+    'clientNote' => 'Software Development / Information Technology Department',
+    'framework' => 'Web-Based Software-as-a-Service (SaaS) Platform using Three-Tier Architecture (Client-Side, Application Server, Database Server)',
+    'locale' => 'Innovatech PH',
+    'accent' => 'brand',
+    'folder' => 'TITLE 1',
+    'portalUrl' => 'TITLE 1/',
+    'adminUrl' => 'TITLE 1/admin/index.php',
+    'summary' => 'A multi-tenant SaaS platform that transforms standardized smartphone-captured panoramas into interactive 360° augmented-reality campus navigation experiences, enabling educational institutions to deploy independent branded virtual tours.',
+    'domains' => [
+      ['title' => 'AI-Integrated Panoramic Processing & Cubemap Stitching', 'desc' => 'Algorithmic conversion of standardized smartphone-captured flat projections into mathematical 360° cubic spherical environments.'],
+      ['title' => 'Semantic Interactive Spatial Hotspots', 'desc' => 'Dynamic metadata binding on visual targets to execute database queries rendering room specifications, occupancy, and physical descriptors.'],
+      ['title' => 'Markerless Augmented Reality Overlay Protocol', 'desc' => 'Real-time spatial tracking utilizing web-browser cameras to project digital navigation labels and geographic overlays over the live physical environment.'],
+      ['title' => 'Topological 2D Floorplan Mapping & Point-to-Point Routing', 'desc' => 'A dynamic cartographic database calculating pathfinding vectors and projecting active "You Are Here" orientation nodes synchronized with the user\'s spatial perspective.'],
+      ['title' => 'Natural Language Processing Facility Description Generator', 'desc' => 'Administrative AI subsystem using OpenAI API to synthesize spatial parameters and automate semantic summary generation for campus facilities.'],
+      ['title' => 'Multi-School Configuration Interface (Multi-Tenant SaaS Engine)', 'desc' => 'Multi-tenant database architecture partitioning school data to allow separate institutions to deploy independent branded instances.']
     ]
+  ]
+
 ];
 
 $proponents = [
-    ['name' => 'Sean Charles Vicente Pugosa', 'role' => 'Principal Investigator', 'initials' => 'SP', 'accent' => 'brand'],
-    ['name' => 'Cedric Fuerzas Sy', 'role' => 'Co-Investigator', 'initials' => 'CS', 'accent' => 'brand'],
-    ['name' => 'Christian Abuyabor', 'role' => 'Co-Investigator', 'initials' => 'CA', 'accent' => 'brand'],
+  ['name' => 'Sean Charles Vicente Pugosa', 'role' => 'Principal Investigator', 'initials' => 'SP', 'accent' => 'brand'],
+  ['name' => 'Cedric Fuerzas Sy', 'role' => 'Co-Investigator', 'initials' => 'CS', 'accent' => 'brand'],
+  ['name' => 'Christian Abuyabor', 'role' => 'Co-Investigator', 'initials' => 'CA', 'accent' => 'brand'],
 ];
 
 $panel = [
-    ['name' => 'Mr. Eser Fernandez', 'role' => 'Research Adviser', 'initials' => 'EF', 'accent' => 'amber'],
-    ['name' => 'Mr. Jonathan E. Pariente, MIT', 'role' => 'Program Head / Chairman', 'initials' => 'JP', 'accent' => 'emerald'],
+  ['name' => 'Mr. Eser Fernandez', 'role' => 'Research Adviser', 'initials' => 'EF', 'accent' => 'amber'],
+  ['name' => 'Mr. Jonathan E. Pariente, MIT', 'role' => 'Program Head / Chairman', 'initials' => 'JP', 'accent' => 'emerald'],
 ];
 ?>
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Capstone Research Portfolio | Immaculada Concepcion College</title>
-  <meta name="description" content="Capstone Research Portfolio — College of Computer Studies, Immaculada Concepcion College. Three AI-integrated systems: AR Campus Navigation, KD Building Property Management, and LGU Emergency Response.">
+  <meta name="description"
+    content="Capstone Research Portfolio — College of Computer Studies, Immaculada Concepcion College. Three AI-integrated systems: AR Campus Navigation, KD Building Property Management, and LGU Emergency Response.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+
   <style>
     :root {
       --bg: #07090e;
@@ -119,7 +79,12 @@ $panel = [
       --accent: #38bdf8;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       background-color: var(--bg);
       color: var(--text);
@@ -134,7 +99,7 @@ $panel = [
       inset: 0;
       pointer-events: none;
       z-index: 0;
-      background: 
+      background:
         radial-gradient(circle at 50% -20%, rgba(99, 102, 241, 0.18) 0%, transparent 60%),
         radial-gradient(circle at 100% 60%, rgba(56, 189, 248, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 0% 90%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
@@ -145,7 +110,7 @@ $panel = [
       inset: 0;
       pointer-events: none;
       background-size: 40px 40px;
-      background-image: 
+      background-image:
         linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
       mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
@@ -173,12 +138,14 @@ $panel = [
       border-bottom: 1px solid var(--card-border);
       transition: all 0.3s ease;
     }
+
     .nav-inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
       height: 72px;
     }
+
     .logo-group {
       display: flex;
       align-items: center;
@@ -186,6 +153,7 @@ $panel = [
       text-decoration: none;
       color: #fff;
     }
+
     .logo-badge {
       width: 42px;
       height: 42px;
@@ -196,8 +164,18 @@ $panel = [
       place-items: center;
       font-size: 20px;
     }
-    .logo-text h4 { font-size: 14px; font-weight: 700; }
-    .logo-text p { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+    .logo-text h4 {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .logo-text p {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
 
     .nav-links {
       display: flex;
@@ -205,6 +183,7 @@ $panel = [
       gap: 2rem;
       list-style: none;
     }
+
     .nav-links a {
       color: var(--muted);
       text-decoration: none;
@@ -212,7 +191,10 @@ $panel = [
       font-weight: 500;
       transition: color 0.2s;
     }
-    .nav-links a:hover { color: #fff; }
+
+    .nav-links a:hover {
+      color: #fff;
+    }
 
     .btn-portal {
       display: inline-flex;
@@ -229,6 +211,7 @@ $panel = [
       transition: all 0.2s;
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
+
     .btn-portal:hover {
       transform: translateY(-1px);
       box-shadow: 0 6px 22px rgba(99, 102, 241, 0.5);
@@ -239,6 +222,7 @@ $panel = [
       padding: 160px 0 100px;
       text-align: center;
     }
+
     .badge-pill {
       display: inline-flex;
       align-items: center;
@@ -252,6 +236,7 @@ $panel = [
       font-weight: 600;
       margin-bottom: 24px;
     }
+
     .hero-title {
       font-size: clamp(2.4rem, 5.5vw, 4.2rem);
       font-weight: 900;
@@ -261,11 +246,13 @@ $panel = [
       max-width: 960px;
       margin: 0 auto 24px;
     }
+
     .gradient-text {
       background: linear-gradient(135deg, #a5b4fc 0%, #38bdf8 50%, #34d399 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
+
     .hero-desc {
       font-size: clamp(1rem, 2vw, 1.2rem);
       color: var(--muted);
@@ -273,6 +260,7 @@ $panel = [
       margin: 0 auto 36px;
       line-height: 1.7;
     }
+
     .hero-actions {
       display: flex;
       align-items: center;
@@ -280,6 +268,7 @@ $panel = [
       gap: 14px;
       flex-wrap: wrap;
     }
+
     .btn-secondary {
       display: inline-flex;
       align-items: center;
@@ -295,10 +284,12 @@ $panel = [
       backdrop-filter: blur(8px);
       transition: all 0.2s;
     }
+
     .btn-secondary:hover {
       background: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.25);
     }
+
     .btn-primary-large {
       display: inline-flex;
       align-items: center;
@@ -314,6 +305,7 @@ $panel = [
       box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
       transition: all 0.2s;
     }
+
     .btn-primary-large:hover {
       transform: translateY(-2px);
       box-shadow: 0 12px 30px rgba(99, 102, 241, 0.6);
@@ -325,6 +317,7 @@ $panel = [
       max-width: 680px;
       margin: 0 auto 56px;
     }
+
     .section-eyebrow {
       font-size: 12px;
       font-weight: 800;
@@ -333,6 +326,7 @@ $panel = [
       color: var(--accent);
       margin-bottom: 12px;
     }
+
     .section-title {
       font-size: clamp(1.8rem, 3.5vw, 2.6rem);
       font-weight: 800;
@@ -340,6 +334,7 @@ $panel = [
       color: #fff;
       margin-bottom: 16px;
     }
+
     .section-desc {
       font-size: 15px;
       color: var(--muted);
@@ -352,6 +347,7 @@ $panel = [
       gap: 36px;
       margin-bottom: 120px;
     }
+
     .system-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -363,23 +359,36 @@ $panel = [
       overflow: hidden;
       transition: all 0.3s ease;
     }
+
     .system-card:hover {
       border-color: rgba(255, 255, 255, 0.2);
       transform: translateY(-3px);
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
     }
-    
-    .system-card.brand-accent { box-shadow: inset 0 0 80px rgba(99, 102, 241, 0.04); }
-    .system-card.emerald-accent { box-shadow: inset 0 0 80px rgba(16, 185, 129, 0.04); }
-    .system-card.rose-accent { box-shadow: inset 0 0 80px rgba(244, 63, 94, 0.04); }
+
+    .system-card.brand-accent {
+      box-shadow: inset 0 0 80px rgba(99, 102, 241, 0.04);
+    }
+
+    .system-card.emerald-accent {
+      box-shadow: inset 0 0 80px rgba(16, 185, 129, 0.04);
+    }
+
+    .system-card.rose-accent {
+      box-shadow: inset 0 0 80px rgba(244, 63, 94, 0.04);
+    }
 
     .system-grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 36px;
     }
+
     @media (min-width: 992px) {
-      .system-grid { grid-template-columns: 2fr 3fr; gap: 48px; }
+      .system-grid {
+        grid-template-columns: 2fr 3fr;
+        gap: 48px;
+      }
     }
 
     .system-header {
@@ -388,12 +397,14 @@ $panel = [
       justify-content: space-between;
       margin-bottom: 20px;
     }
+
     .system-num {
       font-size: 42px;
       font-weight: 900;
       opacity: 0.2;
       line-height: 1;
     }
+
     .system-chip {
       display: inline-flex;
       align-items: center;
@@ -404,9 +415,21 @@ $panel = [
       font-weight: 700;
       border: 1px solid currentColor;
     }
-    .system-chip.brand { color: #818cf8; background: rgba(99, 102, 241, 0.1); }
-    .system-chip.emerald { color: #34d399; background: rgba(16, 185, 129, 0.1); }
-    .system-chip.rose { color: #fb7185; background: rgba(244, 63, 94, 0.1); }
+
+    .system-chip.brand {
+      color: #818cf8;
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .system-chip.emerald {
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    .system-chip.rose {
+      color: #fb7185;
+      background: rgba(244, 63, 94, 0.1);
+    }
 
     .system-title {
       font-size: 22px;
@@ -415,6 +438,7 @@ $panel = [
       margin-bottom: 14px;
       line-height: 1.35;
     }
+
     .system-summary {
       font-size: 14px;
       color: var(--muted);
@@ -430,24 +454,33 @@ $panel = [
       margin-bottom: 24px;
       font-size: 13px;
     }
+
     .meta-row {
       display: flex;
       margin-bottom: 8px;
     }
-    .meta-row:last-child { margin-bottom: 0; }
+
+    .meta-row:last-child {
+      margin-bottom: 0;
+    }
+
     .meta-label {
       width: 140px;
       flex-shrink: 0;
       color: var(--muted);
       font-weight: 600;
     }
-    .meta-val { color: #e2e8f0; }
+
+    .meta-val {
+      color: #e2e8f0;
+    }
 
     .system-actions {
       display: flex;
       gap: 12px;
       flex-wrap: wrap;
     }
+
     .btn-launch {
       display: inline-flex;
       align-items: center;
@@ -461,10 +494,26 @@ $panel = [
       border: 1px solid rgba(255, 255, 255, 0.2);
       transition: all 0.2s;
     }
-    .btn-launch.brand { background: #6366f1; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35); }
-    .btn-launch.emerald { background: #10b981; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); }
-    .btn-launch.rose { background: #f43f5e; box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35); }
-    .btn-launch:hover { transform: translateY(-1px); filter: brightness(1.1); }
+
+    .btn-launch.brand {
+      background: #6366f1;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+
+    .btn-launch.emerald {
+      background: #10b981;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    }
+
+    .btn-launch.rose {
+      background: #f43f5e;
+      box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35);
+    }
+
+    .btn-launch:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.1);
+    }
 
     .btn-admin {
       display: inline-flex;
@@ -480,6 +529,7 @@ $panel = [
       border: 1px solid var(--card-border);
       transition: all 0.2s;
     }
+
     .btn-admin:hover {
       background: rgba(255, 255, 255, 0.1);
       color: #fff;
@@ -494,14 +544,19 @@ $panel = [
       color: var(--muted);
       margin-bottom: 16px;
     }
+
     .domains-grid {
       display: grid;
       grid-template-columns: 1fr;
       gap: 12px;
     }
+
     @media (min-width: 640px) {
-      .domains-grid { grid-template-columns: 1fr 1fr; }
+      .domains-grid {
+        grid-template-columns: 1fr 1fr;
+      }
     }
+
     .domain-card {
       background: rgba(255, 255, 255, 0.025);
       border: 1px solid rgba(255, 255, 255, 0.05);
@@ -509,7 +564,11 @@ $panel = [
       padding: 16px;
       transition: border-color 0.2s;
     }
-    .domain-card:hover { border-color: rgba(255, 255, 255, 0.15); }
+
+    .domain-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
     .domain-card h5 {
       font-size: 13px;
       font-weight: 700;
@@ -517,6 +576,7 @@ $panel = [
       margin-bottom: 6px;
       line-height: 1.3;
     }
+
     .domain-card p {
       font-size: 12px;
       color: var(--muted);
@@ -530,9 +590,13 @@ $panel = [
       gap: 24px;
       margin-bottom: 120px;
     }
+
     @media (min-width: 768px) {
-      .grid-2 { grid-template-columns: 1fr 1fr; }
+      .grid-2 {
+        grid-template-columns: 1fr 1fr;
+      }
     }
+
     .info-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -540,12 +604,14 @@ $panel = [
       padding: 32px;
       backdrop-filter: blur(16px);
     }
+
     .info-card h3 {
       font-size: 20px;
       font-weight: 800;
       color: #fff;
       margin-bottom: 12px;
     }
+
     .info-card p {
       font-size: 14px;
       color: var(--muted);
@@ -559,6 +625,7 @@ $panel = [
       gap: 20px;
       margin-bottom: 40px;
     }
+
     .person-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -567,6 +634,7 @@ $panel = [
       text-align: center;
       backdrop-filter: blur(12px);
     }
+
     .person-avatar {
       width: 64px;
       height: 64px;
@@ -580,8 +648,21 @@ $panel = [
       color: #818cf8;
       border: 2px solid rgba(99, 102, 241, 0.3);
     }
-    .person-card h4 { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
-    .person-card p { font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: 600; letter-spacing: 0.06em; }
+
+    .person-card h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .person-card p {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+    }
 
     /* Footer */
     footer {
@@ -592,9 +673,13 @@ $panel = [
       color: var(--muted);
       background: rgba(7, 9, 14, 0.95);
     }
-    footer p { margin-bottom: 6px; }
+
+    footer p {
+      margin-bottom: 6px;
+    }
   </style>
 </head>
+
 <body>
 
   <div class="ambient-bg"></div>
@@ -637,8 +722,9 @@ $panel = [
       </h1>
 
       <p class="hero-desc">
-        A formal capstone research manuscript submitted to the <strong style="color:#fff">College of Computer Studies</strong>, 
-        <strong style="color:#fff">Immaculada Concepcion College</strong>, presenting the architectural frameworks, 
+        A formal capstone research manuscript submitted to the <strong style="color:#fff">College of Computer
+          Studies</strong>,
+        <strong style="color:#fff">Immaculada Concepcion College</strong>, presenting the architectural frameworks,
         functional domains, and technical specifications of three developed systems.
       </p>
 
@@ -658,7 +744,8 @@ $panel = [
         <div class="section-eyebrow">General Academic Profile</div>
         <h2 class="section-title">Capstone Research Overview</h2>
         <p class="section-desc">
-          Documenting research conducted under the Center for Research, Innovation, and Development (CRID), complying with institutional thesis manuscript standards.
+          Documenting research conducted under the Center for Research, Innovation, and Development (CRID), complying
+          with institutional thesis manuscript standards.
         </p>
       </div>
 
@@ -667,14 +754,17 @@ $panel = [
           <div style="font-size: 28px; margin-bottom: 14px;">🎯</div>
           <h3>Research Objective</h3>
           <p>
-            Develop and evaluate three AI-integrated systems addressing distinct institutional domains: educational navigation, residential property management, and municipal emergency response.
+            Develop and evaluate three AI-integrated systems addressing distinct institutional domains: educational
+            navigation, residential property management, and municipal emergency response.
           </p>
         </div>
         <div class="info-card">
           <div style="font-size: 28px; margin-bottom: 14px;">🔬</div>
           <h3>Methodological Standard</h3>
           <p>
-            Quantitative evaluation using the <strong>ISO/IEC 25010 Software Quality Standard</strong> to measure Usability, Efficiency, and Security, evaluated through the <strong>Technology Acceptance Model (TAM, Davis 1989)</strong>.
+            Quantitative evaluation using the <strong>ISO/IEC 25010 Software Quality Standard</strong> to measure
+            Usability, Efficiency, and Security, evaluated through the <strong>Technology Acceptance Model (TAM, Davis
+              1989)</strong>.
           </p>
         </div>
       </div>
@@ -761,7 +851,8 @@ $panel = [
           <h3>Technology Acceptance Model (TAM)</h3>
           <p style="margin-bottom: 12px;"><strong>Davis, 1989</strong></p>
           <p>
-            Assessing <em>Perceived Usefulness (PU)</em> and <em>Perceived Ease of Use (PEOU)</em> among system administrators and target end-users to validate adoption viability.
+            Assessing <em>Perceived Usefulness (PU)</em> and <em>Perceived Ease of Use (PEOU)</em> among system
+            administrators and target end-users to validate adoption viability.
           </p>
         </div>
 
@@ -770,7 +861,8 @@ $panel = [
           <h3>ISO/IEC 25010 Standard</h3>
           <p style="margin-bottom: 12px;"><strong>Software Quality Evaluation</strong></p>
           <p>
-            Structured instrument evaluating three primary quality dimensions: Usability, Functional Efficiency, and System Security across each developed platform.
+            Structured instrument evaluating three primary quality dimensions: Usability, Functional Efficiency, and
+            System Security across each developed platform.
           </p>
         </div>
       </div>
@@ -784,7 +876,8 @@ $panel = [
       </div>
 
       <div style="margin-bottom: 32px;">
-        <h4 style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 16px;">
+        <h4
+          style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 16px;">
           Research Proponents
         </h4>
         <div class="proponents-grid">
@@ -799,13 +892,16 @@ $panel = [
       </div>
 
       <div>
-        <h4 style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 16px;">
+        <h4
+          style="font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 16px;">
           Advisory Panel
         </h4>
         <div class="proponents-grid">
           <?php foreach ($panel as $p): ?>
             <div class="person-card">
-              <div class="person-avatar" style="color:#fbbf24; border-color:rgba(251,191,36,0.3); background:rgba(251,191,36,0.1);"><?= h($p['initials']) ?></div>
+              <div class="person-avatar"
+                style="color:#fbbf24; border-color:rgba(251,191,36,0.3); background:rgba(251,191,36,0.1);">
+                <?= h($p['initials']) ?></div>
               <h4><?= h($p['name']) ?></h4>
               <p><?= h($p['role']) ?></p>
             </div>
@@ -820,9 +916,11 @@ $panel = [
     <div class="container">
       <p style="color: #fff; font-weight: 700;">Immaculada Concepcion College · College of Computer Studies</p>
       <p>Center for Research, Innovation, and Development (CRID) · AY 2025–2026</p>
-      <p style="font-size: 12px; margin-top: 12px; opacity: 0.6;">© <?= date('Y') ?> Capstone Research Portfolio. All rights reserved.</p>
+      <p style="font-size: 12px; margin-top: 12px; opacity: 0.6;">© <?= date('Y') ?> Capstone Research Portfolio. All
+        rights reserved.</p>
     </div>
   </footer>
 
 </body>
+
 </html>
