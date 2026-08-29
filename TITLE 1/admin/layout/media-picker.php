@@ -218,6 +218,17 @@ if ($activeInst && !empty($activeInst['folder_path'])) {
 </div>
 
 <script>
+// Move the media picker modal to body to avoid Bootstrap nested modal z-index/backdrop issues
+(function() {
+    var modalId = "modal_<?= h($pickerId) ?>";
+    var m = document.getElementById(modalId);
+    if (m && m.parentElement !== document.body) {
+        document.body.appendChild(m);
+    }
+})();
+</script>
+
+<script>
 if (typeof window.mediaPickerInit === 'undefined') {
     window.mediaPickerInit = true;
 
