@@ -11,17 +11,17 @@ $pageTitle = 'Archive & Restore';
 $pageSub = 'Recover deleted institutions and user accounts';
 $active = 'Archive & Restore';
 
-$pdo = db();
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_id'], $_POST['restore_type'])) {
     $id = (int) $_POST['restore_id'];
     $type = $_POST['restore_type'];
     
     if ($type === 'institution') {
-        $pdo->prepare("UPDATE institutions SET deleted_at = NULL WHERE id = ?")->execute([$id]);
+        crud()->update('institutions', ['deleted_at' => null], ['id' => $id]);
         flash('success', 'Institution restored successfully.');
     } elseif ($type === 'user') {
-        $pdo->prepare("UPDATE users SET deleted_at = NULL WHERE id = ?")->execute([$id]);
+        crud()->update('users', ['deleted_at' => null], ['id' => $id]);
         flash('success', 'User account restored successfully.');
     }
     
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_id'], $_POST[
 $tab = $_GET['tab'] ?? 'institutions';
 
 if ($tab === 'users') {
-    $archived = $pdo->query(
+    $archived = crud()->raw(
         "SELECT u.id, u.first_name, u.last_name, u.email, u.deleted_at, r.name AS role_name, i.name AS institution_name
          FROM users u
          LEFT JOIN roles r ON r.id = u.role_id
@@ -40,12 +40,7 @@ if ($tab === 'users') {
          ORDER BY u.deleted_at DESC"
     )->fetchAll();
 } else {
-    $archived = $pdo->query(
-        "SELECT i.id, i.name, i.slug, i.deleted_at
-         FROM institutions i
-         WHERE i.deleted_at IS NOT NULL
-         ORDER BY i.deleted_at DESC"
-    )->fetchAll();
+    $archived = crud()->select('institutions i', 'i.id, i.name, i.slug, i.deleted_at', ['i.deleted_at' => ['IS NOT', null]], 'ORDER BY i.deleted_at DESC');
 }
 ?>
 

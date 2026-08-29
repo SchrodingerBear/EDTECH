@@ -2,7 +2,7 @@
 /**
  * Capstone Research Portfolio — College of Computer Studies
  * Immaculada Concepcion College · AY 2025–2026
- * Unified Portal for Three AI-Integrated Thesis Systems
+ * Unified Portal for Two AI-Integrated Thesis Systems
  */
 
 if (!function_exists('h')) {
@@ -20,7 +20,7 @@ $systems = [
     'officialTitle' => 'AI-Assisted AR 360° Virtual Campus Navigation and Information System for Educational Institutions',
     'client' => 'Innovatech PH',
     'clientNote' => 'Software Development / Information Technology Department',
-    'framework' => 'Web-Based Software-as-a-Service (SaaS) Platform using Three-Tier Architecture (Client-Side, Application Server, Database Server)',
+    'framework' => 'Web-Based Software-as-a-Service (SaaS) Platform using Two-Tier Architecture (Client-Side, Application Server, Database Server)',
     'locale' => 'Innovatech PH',
     'accent' => 'brand',
     'folder' => 'TITLE 1',
@@ -58,7 +58,7 @@ $panel = [
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Capstone Research Portfolio | Immaculada Concepcion College</title>
   <meta name="description"
-    content="Capstone Research Portfolio — College of Computer Studies, Immaculada Concepcion College. Three AI-integrated systems: AR Campus Navigation, KD Building Property Management, and LGU Emergency Response.">
+    content="Capstone Research Portfolio — College of Computer Studies, Immaculada Concepcion College. Two AI-integrated systems: AR Campus Navigation, KD Building Property Management, and LGU Emergency Response.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
@@ -698,7 +698,7 @@ $panel = [
 
       <ul class="nav-links">
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#systems">The Three Systems</a></li>
+        <li><a href="#systems">The Two Systems</a></li>
         <li><a href="#framework">Framework</a></li>
         <li><a href="#proponents">Proponents</a></li>
       </ul>
@@ -717,7 +717,7 @@ $panel = [
       </div>
 
       <h1 class="hero-title">
-        Three AI-Integrated Systems for
+        Two AI-Integrated Systems for
         <span class="gradient-text">Real-World Institutional Challenges</span>
       </h1>
 
@@ -725,7 +725,7 @@ $panel = [
         A formal capstone research manuscript submitted to the <strong style="color:#fff">College of Computer
           Studies</strong>,
         <strong style="color:#fff">Immaculada Concepcion College</strong>, presenting the architectural frameworks,
-        functional domains, and technical specifications of three developed systems.
+        functional domains, and technical specifications of Two developed systems.
       </p>
 
       <div class="hero-actions">
@@ -754,7 +754,7 @@ $panel = [
           <div style="font-size: 28px; margin-bottom: 14px;">🎯</div>
           <h3>Research Objective</h3>
           <p>
-            Develop and evaluate three AI-integrated systems addressing distinct institutional domains: educational
+            Develop and evaluate Two AI-integrated systems addressing distinct institutional domains: educational
             navigation, residential property management, and municipal emergency response.
           </p>
         </div>
@@ -774,7 +774,7 @@ $panel = [
     <section id="systems">
       <div class="section-header">
         <div class="section-eyebrow">Thesis Deliverables</div>
-        <h2 class="section-title">The Three Developed Systems</h2>
+        <h2 class="section-title">The Two Developed Systems</h2>
         <p class="section-desc">
           Direct portal access and administrative command centers for each research application.
         </p>
@@ -861,7 +861,7 @@ $panel = [
           <h3>ISO/IEC 25010 Standard</h3>
           <p style="margin-bottom: 12px;"><strong>Software Quality Evaluation</strong></p>
           <p>
-            Structured instrument evaluating three primary quality dimensions: Usability, Functional Efficiency, and
+            Structured instrument evaluating Two primary quality dimensions: Usability, Functional Efficiency, and
             System Security across each developed platform.
           </p>
         </div>
@@ -901,7 +901,8 @@ $panel = [
             <div class="person-card">
               <div class="person-avatar"
                 style="color:#fbbf24; border-color:rgba(251,191,36,0.3); background:rgba(251,191,36,0.1);">
-                <?= h($p['initials']) ?></div>
+                <?= h($p['initials']) ?>
+              </div>
               <h4><?= h($p['name']) ?></h4>
               <p><?= h($p['role']) ?></p>
             </div>

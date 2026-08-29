@@ -11,7 +11,6 @@ $pageTitle = 'AI Info';
 $pageSub = 'Generate visitor-friendly descriptions in one click';
 $active = 'AI Info';
 
-$pdo = db();
 $inst = current_institution();
 $iid = (int) $inst['id'];
 $me = (int) current_user()['id'];
@@ -26,20 +25,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $allowed = ['building', 'room', 'facility', 'campus_area'];
             if (!in_array($targetType, $allowed, true) || !$targetId) throw new RuntimeException('Pick a target.');
             $tableMap = ['building' => 'buildings', 'room' => 'rooms', 'facility' => 'facilities', 'campus_area' => 'campus_areas'];
-            $q = $pdo->prepare("SELECT name FROM {$tableMap[$targetType]} WHERE id=:id AND institution_id=:iid");
-            $q->execute(['id' => $targetId, 'iid' => $iid]);
-            $name = $q->fetchColumn();
+            $name = crud()->raw("SELECT name FROM {$tableMap[$targetType]} WHERE id=:id AND institution_id=:iid", ['id' => $targetId, 'iid' => $iid])->fetchColumn();
             if (!$name) throw new RuntimeException('Target not found.');
 
             $out = sprintf(
                 "%s is a key part of %s. Visitors can find it on the campus floor plan, view photos in the media section, and explore it through the 360° virtual tour%s.",
                 $name, $inst['name'], $prompt !== '' ? ' — ' . $prompt : ''
             );
-            $pdo->prepare("INSERT INTO ai_info_jobs (institution_id, created_by, target_type, target_id, prompt, output_text, status) VALUES (:iid,:me,:tt,:tid,:p,:out,'completed')")
-                ->execute(['iid' => $iid, 'me' => $me, 'tt' => $targetType, 'tid' => $targetId, 'p' => $prompt ?: null, 'out' => $out]);
+            crud()->insert('ai_info_jobs', [
+                'institution_id' => $iid, 'created_by' => $me, 'target_type' => $targetType, 'target_id' => $targetId, 'prompt' => $prompt ?: null, 'output_text' => $out, 'status' => 'completed'
+            ]);
             $tableMap = ['building' => 'buildings', 'room' => 'rooms', 'facility' => 'facilities', 'campus_area' => 'campus_areas'];
-            $pdo->prepare("UPDATE {$tableMap[$targetType]} SET ai_description=:ai WHERE id=:id AND institution_id=:iid")
-                ->execute(['ai' => $out, 'id' => $targetId, 'iid' => $iid]);
+            crud()->update($tableMap[$targetType], ['ai_description' => $out], ['id' => $targetId, 'institution_id' => $iid]);
             audit('ai_info.generate', 'ai', $targetType, $targetId);
             flash('success', 'AI description generated.');
         }
@@ -49,20 +46,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('admin/staff/ai-info');
 }
 
-$jobs = $pdo->prepare("SELECT i.*, u.email FROM ai_info_jobs i JOIN users u ON u.id=i.created_by WHERE i.institution_id=? ORDER BY i.created_at DESC LIMIT 20");
-$jobs->execute([$iid]);
+$jobs = crud()->raw("SELECT i.*, u.email FROM ai_info_jobs i JOIN users u ON u.id=i.created_by WHERE i.institution_id=:iid ORDER BY i.created_at DESC LIMIT 20", ['iid' => $iid]);
 
 $tables = [
-    'building'    => "SELECT id, name, COALESCE(ai_description,'') AS ai FROM buildings WHERE institution_id=? AND deleted_at IS NULL ORDER BY name",
-    'room'        => "SELECT id, name, COALESCE(ai_description,'') AS ai FROM rooms WHERE institution_id=? AND deleted_at IS NULL ORDER BY name",
-    'facility'    => "SELECT id, name, COALESCE(ai_description,'') AS ai FROM facilities WHERE institution_id=? ORDER BY name",
-    'campus_area' => "SELECT id, name, COALESCE(ai_description,'') AS ai FROM campus_areas WHERE institution_id=? ORDER BY name",
+    'building'    => "SELECT id, name, COALESCE(ai_description,'') AS ai FROM buildings WHERE institution_id=:iid AND deleted_at IS NULL ORDER BY name",
+    'room'        => "SELECT id, name, COALESCE(ai_description,'') AS ai FROM rooms WHERE institution_id=:iid AND deleted_at IS NULL ORDER BY name",
+    'facility'    => "SELECT id, name, COALESCE(ai_description,'') AS ai FROM facilities WHERE institution_id=:iid ORDER BY name",
+    'campus_area' => "SELECT id, name, COALESCE(ai_description,'') AS ai FROM campus_areas WHERE institution_id=:iid ORDER BY name",
 ];
 $rows = [];
 foreach ($tables as $t => $sql) {
-    $st = $pdo->prepare($sql);
-    $st->execute([$iid]);
-    $rows[$t] = $st->fetchAll();
+    $rows[$t] = crud()->raw($sql, ['iid' => $iid])->fetchAll();
 }
 ?>
 <div class="row g-4">

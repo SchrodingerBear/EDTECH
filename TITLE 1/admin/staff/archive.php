@@ -11,7 +11,6 @@ $pageTitle = 'Archive & Restore';
 $pageSub = 'Recover deleted content for your institution';
 $active = 'Archive & Restore';
 
-$pdo = db();
 $iid = (int) current_institution()['id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_id'], $_POST['restore_type'])) {
@@ -27,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_id'], $_POST[
     
     if (isset($tables[$type])) {
         $table = $tables[$type];
-        $pdo->prepare("UPDATE {$table} SET deleted_at = NULL WHERE id = ? AND institution_id = ?")->execute([$id, $iid]);
+        crud()->raw("UPDATE {$table} SET deleted_at = NULL WHERE id = :id AND institution_id = :iid", ['id' => $id, 'iid' => $iid])->execute();
         flash('success', ucfirst(str_replace('_', ' ', $type)) . ' restored successfully.');
     }
     
@@ -38,18 +37,13 @@ $tab = $_GET['tab'] ?? 'building';
 $archived = [];
 
 if ($tab === 'building') {
-    $archived = $pdo->prepare("SELECT id, name, deleted_at FROM buildings WHERE institution_id = ? AND deleted_at IS NOT NULL ORDER BY deleted_at DESC");
+    $archived = crud()->select('buildings', 'id, name, deleted_at', ['institution_id' => $iid, 'deleted_at' => ['IS NOT', null]], 'ORDER BY deleted_at DESC');
 } elseif ($tab === 'room') {
-    $archived = $pdo->prepare("SELECT r.id, r.name, b.name as building_name, r.deleted_at FROM rooms r LEFT JOIN buildings b ON b.id = r.building_id WHERE r.institution_id = ? AND r.deleted_at IS NOT NULL ORDER BY r.deleted_at DESC");
+    $archived = crud()->raw("SELECT r.id, r.name, b.name as building_name, r.deleted_at FROM rooms r LEFT JOIN buildings b ON b.id = r.building_id WHERE r.institution_id = :iid AND r.deleted_at IS NOT NULL ORDER BY r.deleted_at DESC", ['iid' => $iid])->fetchAll();
 } elseif ($tab === 'tour') {
-    $archived = $pdo->prepare("SELECT id, title as name, deleted_at FROM tour_scenes WHERE institution_id = ? AND deleted_at IS NOT NULL ORDER BY deleted_at DESC");
+    $archived = crud()->select('tour_scenes', 'id, title as name, deleted_at', ['institution_id' => $iid, 'deleted_at' => ['IS NOT', null]], 'ORDER BY deleted_at DESC');
 } elseif ($tab === 'floorplan') {
-    $archived = $pdo->prepare("SELECT id, title as name, deleted_at FROM floor_plans WHERE institution_id = ? AND deleted_at IS NOT NULL ORDER BY deleted_at DESC");
-}
-
-if ($archived) {
-    $archived->execute([$iid]);
-    $archived = $archived->fetchAll();
+    $archived = crud()->select('floor_plans', 'id, title as name, deleted_at', ['institution_id' => $iid, 'deleted_at' => ['IS NOT', null]], 'ORDER BY deleted_at DESC');
 }
 ?>
 

@@ -11,7 +11,6 @@ $pageTitle = 'AI Tools';
 $pageSub = 'Stitch a 360 panorama from six faces · generate facility info';
 $active = 'AI Tools';
 
-$pdo = db();
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
 $iid = (int) $inst['id'];
@@ -26,11 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         /* ------------------------- stitch job ------------------------- */
         if ($action === 'job-create') {
             $source = ($_POST['source_type'] ?? 'cubemap_upload') === 'in_app_capture' ? 'in_app_capture' : 'cubemap_upload';
-            $pdo->prepare(
-                "INSERT INTO ai_stitch_jobs (institution_id, created_by, source_type, status, guide_step)
-                 VALUES (:iid,:me,:src,'draft','front')"
-            )->execute(['iid' => $iid, 'me' => $me, 'src' => $source]);
-            $jid = (int) $pdo->lastInsertId();
+            $jid = crud()->insert('ai_stitch_jobs', [
+                'institution_id' => $iid, 'created_by' => $me,
+                'source_type' => $source, 'status' => 'draft', 'guide_step' => 'front'
+            ]);
             audit('ai_stitch.job.create', 'ai', 'job', $jid);
             flash('success', 'Stitch job created. Upload six cube faces.');
             redirect('admin/institution/ai');
@@ -43,9 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!in_array($face, $order, true)) throw new RuntimeException('Invalid face.');
             if (empty($_FILES['face_file']['name'])) throw new RuntimeException('Choose a face image.');
 
-            $job = $pdo->prepare("SELECT * FROM ai_stitch_jobs WHERE id=:id AND institution_id=:iid");
-            $job->execute(['id' => $jid, 'iid' => $iid]);
-            $job = $job->fetch();
+            $job = crud()->raw('SELECT * FROM ai_stitch_jobs WHERE id=:id AND institution_id=:iid LIMIT 1', ['id' => $jid, 'iid' => $iid])->fetch();
             if (!$job) throw new RuntimeException('Job not found.');
 
             if (!is_dir($cubeAbs . '/' . $jid)) mkdir($cubeAbs . '/' . $jid, 0775, true);
@@ -54,25 +50,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             move_uploaded_file($_FILES['face_file']['tmp_name'], $cubeAbs . '/' . $jid . '/' . $name);
             $rel = 'assets/cubemaps/' . $jid . '/' . $name;
 
-            $pdo->prepare(
-                "INSERT INTO cubemap_faces (job_id, face, image_path, captured_at) VALUES (:jid,:face,:img, NOW())
-                 ON DUPLICATE KEY UPDATE image_path=:img2, captured_at=NOW()"
-            )->execute(['jid' => $jid, 'face' => $face, 'img' => $rel, 'img2' => $rel]);
+            crud()->raw("INSERT INTO cubemap_faces (job_id, face, image_path, captured_at) VALUES (:jid,:face,:img, NOW()) ON DUPLICATE KEY UPDATE image_path=:img2, captured_at=NOW()", ['jid' => $jid, 'face' => $face, 'img' => $rel, 'img2' => $rel])->execute();
 
             // media audit row (kind cubemap_face)
             try {
-                $pdo->prepare(
-                    "INSERT INTO media_assets (institution_id, uploaded_by, kind, file_path, original_name) VALUES (:iid,:me,'cubemap_face',:rel,:orig)"
-                )->execute(['iid' => $iid, 'me' => $me, 'rel' => $rel, 'orig' => $_FILES['face_file']['name']]);
+                crud()->insert('media_assets', [
+                    'institution_id' => $iid, 'uploaded_by' => $me, 'kind' => 'cubemap_face',
+                    'file_path' => $rel, 'original_name' => $_FILES['face_file']['name']
+                ]);
             } catch (Throwable $e) { /* non-fatal */ }
 
             // advance guide step for in-app capture
             if (($job['source_type'] ?? '') === 'in_app_capture') {
                 $next = $order[min(array_search($face, $order, true) + 1, 5)];
-                $pdo->prepare("UPDATE ai_stitch_jobs SET guide_step=:gs, status=IF(:gs='done','ready','uploading') WHERE id=:id")
-                    ->execute(['gs' => $next, 'id' => $jid]);
+                crud()->raw("UPDATE ai_stitch_jobs SET guide_step=:gs, status=IF(:gs='done','ready','uploading') WHERE id=:id", ['gs' => $next, 'id' => $jid])->execute();
             } else {
-                $pdo->prepare("UPDATE ai_stitch_jobs SET status='uploading' WHERE id=:id")->execute(['id' => $jid]);
+                crud()->update('ai_stitch_jobs', ['status' => 'uploading'], ['id' => $jid]);
             }
             flash('success', ucfirst($face) . ' face saved.');
             redirect('admin/institution/ai');
@@ -80,9 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($action === 'stitch') {
             $jid = (int) ($_POST['job_id'] ?? 0);
-            $faces = $pdo->prepare("SELECT face, image_path FROM cubemap_faces WHERE job_id=:jid");
-            $faces->execute(['jid' => $jid]);
-            $faces = $faces->fetchAll();
+            $faces = crud()->select('cubemap_faces', 'face, image_path', ['job_id' => $jid]);
             if (count($faces) !== 6) throw new RuntimeException('All six faces are required before stitching.');
 
             $map = [];
@@ -94,19 +85,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!is_dir($panoAbs)) mkdir($panoAbs, 0775, true);
             $out = $panoAbs . '/stitch-' . $jid . '-' . random_token(4) . '.jpg';
 
-            $pdo->prepare("UPDATE ai_stitch_jobs SET status='processing' WHERE id=:id")->execute(['id' => $jid]);
+            crud()->update('ai_stitch_jobs', ['status' => 'processing'], ['id' => $jid]);
             $ok = cubemap_to_equirect($map, $out);
             if (!$ok) throw new RuntimeException('Stitch failed — check that faces are square JPEG/PNG images.');
 
             $rel = 'assets/panos/' . basename($out);
-            $pdo->prepare(
-                "UPDATE ai_stitch_jobs SET status='completed', output_equirect_path=:rel, guide_step='done', completed_at=NOW(), provider='builtin-gd', error_message=NULL WHERE id=:id"
-            )->execute(['rel' => $rel, 'id' => $jid]);
+            crud()->raw("UPDATE ai_stitch_jobs SET status='completed', output_equirect_path=:rel, guide_step='done', completed_at=NOW(), provider='builtin-gd', error_message=NULL WHERE id=:id", ['rel' => $rel, 'id' => $jid])->execute();
             try {
                 $st = @getimagesize($out);
-                $pdo->prepare(
-                    "INSERT INTO media_assets (institution_id, uploaded_by, kind, file_path, original_name, width, height) VALUES (:iid,:me,'pano',:rel,:orig,:w,:h)"
-                )->execute(['iid' => $iid, 'me' => $me, 'rel' => $rel, 'orig' => 'stitched-360.jpg', 'w' => $st[0] ?? null, 'h' => $st[1] ?? null]);
+                crud()->insert('media_assets', [
+                    'institution_id' => $iid, 'uploaded_by' => $me, 'kind' => 'pano', 'file_path' => $rel,
+                    'original_name' => 'stitched-360.jpg', 'width' => $st[0] ?? null, 'height' => $st[1] ?? null
+                ]);
             } catch (Throwable $e) { /* non-fatal */ }
             audit('ai_stitch.complete', 'ai', 'job', $jid);
             flash('success', 'Stitched! 2048×1024 equirect saved — attach it to a tour scene below.');
@@ -116,15 +106,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'attach-scene') {
             $jid = (int) ($_POST['job_id'] ?? 0);
             $sid = (int) ($_POST['scene_id'] ?? 0) ?: null;
-            $pdo->prepare("UPDATE ai_stitch_jobs SET output_scene_id=:sid WHERE id=:id AND institution_id=:iid")
-                ->execute(['sid' => $sid, 'id' => $jid, 'iid' => $iid]);
+            crud()->update('ai_stitch_jobs', ['output_scene_id' => $sid], ['id' => $jid, 'institution_id' => $iid]);
             if ($sid) {
-                $row = $pdo->prepare("SELECT output_equirect_path FROM ai_stitch_jobs WHERE id=:id");
-                $row->execute(['id' => $jid]);
-                $eq = $row->fetchColumn();
+                $eq = crud()->raw("SELECT output_equirect_path FROM ai_stitch_jobs WHERE id=:id", ['id' => $jid])->fetchColumn();
                 if ($eq) {
-                    $pdo->prepare("UPDATE tour_scenes SET equirect_path=:eq WHERE id=:sid AND institution_id=:iid")
-                        ->execute(['eq' => $eq, 'sid' => $sid, 'iid' => $iid]);
+                    crud()->update('tour_scenes', ['equirect_path' => $eq], ['id' => $sid, 'institution_id' => $iid]);
                 }
             }
             audit('ai_stitch.attach', 'ai', 'job', $jid);
@@ -134,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($action === 'job-delete') {
             $jid = (int) ($_POST['id'] ?? 0);
-            $pdo->prepare("DELETE FROM ai_stitch_jobs WHERE id=:id AND institution_id=:iid")->execute(['id' => $jid, 'iid' => $iid]);
+            crud()->delete('ai_stitch_jobs', ['id' => $jid, 'institution_id' => $iid]);
             $dir = $cubeAbs . '/' . $jid;
             if (is_dir($dir)) rrmdir($dir);
             flash('success', 'Job removed.');
@@ -150,13 +136,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!in_array($targetType, $allowed, true) || !$targetId) throw new RuntimeException('Pick a target.');
 
             $name = '';
-            if ($targetType === 'building')   { $q = $pdo->prepare("SELECT name FROM buildings WHERE id=:id AND institution_id=:iid"); }
-            if ($targetType === 'room')       { $q = $pdo->prepare("SELECT name FROM rooms WHERE id=:id AND institution_id=:iid"); }
-            if ($targetType === 'facility')   { $q = $pdo->prepare("SELECT name FROM facilities WHERE id=:id AND institution_id=:iid"); }
-            if ($targetType === 'campus_area'){ $q = $pdo->prepare("SELECT name FROM campus_areas WHERE id=:id AND institution_id=:iid"); }
-            if ($targetType === 'tour_scene') { $q = $pdo->prepare("SELECT title AS name FROM tour_scenes WHERE id=:id AND institution_id=:iid"); }
-            $q->execute(['id' => $targetId, 'iid' => $iid]);
-            $name = $q->fetchColumn();
+            $nameField = $targetType === 'tour_scene' ? 'title' : 'name';
+            $tables = ['building' => 'buildings', 'room' => 'rooms', 'facility' => 'facilities', 'campus_area' => 'campus_areas', 'tour_scene' => 'tour_scenes'];
+            $name = crud()->raw("SELECT $nameField FROM {$tables[$targetType]} WHERE id=:id AND institution_id=:iid", ['id' => $targetId, 'iid' => $iid])->fetchColumn();
             if (!$name) throw new RuntimeException('Target not found.');
 
             // built-in generator (offline); replace with an LLM call API key later
@@ -167,17 +149,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $name, $inst['name'], $name, $extra
             );
 
-            $pdo->prepare("INSERT INTO ai_info_jobs (institution_id, created_by, target_type, target_id, prompt, output_text, status)
-                           VALUES (:iid,:me,:tt,:tid,:p,:out,'completed')")
-                ->execute(['iid' => $iid, 'me' => $me, 'tt' => $targetType, 'tid' => $targetId, 'p' => $prompt ?: null, 'out' => $out]);
+            crud()->insert('ai_info_jobs', [
+                'institution_id' => $iid, 'created_by' => $me, 'target_type' => $targetType,
+                'target_id' => $targetId, 'prompt' => $prompt ?: null, 'output_text' => $out, 'status' => 'completed'
+            ]);
 
             $col = $targetType === 'tour_scene' ? 'title' : 'name';
             $tableMap = [
                 'building' => 'buildings', 'room' => 'rooms', 'facility' => 'facilities',
                 'campus_area' => 'campus_areas', 'tour_scene' => 'tour_scenes',
             ];
-            $pdo->prepare("UPDATE {$tableMap[$targetType]} SET ai_description=:ai WHERE id=:id AND institution_id=:iid")
-                ->execute(['ai' => $out, 'id' => $targetId, 'iid' => $iid]);
+            crud()->update($tableMap[$targetType], ['ai_description' => $out], ['id' => $targetId, 'institution_id' => $iid]);
             audit('ai_info.generate', 'ai', $targetType, $targetId);
             flash('success', 'AI info generated and attached.');
             redirect('admin/institution/ai');
@@ -189,31 +171,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // data ---------------------------------------------------------------
-$jobs = $pdo->prepare(
-    "SELECT j.*,
-            (SELECT COUNT(*) FROM cubemap_faces f WHERE f.job_id=j.id) AS face_count,
-            s.title AS scene_title
-     FROM ai_stitch_jobs j LEFT JOIN tour_scenes s ON s.id=j.output_scene_id
-     WHERE j.institution_id=? ORDER BY j.created_at DESC LIMIT 30"
-);
-$jobs->execute([$iid]);
+$jobs = crud()->raw("SELECT j.*, (SELECT COUNT(*) FROM cubemap_faces f WHERE f.job_id=j.id) AS face_count, s.title AS scene_title FROM ai_stitch_jobs j LEFT JOIN tour_scenes s ON s.id=j.output_scene_id WHERE j.institution_id=:iid ORDER BY j.created_at DESC LIMIT 30", ['iid' => $iid]);
 $order = ['front', 'back', 'left', 'right', 'up', 'down'];
 $facesByJob = [];
-$faceRows = $pdo->prepare("SELECT job_id, face, image_path FROM cubemap_faces ORDER BY id");
-$faceRows->execute();
+$faceRows = crud()->raw("SELECT job_id, face, image_path FROM cubemap_faces ORDER BY id");
 foreach ($faceRows->fetchAll() as $fr) { $facesByJob[(int) $fr['job_id']][$fr['face']] = $fr['image_path']; }
 
-$infoJobs = $pdo->prepare("SELECT i.*, u.email FROM ai_info_jobs i JOIN users u ON u.id=i.created_by WHERE i.institution_id=? ORDER BY i.created_at DESC LIMIT 15");
-$infoJobs->execute([$iid]);
+$infoJobs = crud()->raw("SELECT i.*, u.email FROM ai_info_jobs i JOIN users u ON u.id=i.created_by WHERE i.institution_id=:iid ORDER BY i.created_at DESC LIMIT 15", ['iid' => $iid]);
 
-$scenesForAttach = $pdo->prepare("SELECT id,title FROM tour_scenes WHERE institution_id=? AND deleted_at IS NULL ORDER BY title");
-$scenesForAttach->execute([$iid]);
+$scenesForAttach = crud()->select('tour_scenes', 'id,title', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY title');
 
-$buildings = $pdo->prepare("SELECT id,name FROM buildings WHERE institution_id=? AND deleted_at IS NULL ORDER BY name"); $buildings->execute([$iid]);
-$rooms = $pdo->prepare("SELECT id,name FROM rooms WHERE institution_id=? AND deleted_at IS NULL ORDER BY name"); $rooms->execute([$iid]);
-$facilities = $pdo->prepare("SELECT id,name FROM facilities WHERE institution_id=? ORDER BY name"); $facilities->execute([$iid]);
-$areas = $pdo->prepare("SELECT id,name FROM campus_areas WHERE institution_id=? ORDER BY name"); $areas->execute([$iid]);
-$scenesForInfo = $pdo->prepare("SELECT id,title FROM tour_scenes WHERE institution_id=? AND deleted_at IS NULL ORDER BY title"); $scenesForInfo->execute([$iid]);
+$buildings = crud()->select('buildings', 'id,name', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY name');
+$rooms = crud()->select('rooms', 'id,name', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY name');
+$facilities = crud()->select('facilities', 'id,name', ['institution_id' => $iid], 'ORDER BY name');
+$areas = crud()->select('campus_areas', 'id,name', ['institution_id' => $iid], 'ORDER BY name');
+$scenesForInfo = crud()->select('tour_scenes', 'id,title', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY title');
 
 $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued' => 'badge-draft', 'processing' => 'badge-live', 'completed' => 'badge-live', 'failed' => 'badge-dead'];
 ?>
@@ -394,11 +366,11 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
 document.addEventListener('DOMContentLoaded', () => {
   // face uploads
   window.__aiTargets = {
-    building: <?= json_enc(array_values(array_map(fn($b) => ['id'=>$b['id'],'label'=>$b['name']], $buildings->fetchAll()))) ?>,
-    room: <?= json_enc(array_values(array_map(fn($r) => ['id'=>$r['id'],'label'=>$r['name']], $rooms->fetchAll()))) ?>,
-    facility: <?= json_enc(array_values(array_map(fn($f) => ['id'=>$f['id'],'label'=>$f['name']], $facilities->fetchAll()))) ?>,
-    campus_area: <?= json_enc(array_values(array_map(fn($a) => ['id'=>$a['id'],'label'=>$a['name']], $areas->fetchAll()))) ?>,
-    tour_scene: <?= json_enc(array_values(array_map(fn($s) => ['id'=>$s['id'],'label'=>$s['title']], $scenesForInfo->fetchAll()))) ?>
+    building: <?= json_enc(array_values(array_map(fn($b) => ['id'=>$b['id'],'label'=>$b['name']], $buildings))) ?>,
+    room: <?= json_enc(array_values(array_map(fn($r) => ['id'=>$r['id'],'label'=>$r['name']], $rooms))) ?>,
+    facility: <?= json_enc(array_values(array_map(fn($f) => ['id'=>$f['id'],'label'=>$f['name']], $facilities))) ?>,
+    campus_area: <?= json_enc(array_values(array_map(fn($a) => ['id'=>$a['id'],'label'=>$a['name']], $areas))) ?>,
+    tour_scene: <?= json_enc(array_values(array_map(fn($s) => ['id'=>$s['id'],'label'=>$s['title']], $scenesForInfo))) ?>
   }
   const typeSel = document.getElementById('ai-target-type')
   const idSel = document.getElementById('ai-target-id')

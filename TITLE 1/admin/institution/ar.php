@@ -12,7 +12,6 @@ $pageTitle = 'Augmented Reality';
 $pageSub   = 'Manage AR waypoints, compass directions, and visual tracking targets';
 $active    = 'Augmented Reality';
 
-$pdo  = db();
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
 $iid    = (int) $inst['id'];
@@ -48,23 +47,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $mindPath = 'assets/ar_targets/' . $fname;
             }
             if ($action === 'waypoint-create') {
-                $pdo->prepare("INSERT INTO ar_waypoints (institution_id,name,building_id,room_id,scene_id,heading_deg,detect_radius_m,direction_label,overlay_title,overlay_html,visual_target_path,is_active) VALUES (:iid,:n,:b,:r,:s,:h,:rad,:dir,:t,:html,:mind,:act)")
-                    ->execute(['iid'=>$iid,'n'=>$name,'b'=>$buildingId,'r'=>$roomId,'s'=>$sceneId,'h'=>$heading,'rad'=>$radius,'dir'=>$direction,'t'=>$title,'html'=>$html,'mind'=>$mindPath,'act'=>$active_wp]);
+                crud()->insert('ar_waypoints', [
+                    'institution_id'=>$iid, 'name'=>$name, 'building_id'=>$buildingId, 'room_id'=>$roomId,
+                    'scene_id'=>$sceneId, 'heading_deg'=>$heading, 'detect_radius_m'=>$radius,
+                    'direction_label'=>$direction, 'overlay_title'=>$title, 'overlay_html'=>$html,
+                    'visual_target_path'=>$mindPath, 'is_active'=>$active_wp
+                ]);
                 flash('success', 'AR waypoint created.');
             } else {
-                $setStr = "name=:n,building_id=:b,room_id=:r,scene_id=:s,heading_deg=:h,detect_radius_m=:rad,direction_label=:dir,overlay_title=:t,overlay_html=:html,is_active=:act";
-                $params = ['n'=>$name,'b'=>$buildingId,'r'=>$roomId,'s'=>$sceneId,'h'=>$heading,'rad'=>$radius,'dir'=>$direction,'t'=>$title,'html'=>$html,'act'=>$active_wp,'id'=>$id,'iid'=>$iid];
-                if ($mindPath) { $setStr .= ',visual_target_path=:mind'; $params['mind'] = $mindPath; }
-                $pdo->prepare("UPDATE ar_waypoints SET {$setStr} WHERE id=:id AND institution_id=:iid")->execute($params);
+                $updates = ['name'=>$name,'building_id'=>$buildingId,'room_id'=>$roomId,'scene_id'=>$sceneId,'heading_deg'=>$heading,'detect_radius_m'=>$radius,'direction_label'=>$direction,'overlay_title'=>$title,'overlay_html'=>$html,'is_active'=>$active_wp];
+                if ($mindPath) { $updates['visual_target_path'] = $mindPath; }
+                crud()->update('ar_waypoints', $updates, ['id'=>$id, 'institution_id'=>$iid]);
                 flash('success', 'Waypoint updated.');
             }
         }
         if ($action === 'waypoint-delete') {
             $id  = (int) ($_POST['id'] ?? 0);
-            $row = $pdo->prepare("SELECT visual_target_path FROM ar_waypoints WHERE id=:id AND institution_id=:iid");
-            $row->execute(['id'=>$id,'iid'=>$iid]);
-            $vt = $row->fetchColumn();
-            $pdo->prepare("DELETE FROM ar_waypoints WHERE id=:id AND institution_id=:iid")->execute(['id'=>$id,'iid'=>$iid]);
+            $vt = crud()->raw("SELECT visual_target_path FROM ar_waypoints WHERE id=:id AND institution_id=:iid", ['id'=>$id,'iid'=>$iid])->fetchColumn();
+            crud()->delete('ar_waypoints', ['id'=>$id,'iid'=>$iid]);
             if ($vt) { $abs = $orgAbs.'/'.ltrim($vt,'/'); if (is_file($abs)) @unlink($abs); }
             flash('success', 'Waypoint removed.');
         }
@@ -72,14 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('admin/institution/ar');
 }
 
-$buildings = $pdo->prepare("SELECT id, name FROM buildings WHERE institution_id=? AND deleted_at IS NULL ORDER BY name");
-$buildings->execute([$iid]); $buildings = $buildings->fetchAll();
-$rooms = $pdo->prepare("SELECT r.id, r.name, r.building_id, b.name AS building_name FROM rooms r LEFT JOIN buildings b ON b.id=r.building_id WHERE r.institution_id=? AND r.deleted_at IS NULL ORDER BY r.name");
-$rooms->execute([$iid]); $rooms = $rooms->fetchAll();
-$scenes = $pdo->prepare("SELECT id, title FROM tour_scenes WHERE institution_id=? AND deleted_at IS NULL ORDER BY title");
-$scenes->execute([$iid]); $scenes = $scenes->fetchAll();
-$waypoints = $pdo->prepare("SELECT w.*,b.name AS building_name,r.name AS room_name,s.title AS scene_title FROM ar_waypoints w LEFT JOIN buildings b ON b.id=w.building_id LEFT JOIN rooms r ON r.id=w.room_id LEFT JOIN tour_scenes s ON s.id=w.scene_id WHERE w.institution_id=? ORDER BY b.name,w.name");
-$waypoints->execute([$iid]); $waypoints = $waypoints->fetchAll();
+$buildings = crud()->select('buildings', 'id, name', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY name');
+$rooms = crud()->raw("SELECT r.id, r.name, r.building_id, b.name AS building_name FROM rooms r LEFT JOIN buildings b ON b.id=r.building_id WHERE r.institution_id=:iid AND r.deleted_at IS NULL ORDER BY r.name", ['iid' => $iid])->fetchAll();
+$scenes = crud()->select('tour_scenes', 'id, title', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY title');
+$waypoints = crud()->raw("SELECT w.*,b.name AS building_name,r.name AS room_name,s.title AS scene_title FROM ar_waypoints w LEFT JOIN buildings b ON b.id=w.building_id LEFT JOIN rooms r ON r.id=w.room_id LEFT JOIN tour_scenes s ON s.id=w.scene_id WHERE w.institution_id=:iid ORDER BY b.name,w.name", ['iid' => $iid])->fetchAll();
 ?>
 <div class="ia-card mb-4" style="border-left:4px solid var(--ia-accent)">
   <div class="card-body" style="padding:20px">
