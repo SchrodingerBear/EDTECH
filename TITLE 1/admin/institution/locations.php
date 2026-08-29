@@ -11,7 +11,6 @@ $pageTitle = 'Rooms & Areas';
 $pageSub = 'Classrooms, offices, quads and landmarks';
 $active = 'Rooms & Areas';
 
-$pdo = db();
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
 $iid = (int) $inst['id'];
@@ -32,35 +31,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $featured = handle_media_picker('featured_image', trim($inst['folder_path'], '/') . '/assets/rooms');
             
             if ($action === 'room-create') {
-                $pdo->prepare("INSERT INTO rooms (institution_id, building_id, name, code, floor_label, room_type, capacity, featured_image_path)
-                               VALUES (:iid,:bid,:name,:code,:floor,:type,:cap,:feat)")
-                    ->execute(['iid' => $iid, 'bid' => $buildingId, 'name' => $name, 'code' => $code ?: null, 'floor' => $floor ?: null, 'type' => $roomType ?: null, 'cap' => $capacity, 'feat' => $featured]);
+                crud()->insert('rooms', [
+                    'institution_id' => $iid, 'building_id' => $buildingId, 'name' => $name,
+                    'code' => $code ?: null, 'floor_label' => $floor ?: null, 'room_type' => $roomType ?: null,
+                    'capacity' => $capacity, 'featured_image_path' => $featured
+                ]);
                 flash('success', 'Room added.');
             } else {
-                if ($featured) {
-                    $pdo->prepare("UPDATE rooms SET name=:name, building_id=:bid, code=:code, floor_label=:floor, room_type=:type, capacity=:cap, featured_image_path=:feat WHERE id=:id AND institution_id=:iid")
-                        ->execute(['name' => $name, 'bid' => $buildingId, 'code' => $code ?: null, 'floor' => $floor ?: null, 'type' => $roomType ?: null, 'cap' => $capacity, 'feat' => $featured, 'id' => $id, 'iid' => $iid]);
-                } else {
-                    $pdo->prepare("UPDATE rooms SET name=:name, building_id=:bid, code=:code, floor_label=:floor, room_type=:type, capacity=:cap WHERE id=:id AND institution_id=:iid")
-                        ->execute(['name' => $name, 'bid' => $buildingId, 'code' => $code ?: null, 'floor' => $floor ?: null, 'type' => $roomType ?: null, 'cap' => $capacity, 'id' => $id, 'iid' => $iid]);
-                }
+                $updates = ['name' => $name, 'building_id' => $buildingId, 'code' => $code ?: null, 'floor_label' => $floor ?: null, 'room_type' => $roomType ?: null, 'capacity' => $capacity];
+                if ($featured) $updates['featured_image_path'] = $featured;
+                crud()->update('rooms', $updates, ['id' => $id, 'institution_id' => $iid]);
                 flash('success', 'Room updated.');
             }
         }
         if ($action === 'room-delete') {
-            $pdo->prepare("UPDATE rooms SET deleted_at=NOW() WHERE id=:id AND institution_id=:iid")
-                ->execute(['id' => (int) ($_POST['id'] ?? 0), 'iid' => $iid]);
+            crud()->raw('UPDATE rooms SET deleted_at=NOW() WHERE id=:id AND institution_id=:iid', ['id' => (int) ($_POST['id'] ?? 0), 'iid' => $iid])->execute();
             flash('success', 'Room archived.');
         }
         if ($action === 'area-create') {
-            $pdo->prepare("INSERT INTO campus_areas (institution_id, building_id, name, area_type, description)
-                           VALUES (:iid,:bid,:name,:type,:desc)")
-                ->execute(['iid' => $iid, 'bid' => (int) ($_POST['building_id'] ?? 0) ?: null, 'name' => trim($_POST['name'] ?? ''), 'type' => trim($_POST['area_type'] ?? '') ?: null, 'desc' => trim($_POST['description'] ?? '') ?: null]);
+            crud()->insert('campus_areas', [
+                'institution_id' => $iid, 'building_id' => (int) ($_POST['building_id'] ?? 0) ?: null,
+                'name' => trim($_POST['name'] ?? ''), 'area_type' => trim($_POST['area_type'] ?? '') ?: null,
+                'description' => trim($_POST['description'] ?? '') ?: null
+            ]);
             flash('success', 'Area added.');
         }
         if ($action === 'area-delete') {
-            $pdo->prepare("DELETE FROM campus_areas WHERE id=:id AND institution_id=:iid")
-                ->execute(['id' => (int) ($_POST['id'] ?? 0), 'iid' => $iid]);
+            crud()->delete('campus_areas', ['id' => (int) ($_POST['id'] ?? 0), 'institution_id' => $iid]);
             flash('success', 'Area removed.');
         }
     } catch (Throwable $e) {
@@ -69,19 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('admin/institution/locations');
 }
 
-$buildings = $pdo->prepare("SELECT id, name FROM buildings WHERE institution_id=? AND deleted_at IS NULL ORDER BY name");
-$buildings->execute([$iid]);
-$buildings = $buildings->fetchAll();
-
-$rooms = $pdo->prepare("SELECT r.*, b.name AS building_name FROM rooms r LEFT JOIN buildings b ON b.id=r.building_id
-                        WHERE r.institution_id=? AND r.deleted_at IS NULL ORDER BY r.name");
-$rooms->execute([$iid]);
-$rooms = $rooms->fetchAll();
-
-$areas = $pdo->prepare("SELECT a.*, b.name AS building_name FROM campus_areas a LEFT JOIN buildings b ON b.id=a.building_id
-                        WHERE a.institution_id=? ORDER BY a.name");
-$areas->execute([$iid]);
-$areas = $areas->fetchAll();
+$buildings = crud()->select('buildings', 'id, name', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY name');
+$rooms = crud()->raw('SELECT r.*, b.name AS building_name FROM rooms r LEFT JOIN buildings b ON b.id=r.building_id WHERE r.institution_id=:iid AND r.deleted_at IS NULL ORDER BY r.name', [':iid' => $iid])->fetchAll();
+$areas = crud()->raw('SELECT a.*, b.name AS building_name FROM campus_areas a LEFT JOIN buildings b ON b.id=a.building_id WHERE a.institution_id=:iid ORDER BY a.name', [':iid' => $iid])->fetchAll();
 ?>
 <div class="row g-4">
   <div class="col-lg-8">

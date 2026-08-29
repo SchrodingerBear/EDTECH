@@ -11,7 +11,6 @@ $pageTitle = 'Buildings';
 $pageSub = 'Structures → Floor Plans → Rooms → Facilities';
 $active = 'Buildings';
 
-$pdo = db();
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
 $iid = (int) $inst['id'];
@@ -28,24 +27,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $featured = handle_media_picker('featured_image', trim($inst['folder_path'], '/') . '/assets/buildings');
             
             if ($action === 'create') {
-                $pdo->prepare("INSERT INTO buildings (institution_id, name, code, description, featured_image_path, sort_order)
-                               VALUES (:iid,:name,:code,:desc,:feat,0)")
-                    ->execute(['iid' => $iid, 'name' => $name, 'code' => $code ?: null, 'desc' => $description ?: null, 'feat' => $featured]);
+                crud()->insert('buildings', [
+                    'institution_id' => $iid, 'name' => $name, 'code' => $code ?: null,
+                    'description' => $description ?: null, 'featured_image_path' => $featured, 'sort_order' => 0
+                ]);
                 flash('success', 'Building added.');
             } else {
-                if ($featured) {
-                    $pdo->prepare("UPDATE buildings SET name=:name, code=:code, description=:desc, featured_image_path=:feat WHERE id=:id AND institution_id=:iid")
-                        ->execute(['name' => $name, 'code' => $code ?: null, 'desc' => $description ?: null, 'feat' => $featured, 'id' => $id, 'iid' => $iid]);
-                } else {
-                    $pdo->prepare("UPDATE buildings SET name=:name, code=:code, description=:desc WHERE id=:id AND institution_id=:iid")
-                        ->execute(['name' => $name, 'code' => $code ?: null, 'desc' => $description ?: null, 'id' => $id, 'iid' => $iid]);
-                }
+                $updates = ['name' => $name, 'code' => $code ?: null, 'description' => $description ?: null];
+                if ($featured) $updates['featured_image_path'] = $featured;
+                crud()->update('buildings', $updates, ['id' => $id, 'institution_id' => $iid]);
                 flash('success', 'Building updated.');
             }
         }
         if ($action === 'delete') {
-            $pdo->prepare("UPDATE buildings SET deleted_at=NOW() WHERE id=:id AND institution_id=:iid")
-                ->execute(['id' => (int) ($_POST['id'] ?? 0), 'iid' => $iid]);
+            crud()->raw('UPDATE buildings SET deleted_at=NOW() WHERE id=:id AND institution_id=:iid', ['id' => (int) ($_POST['id'] ?? 0), 'iid' => $iid])->execute();
             flash('success', 'Building archived.');
         }
         if ($action === 'ai') {
@@ -57,8 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   ($desc !== '' ? rtrim($desc, '.') . '. ' : '') .
                   "Visitors commonly look for it when exploring facilities, offices and learning spaces. " .
                   "Use the 360° tour to walk inside and see what this building offers.";
-            $pdo->prepare("UPDATE buildings SET ai_description=:a WHERE id=:id AND institution_id=:iid")
-                ->execute(['a' => $ai, 'id' => $id, 'iid' => $iid]);
+            crud()->update('buildings', ['ai_description' => $ai], ['id' => $id, 'institution_id' => $iid]);
             flash('success', 'AI description generated.');
         }
     } catch (Throwable $e) {
@@ -67,10 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('admin/institution/buildings');
 }
 
-$buildings = $pdo->prepare("SELECT b.*, (SELECT COUNT(*) FROM rooms r WHERE r.building_id=b.id) AS room_count
-                            FROM buildings b WHERE b.institution_id=? AND b.deleted_at IS NULL ORDER BY b.sort_order, b.name");
-$buildings->execute([$iid]);
-$buildings = $buildings->fetchAll();
+$buildings = crud()->raw(
+    'SELECT b.*, (SELECT COUNT(*) FROM rooms r WHERE r.building_id=b.id) AS room_count FROM buildings b WHERE b.institution_id=:iid AND b.deleted_at IS NULL ORDER BY b.sort_order, b.name',
+    [':iid' => $iid]
+)->fetchAll();
 ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
   <p class="mb-1" style="color:var(--ia-muted);font-size:13.5px"><?= count($buildings) ?> building(s)</p>

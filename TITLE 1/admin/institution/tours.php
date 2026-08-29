@@ -11,7 +11,6 @@ $pageTitle = '360 Tours';
 $pageSub = 'Scenes, featured images and the landing starting point';
 $active = '360 Tours';
 
-$pdo = db();
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
 $iid = (int) $inst['id'];
@@ -34,46 +33,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $featured = handle_media_picker('featured_image', trim($inst['folder_path'], '/') . '/assets/scenes') ?: trim($_POST['featured_image_path'] ?? '');
 
             if ($action === 'create') {
-                $pdo->prepare(
-                    "INSERT INTO tour_scenes (institution_id, building_id, room_id, title, slug, description, equirect_path, featured_image_path, initial_yaw, initial_pitch, created_by)
-                     VALUES (:iid,:bid,:rid,:title,:slug,:desc,:eq,:feat,:yaw,:pitch,:me)"
-                )->execute([
-                    'iid' => $iid, 'bid' => $buildingId, 'rid' => $roomId, 'title' => $title,
-                    'slug' => slugify($title), 'desc' => $description ?: null, 'eq' => $equirect ?: null,
-                    'feat' => $featured ?: null, 'yaw' => $yaw, 'pitch' => $pitch, 'me' => (int) current_user()['id'],
+                crud()->insert('tour_scenes', [
+                    'institution_id' => $iid, 'building_id' => $buildingId, 'room_id' => $roomId,
+                    'title' => $title, 'slug' => slugify($title), 'description' => $description ?: null,
+                    'equirect_path' => $equirect ?: null, 'featured_image_path' => $featured ?: null,
+                    'initial_yaw' => $yaw, 'initial_pitch' => $pitch, 'created_by' => (int) current_user()['id'],
                 ]);
                 flash('success', 'Scene created.');
             } else {
-                $pdo->prepare(
-                    "UPDATE tour_scenes SET title=:title, building_id=:bid, room_id=:rid, description=:desc,
-                            equirect_path=COALESCE(:eq, equirect_path), featured_image_path=COALESCE(:feat, featured_image_path),
-                            initial_yaw=:yaw, initial_pitch=:pitch
-                     WHERE id=:id AND institution_id=:iid"
-                )->execute([
+                crud()->raw('UPDATE tour_scenes SET title=:title, building_id=:bid, room_id=:rid, description=:desc, equirect_path=COALESCE(:eq, equirect_path), featured_image_path=COALESCE(:feat, featured_image_path), initial_yaw=:yaw, initial_pitch=:pitch WHERE id=:id AND institution_id=:iid', [
                     'title' => $title, 'bid' => $buildingId, 'rid' => $roomId, 'desc' => $description ?: null,
                     'eq' => $equirect ?: null, 'feat' => $featured ?: null, 'yaw' => $yaw, 'pitch' => $pitch,
                     'id' => $id, 'iid' => $iid,
-                ]);
+                ])->execute();
                 flash('success', 'Scene updated.');
             }
         }
         if ($action === 'start') {
             // set one scene as landing start + update institution landing_mode + starting_scene_id
             $id = (int) ($_POST['id'] ?? 0);
-            $pdo->beginTransaction();
-            $pdo->prepare("UPDATE tour_scenes SET is_landing_start=0 WHERE institution_id=:iid")->execute(['iid' => $iid]);
-            $pdo->prepare("UPDATE tour_scenes SET is_landing_start=1 WHERE id=:id AND institution_id=:iid")->execute(['id' => $id, 'iid' => $iid]);
-            $pdo->prepare("UPDATE institutions SET landing_mode='360_rotation', starting_scene_id=:sid WHERE id=:iid")
-                ->execute(['sid' => $id, 'iid' => $iid]);
-            $pdo->commit();
+            crud()->pdo->beginTransaction();
+            crud()->update('tour_scenes', ['is_landing_start' => 0], ['institution_id' => $iid]);
+            crud()->update('tour_scenes', ['is_landing_start' => 1], ['id' => $id, 'institution_id' => $iid]);
+            crud()->update('institutions', ['landing_mode' => '360_rotation', 'starting_scene_id' => $id], ['id' => $iid]);
+            crud()->pdo->commit();
             // refresh session institution
             $_SESSION['user']['institution']['landing_mode'] = '360_rotation';
             $_SESSION['user']['institution']['starting_scene_id'] = $id;
             flash('success', 'Landing set to this scene (360 rotation).');
         }
         if ($action === 'delete') {
-            $pdo->prepare("UPDATE tour_scenes SET deleted_at=NOW() WHERE id=:id AND institution_id=:iid")
-                ->execute(['id' => (int) ($_POST['id'] ?? 0), 'iid' => $iid]);
+            crud()->raw('UPDATE tour_scenes SET deleted_at=NOW() WHERE id=:id AND institution_id=:iid', ['id' => (int) ($_POST['id'] ?? 0), 'iid' => $iid])->execute();
             flash('success', 'Scene archived.');
         }
     } catch (Throwable $e) {
@@ -82,20 +72,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('admin/institution/tours');
 }
 
-$scenes = $pdo->prepare(
-    "SELECT s.*, b.name AS building_name, r.name AS room_name
-     FROM tour_scenes s
-     LEFT JOIN buildings b ON b.id=s.building_id
-     LEFT JOIN rooms r ON r.id=s.room_id
-     WHERE s.institution_id=? AND s.deleted_at IS NULL ORDER BY s.sort_order, s.id DESC"
-);
-$scenes->execute([$iid]);
-$scenes = $scenes->fetchAll();
+$scenes = crud()->raw(
+    'SELECT s.*, b.name AS building_name, r.name AS room_name FROM tour_scenes s LEFT JOIN buildings b ON b.id=s.building_id LEFT JOIN rooms r ON r.id=s.room_id WHERE s.institution_id=:iid AND s.deleted_at IS NULL ORDER BY s.sort_order, s.id DESC',
+    [':iid' => $iid]
+)->fetchAll();
 
-$buildings = $pdo->prepare("SELECT id,name FROM buildings WHERE institution_id=? AND deleted_at IS NULL ORDER BY name");
-$buildings->execute([$iid]);
-$rooms = $pdo->prepare("SELECT id,name FROM rooms WHERE institution_id=? AND deleted_at IS NULL ORDER BY name");
-$rooms->execute([$iid]);
+$buildings = crud()->select('buildings', 'id,name', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY name');
+$rooms = crud()->select('rooms', 'id,name', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY name');
 $organizationsUrl = org_url($inst['slug'], 'assets/scenes');
 ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -121,11 +104,7 @@ $organizationsUrl = org_url($inst['slug'], 'assets/scenes');
             <td><?= $sc['featured_image_path'] ? '<span class="badge badge-live">set</span>' : '<span class="badge badge-draft">missing</span>' ?></td>
             <td>
               <?php
-              $hsCount = (int) $pdo->prepare("SELECT COUNT(*) FROM scene_hotspots WHERE from_scene_id=? AND institution_id=?")->execute([$sc['id'],$iid]) ? $pdo->query("SELECT FOUND_ROWS()")->fetchColumn() : 0;
-              // Simple count query
-              $hcStmt = $pdo->prepare("SELECT COUNT(*) FROM scene_hotspots WHERE from_scene_id=? AND institution_id=?");
-              $hcStmt->execute([(int)$sc['id'], $iid]);
-              $hsCount = (int) $hcStmt->fetchColumn();
+              $hsCount = crud()->count('scene_hotspots', ['from_scene_id' => (int)$sc['id'], 'institution_id' => $iid]);
               ?>
               <a href="tour-studio?scene=<?= (int)$sc['id'] ?>" class="badge <?= $hsCount ? 'badge-live' : 'badge-draft' ?>"><?= $hsCount ?> hs</a>
             </td>
@@ -170,11 +149,11 @@ $organizationsUrl = org_url($inst['slug'], 'assets/scenes');
         <div class="row g-3">
           <div class="col-md-6">
             <label class="form-label">Building</label>
-            <select class="form-select" name="building_id" id="scene-building"><option value="">— none —</option><?php foreach ($buildings->fetchAll() as $b): ?><option value="<?= (int) $b['id'] ?>"><?= h($b['name']) ?></option><?php endforeach; ?></select>
+            <select class="form-select" name="building_id" id="scene-building"><option value="">— none —</option><?php foreach ($buildings as $b): ?><option value="<?= (int) $b['id'] ?>"><?= h($b['name']) ?></option><?php endforeach; ?></select>
           </div>
           <div class="col-md-6">
             <label class="form-label">Room</label>
-            <select class="form-select" name="room_id" id="scene-room"><option value="">— none —</option><?php foreach ($rooms->fetchAll() as $r): ?><option value="<?= (int) $r['id'] ?>"><?= h($r['name']) ?></option><?php endforeach; ?></select>
+            <select class="form-select" name="room_id" id="scene-room"><option value="">— none —</option><?php foreach ($rooms as $r): ?><option value="<?= (int) $r['id'] ?>"><?= h($r['name']) ?></option><?php endforeach; ?></select>
           </div>
         </div>
         <div class="row g-3">

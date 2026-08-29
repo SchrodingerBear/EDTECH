@@ -12,7 +12,6 @@ $pageTitle = 'Tour Studio';
 $pageSub   = 'Place interactive hotspots on your 360 scene';
 $active    = '360 Tours';
 
-$pdo  = db();
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
 $iid  = (int) $inst['id'];
@@ -20,9 +19,7 @@ $iid  = (int) $inst['id'];
 $sceneId = (int) ($_GET['scene'] ?? 0);
 if (!$sceneId) { flash('error', 'No scene selected.'); redirect('admin/institution/tours'); }
 
-$scene = $pdo->prepare("SELECT * FROM tour_scenes WHERE id=:id AND institution_id=:iid AND deleted_at IS NULL");
-$scene->execute(['id' => $sceneId, 'iid' => $iid]);
-$scene = $scene->fetch();
+$scene = crud()->raw('SELECT * FROM tour_scenes WHERE id=:id AND institution_id=:iid AND deleted_at IS NULL LIMIT 1', ['id' => $sceneId, 'iid' => $iid])->fetch();
 if (!$scene) { flash('error', 'Scene not found.'); redirect('admin/institution/tours'); }
 
 // ── handle actions ──────────────────────────────────────────────────────────
@@ -30,40 +27,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['hs_action'] ?? '';
     try {
         if ($action === 'add') {
-            $pdo->prepare(
-                "INSERT INTO scene_hotspots (institution_id, from_scene_id, to_scene_id, hotspot_type, label, body_html, yaw, pitch)
-                 VALUES (:iid,:from,:to,:type,:label,:body,:yaw,:pitch)"
-            )->execute([
-                'iid'   => $iid,
-                'from'  => $sceneId,
-                'to'    => (int) ($_POST['to_scene_id'] ?? 0) ?: null,
-                'type'  => in_array($_POST['hotspot_type'] ?? '', ['navigation','info','facility','media']) ? $_POST['hotspot_type'] : 'info',
-                'label' => trim($_POST['label'] ?? '') ?: 'Info',
-                'body'  => trim($_POST['body_html'] ?? '') ?: null,
-                'yaw'   => (float) ($_POST['yaw'] ?? 0),
-                'pitch' => (float) ($_POST['pitch'] ?? 0),
+            crud()->insert('scene_hotspots', [
+                'institution_id' => $iid, 'from_scene_id' => $sceneId, 'to_scene_id' => (int) ($_POST['to_scene_id'] ?? 0) ?: null,
+                'hotspot_type' => in_array($_POST['hotspot_type'] ?? '', ['navigation','info','facility','media']) ? $_POST['hotspot_type'] : 'info',
+                'label' => trim($_POST['label'] ?? '') ?: 'Info', 'body_html' => trim($_POST['body_html'] ?? '') ?: null,
+                'yaw' => (float) ($_POST['yaw'] ?? 0), 'pitch' => (float) ($_POST['pitch'] ?? 0)
             ]);
             flash('success', 'Hotspot added.');
         }
         if ($action === 'edit') {
-            $pdo->prepare(
-                "UPDATE scene_hotspots SET label=:label, body_html=:body, yaw=:yaw, pitch=:pitch, to_scene_id=:to, hotspot_type=:type
-                 WHERE id=:id AND institution_id=:iid"
-            )->execute([
+            crud()->update('scene_hotspots', [
                 'label' => trim($_POST['label'] ?? '') ?: 'Info',
-                'body'  => trim($_POST['body_html'] ?? '') ?: null,
-                'yaw'   => (float) ($_POST['yaw'] ?? 0),
-                'pitch' => (float) ($_POST['pitch'] ?? 0),
-                'to'    => (int) ($_POST['to_scene_id'] ?? 0) ?: null,
-                'type'  => in_array($_POST['hotspot_type'] ?? '', ['navigation','info','facility','media']) ? $_POST['hotspot_type'] : 'info',
-                'id'    => (int) ($_POST['id'] ?? 0),
-                'iid'   => $iid,
-            ]);
+                'body_html' => trim($_POST['body_html'] ?? '') ?: null,
+                'yaw' => (float) ($_POST['yaw'] ?? 0), 'pitch' => (float) ($_POST['pitch'] ?? 0),
+                'to_scene_id' => (int) ($_POST['to_scene_id'] ?? 0) ?: null,
+                'hotspot_type' => in_array($_POST['hotspot_type'] ?? '', ['navigation','info','facility','media']) ? $_POST['hotspot_type'] : 'info'
+            ], ['id' => (int) ($_POST['id'] ?? 0), 'institution_id' => $iid]);
             flash('success', 'Hotspot updated.');
         }
         if ($action === 'delete') {
-            $pdo->prepare("DELETE FROM scene_hotspots WHERE id=:id AND institution_id=:iid")
-                ->execute(['id' => (int) ($_POST['id'] ?? 0), 'iid' => $iid]);
+            crud()->delete('scene_hotspots', ['id' => (int) ($_POST['id'] ?? 0), 'institution_id' => $iid]);
             flash('success', 'Hotspot removed.');
         }
     } catch (Throwable $e) {
@@ -73,22 +56,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Load hotspots
-$hotspots = $pdo->prepare(
-    "SELECT sh.*, ts.title AS to_scene_title
-     FROM scene_hotspots sh
-     LEFT JOIN tour_scenes ts ON ts.id = sh.to_scene_id
-     WHERE sh.from_scene_id=? AND sh.institution_id=?
-     ORDER BY sh.id"
-);
-$hotspots->execute([$sceneId, $iid]);
-$hotspots = $hotspots->fetchAll();
+$hotspots = crud()->raw(
+    'SELECT sh.*, ts.title AS to_scene_title FROM scene_hotspots sh LEFT JOIN tour_scenes ts ON ts.id = sh.to_scene_id WHERE sh.from_scene_id=:sid AND sh.institution_id=:iid ORDER BY sh.id',
+    ['sid' => $sceneId, 'iid' => $iid]
+)->fetchAll();
 
 // Other scenes for navigation hotspots
-$otherScenes = $pdo->prepare(
-    "SELECT id, title FROM tour_scenes WHERE institution_id=? AND id!=? AND deleted_at IS NULL ORDER BY title"
-);
-$otherScenes->execute([$iid, $sceneId]);
-$otherScenes = $otherScenes->fetchAll();
+$otherScenes = crud()->raw(
+    'SELECT id, title FROM tour_scenes WHERE institution_id=:iid AND id!=:sid AND deleted_at IS NULL ORDER BY title',
+    ['iid' => $iid, 'sid' => $sceneId]
+)->fetchAll();
 
 $equirectUrl = $scene['equirect_path'] ? org_url($inst['slug'], $scene['equirect_path']) : '';
 $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
