@@ -13,14 +13,14 @@ $_SERVER['HTTPS'] = 'off';
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/functions.php';
 
-$pdo = db();
+
 $demoPass = password_hash('password', PASSWORD_DEFAULT);
-$owner = $pdo->query("SELECT id FROM users WHERE email='owner@innovatech.ph' AND deleted_at IS NULL")->fetch();
+$owner = crud()->raw("SELECT id FROM users WHERE email='owner@innovatech.ph' AND deleted_at IS NULL")->fetch();
 if (!$owner) {
-    $pdo->prepare(
-        "INSERT INTO users (role_id, institution_id, email, username, password_hash, first_name, last_name, is_active)
-         VALUES (1, NULL, 'owner@innovatech.ph', 'owner', :ph, 'Innovatech', 'Owner', 1)"
-    )->execute(['ph' => $demoPass]);
+    crud()->insert('users', [
+        'role_id' => 1, 'institution_id' => null, 'email' => 'owner@innovatech.ph', 'username' => 'owner',
+        'password_hash' => $demoPass, 'first_name' => 'Innovatech', 'last_name' => 'Owner', 'is_active' => 1
+    ]);
     echo "seeded: owner@innovatech.ph\n";
 }
 
@@ -30,19 +30,19 @@ $sysAccs = [
     ['system.staff@innovatech.ph', 'system_staff', 'System', 'Staff'],
 ];
 foreach ($sysAccs as [$email, $roleSlug, $first, $last]) {
-    $exists = $pdo->prepare("SELECT u.id FROM users u JOIN roles r ON r.id=u.role_id WHERE u.email=:e AND u.deleted_at IS NULL AND r.slug=:r");
-    $exists->execute(['e' => $email, 'r' => $roleSlug]);
-    if (!$exists->fetch()) {
-        $pdo->prepare(
+    $exists = crud()->raw("SELECT u.id FROM users u JOIN roles r ON r.id=u.role_id WHERE u.email=:e AND u.deleted_at IS NULL AND r.slug=:r", ['e' => $email, 'r' => $roleSlug])->fetch();
+    if (!$exists) {
+        crud()->raw(
             "INSERT INTO users (role_id, institution_id, email, username, password_hash, first_name, last_name, is_active)
-             SELECT id, NULL, :e, :un, :ph, :f, :l, 1 FROM roles WHERE slug=:r"
-        )->execute(['e' => $email, 'un' => slugify($first . '-' . $last), 'ph' => $demoPass, 'f' => $first, 'l' => $last, 'r' => $roleSlug]);
+             SELECT id, NULL, :e, :un, :ph, :f, :l, 1 FROM roles WHERE slug=:r",
+            ['e' => $email, 'un' => slugify($first . '-' . $last), 'ph' => $demoPass, 'f' => $first, 'l' => $last, 'r' => $roleSlug]
+        );
         echo "seeded: $email ($roleSlug)\n";
     }
 }
 
 // demo institution (only if none exist)
-$count = (int) $pdo->query("SELECT COUNT(*) FROM institutions WHERE deleted_at IS NULL")->fetchColumn();
+$count = (int) crud()->raw("SELECT COUNT(*) FROM institutions WHERE deleted_at IS NULL")->fetchColumn();
 if ($count === 0) {
     $name = 'Immaculada Concepcion College';
     $slug = 'immaculada-concepcion-college';
@@ -61,21 +61,23 @@ if ($count === 0) {
         $html = str_replace('__FLOORPLAN__', 'assets/floorplans/example.jpg', $html);
         file_put_contents($indexHtml, $html);
     }
-    $pdo->prepare(
-        "INSERT INTO institutions (slug, name, short_name, institution_type, city, folder_path, landing_mode, is_active, created_by)
-         VALUES (:s, :n, 'ICC', 'college', 'Manila', :f, '360_rotation', 1, 1)"
-    )->execute(['s' => $slug, 'n' => $name, 'f' => 'organizations/' . $folder]);
-    $iid = (int) $pdo->lastInsertId();
+    crud()->insert('institutions', [
+        'slug' => $slug, 'name' => $name, 'short_name' => 'ICC', 'institution_type' => 'college',
+        'city' => 'Manila', 'folder_path' => 'organizations/' . $folder, 'landing_mode' => '360_rotation',
+        'is_active' => 1, 'created_by' => 1
+    ]);
+    $iid = (int) crud()->lastInsertId();
 
     $orgAccs = [
         ['admin@innovatech.ph', 'admin', 'Maria', 'Reyes'],
         ['staff@innovatech.ph', 'staff', 'Juan', 'Dela Cruz'],
     ];
     foreach ($orgAccs as [$email, $roleSlug, $first, $last]) {
-        $pdo->prepare(
+        crud()->raw(
             "INSERT INTO users (role_id, institution_id, email, username, password_hash, first_name, last_name, is_active)
-             SELECT id, :iid, :e, :un, :ph, :f, :l, 1 FROM roles WHERE slug=:r"
-        )->execute(['iid' => $iid, 'e' => $email, 'un' => slugify($first . '-' . $last), 'ph' => $demoPass, 'f' => $first, 'l' => $last, 'r' => $roleSlug]);
+             SELECT id, :iid, :e, :un, :ph, :f, :l, 1 FROM roles WHERE slug=:r",
+            ['iid' => $iid, 'e' => $email, 'un' => slugify($first . '-' . $last), 'ph' => $demoPass, 'f' => $first, 'l' => $last, 'r' => $roleSlug]
+        );
         echo "seeded: $email ($roleSlug @ ICC)\n";
     }
 } else {

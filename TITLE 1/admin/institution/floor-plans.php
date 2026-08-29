@@ -12,7 +12,6 @@ $pageTitle = 'Floor Plans';
 $pageSub = 'Upload the campus map and drop circular markers (drag & drop studio)';
 $active = 'Floor Plans';
 
-$pdo = db();
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
 $iid = (int) $inst['id'];
@@ -35,19 +34,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $w = (int) ($size[0] ?? 1200);
             $h = (int) ($size[1] ?? 900);
 
-            $pdo->prepare(
-                "INSERT INTO floor_plans (institution_id, title, image_path, original_width, original_height, aspect_ratio, object_fit, created_by)
-                 VALUES (:iid,:t,:img,:w,:h,:ar,'contain',:me)"
-            )->execute(['iid' => $iid, 't' => $title, 'img' => $rel, 'w' => $w, 'h' => $h, 'ar' => $w / max(1, $h), 'me' => (int) current_user()['id']]);
+            crud()->insert('floor_plans', ['institution_id' => $iid, 'title' => $title, 'image_path' => $rel, 'original_width' => $w, 'original_height' => $h, 'aspect_ratio' => $w / max(1, $h), 'object_fit' => 'contain', 'created_by' => (int) current_user()['id']]);
             flash('success', 'Floor plan uploaded (aspect ratio locked).');
         }
 
         if ($action === 'landing') {
             $id = (int) ($_POST['id'] ?? 0);
-            $pdo->prepare("UPDATE institutions SET landing_mode='floor_plan', starting_scene_id=NULL, starting_floor_plan_id=:fp WHERE id=:iid")
-                ->execute(['fp' => $id, 'iid' => $iid]);
-            $pdo->prepare("UPDATE floor_plans SET is_campus_landing=0 WHERE institution_id=:iid")->execute(['iid' => $iid]);
-            $pdo->prepare("UPDATE floor_plans SET is_campus_landing=1 WHERE id=:id AND institution_id=:iid")->execute(['id' => $id, 'iid' => $iid]);
+            crud()->update('institutions', ['landing_mode' => 'floor_plan', 'starting_scene_id' => null, 'starting_floor_plan_id' => $id], ['id' => $iid]);
+            crud()->update('floor_plans', ['is_campus_landing' => 0], ['institution_id' => $iid]);
+            crud()->update('floor_plans', ['is_campus_landing' => 1], ['id' => $id, 'institution_id' => $iid]);
             $_SESSION['user']['institution']['landing_mode'] = 'floor_plan';
             $_SESSION['user']['institution']['starting_floor_plan_id'] = $id;
             flash('success', 'This floor plan is now the landing.');
@@ -55,10 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($action === 'delete') {
             $id = (int) ($_POST['id'] ?? 0);
-            $row = $pdo->prepare("SELECT image_path FROM floor_plans WHERE id=:id AND institution_id=:iid");
-            $row->execute(['id' => $id, 'iid' => $iid]);
-            $img = $row->fetchColumn();
-            $pdo->prepare("DELETE FROM floor_plans WHERE id=:id AND institution_id=:iid")->execute(['id' => $id, 'iid' => $iid]);
+            $img = crud()->raw("SELECT image_path FROM floor_plans WHERE id=:id AND institution_id=:iid", ['id' => $id, 'iid' => $iid])->fetchColumn();
+            crud()->delete('floor_plans', ['id' => $id, 'institution_id' => $iid]);
             if ($img) {
                 $abs = ROOT_PATH . '/' . ltrim($img, '/');
                 if (str_starts_with($abs, $orgDir) && is_file($abs)) unlink($abs);
@@ -70,20 +63,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $planId = (int) ($_POST['plan_id'] ?? 0);
             $label = trim($_POST['label'] ?? '');
             if ($label === '') throw new RuntimeException('Marker label required.');
-            $pdo->prepare(
-                "INSERT INTO floor_plan_markers (institution_id, floor_plan_id, label, x_percent, y_percent, size_percent,
-                        target_room_id, target_building_id, target_facility_id, target_scene_id, target_floor_plan_id, popup_title, popup_html, sort_order)
-                 VALUES (:iid,:plan,:label,:x,:y,4,:tr,:tb,:tf,:ts,:tfp,:pt,:ph,0)"
-            )->execute([
-                'iid' => $iid, 'plan' => $planId, 'label' => $label,
-                'x' => (float) ($_POST['x'] ?? 50), 'y' => (float) ($_POST['y'] ?? 50),
-                'tr'  => (int) ($_POST['target_room_id'] ?? 0) ?: null,
-                'tb'  => (int) ($_POST['target_building_id'] ?? 0) ?: null,
-                'tf'  => (int) ($_POST['target_facility_id'] ?? 0) ?: null,
-                'ts'  => (int) ($_POST['target_scene_id'] ?? 0) ?: null,
-                'tfp' => (int) ($_POST['target_floor_plan_id'] ?? 0) ?: null,
-                'pt' => trim($_POST['popup_title'] ?? '') ?: null,
-                'ph' => trim($_POST['popup_html'] ?? '') ?: null,
+            crud()->insert('floor_plan_markers', [
+                'institution_id' => $iid, 'floor_plan_id' => $planId, 'label' => $label,
+                'x_percent' => (float) ($_POST['x'] ?? 50), 'y_percent' => (float) ($_POST['y'] ?? 50), 'size_percent' => 4,
+                'target_room_id'  => (int) ($_POST['target_room_id'] ?? 0) ?: null,
+                'target_building_id'  => (int) ($_POST['target_building_id'] ?? 0) ?: null,
+                'target_facility_id'  => (int) ($_POST['target_facility_id'] ?? 0) ?: null,
+                'target_scene_id'  => (int) ($_POST['target_scene_id'] ?? 0) ?: null,
+                'target_floor_plan_id' => (int) ($_POST['target_floor_plan_id'] ?? 0) ?: null,
+                'popup_title' => trim($_POST['popup_title'] ?? '') ?: null,
+                'popup_html' => trim($_POST['popup_html'] ?? '') ?: null, 'sort_order' => 0
             ]);
             sync_institution_config($iid);
             flash('success', 'Marker added. Drag it into place in the studio.');
@@ -91,32 +80,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($action === 'markers-save') {
             $planId = (int) ($_POST['plan_id'] ?? 0);
-            $upd = $pdo->prepare(
-                "UPDATE floor_plan_markers SET x_percent=:x, y_percent=:y, popup_title=:pt, popup_html=:ph, label=:l WHERE id=:id AND institution_id=:iid"
-            );
             foreach (($_POST['markers'] ?? []) as $m) {
                 $mid = (int) ($m['id'] ?? 0);
                 if (!$mid) continue;
-                $upd->execute([
-                    'x' => max(0, min(100, (float) ($m['x'] ?? 0))),
-                    'y' => max(0, min(100, (float) ($m['y'] ?? 0))),
-                    'pt' => trim($m['popup_title'] ?? '') ?: null,
-                    'ph' => trim($m['popup_html'] ?? '') ?: null,
-                    'l' => trim($m['label'] ?? '') ?: 'Marker',
-                    'id' => $mid, 'iid' => $iid,
-                ]);
+                crud()->update('floor_plan_markers', [
+                    'x_percent' => max(0, min(100, (float) ($m['x'] ?? 0))),
+                    'y_percent' => max(0, min(100, (float) ($m['y'] ?? 0))),
+                    'popup_title' => trim($m['popup_title'] ?? '') ?: null,
+                    'popup_html' => trim($m['popup_html'] ?? '') ?: null,
+                    'label' => trim($m['label'] ?? '') ?: 'Marker',
+                ], ['id' => $mid, 'institution_id' => $iid]);
             }
             if (isset($_POST['marker_delete']) && $_POST['marker_delete'] !== '') {
-                $pdo->prepare("DELETE FROM floor_plan_markers WHERE id=:id AND institution_id=:iid")
-                    ->execute(['id' => (int) $_POST['marker_delete'], 'iid' => $iid]);
+                crud()->delete('floor_plan_markers', ['id' => (int) $_POST['marker_delete'], 'institution_id' => $iid]);
             }
             sync_institution_config($iid);
             flash('success', 'Marker positions saved.');
         }
 
         if ($action === 'marker-delete') {
-            $pdo->prepare("DELETE FROM floor_plan_markers WHERE id=:id AND institution_id=:iid")
-                ->execute(['id' => (int) ($_POST['id'] ?? 0), 'iid' => $iid]);
+            crud()->delete('floor_plan_markers', ['id' => (int) ($_POST['id'] ?? 0), 'institution_id' => $iid]);
             sync_institution_config($iid);
             flash('success', 'Marker removed.');
         }
@@ -135,31 +118,22 @@ if ($filterBuildingId) {
     // Show all plans that have at least one marker targeting this building, or all if not narrowed
     // For a simple UX: just show all plans with a notice that they can assign markers to that building
 }
-$plans = $pdo->prepare($plansQuery . ' ORDER BY fp.created_at DESC');
-$plans->execute($plansParams);
+$plans = crud()->raw($plansQuery . ' ORDER BY fp.created_at DESC', $plansParams);
 
 // studio data
 $studio = null;
 $markers = [];
 if ($studioPlanId) {
-    $q = $pdo->prepare("SELECT * FROM floor_plans WHERE id=:id AND institution_id=:iid");
-    $q->execute(['id' => $studioPlanId, 'iid' => $iid]);
-    $studio = $q->fetch() ?: null;
+    $studio = crud()->raw("SELECT * FROM floor_plans WHERE id=:id AND institution_id=:iid", ['id' => $studioPlanId, 'iid' => $iid])->fetch() ?: null;
     if ($studio) {
-        $mk = $pdo->prepare("SELECT * FROM floor_plan_markers WHERE floor_plan_id=? AND institution_id=? ORDER BY sort_order, id");
-        $mk->execute([$studioPlanId, $iid]);
-        $markers = $mk->fetchAll();
+        $markers = crud()->raw("SELECT * FROM floor_plan_markers WHERE floor_plan_id=? AND institution_id=? ORDER BY sort_order, id", [$studioPlanId, $iid])->fetchAll();
     }
 }
 
-$buildings = $pdo->prepare("SELECT id,name FROM buildings WHERE institution_id=? AND deleted_at IS NULL ORDER BY name");
-$buildings->execute([$iid]);
-$rooms = $pdo->prepare("SELECT id,name FROM rooms WHERE institution_id=? AND deleted_at IS NULL ORDER BY name");
-$rooms->execute([$iid]);
-$scenes = $pdo->prepare("SELECT id,title as name FROM tour_scenes WHERE institution_id=? AND deleted_at IS NULL ORDER BY title");
-$scenes->execute([$iid]);
-$floorPlansList = $pdo->prepare("SELECT id,title as name FROM floor_plans WHERE institution_id=? AND deleted_at IS NULL AND id!=? ORDER BY title");
-$floorPlansList->execute([$iid, $studioPlanId ?: 0]);
+$buildings = crud()->raw("SELECT id,name FROM buildings WHERE institution_id=? AND deleted_at IS NULL ORDER BY name", [$iid]);
+$rooms = crud()->raw("SELECT id,name FROM rooms WHERE institution_id=? AND deleted_at IS NULL ORDER BY name", [$iid]);
+$scenes = crud()->raw("SELECT id,title as name FROM tour_scenes WHERE institution_id=? AND deleted_at IS NULL ORDER BY title", [$iid]);
+$floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE institution_id=? AND deleted_at IS NULL AND id!=? ORDER BY title", [$iid, $studioPlanId ?: 0]);
 ?>
 
 <?php if ($studio): ?>

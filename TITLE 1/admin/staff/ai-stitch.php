@@ -11,7 +11,6 @@ $pageTitle = 'AI Stitch';
 $pageSub = 'Six faces in, one seamless 360 panorama out';
 $active = 'AI Stitch';
 
-$pdo = db();
 $inst = current_institution();
 $iid = (int) $inst['id'];
 $me = (int) current_user()['id'];
@@ -24,9 +23,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         if ($action === 'job-create') {
             $source = ($_POST['source_type'] ?? 'cubemap_upload') === 'in_app_capture' ? 'in_app_capture' : 'cubemap_upload';
-            $pdo->prepare("INSERT INTO ai_stitch_jobs (institution_id, created_by, source_type, status, guide_step) VALUES (:iid,:me,:src,'draft','front')")
-                ->execute(['iid' => $iid, 'me' => $me, 'src' => $source]);
-            audit('ai_stitch.job.create', 'ai', 'job', (int) $pdo->lastInsertId());
+            crud()->insert('ai_stitch_jobs', ['institution_id' => $iid, 'created_by' => $me, 'source_type' => $source, 'status' => 'draft', 'guide_step' => 'front']);
+            audit('ai_stitch.job.create', 'ai', 'job', (int) crud()->lastInsertId());
             flash('success', 'Stitch job created.');
             redirect('admin/staff/ai-stitch');
         }
@@ -41,22 +39,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $name = $face . '.' . ($ext === '' ? 'jpg' : $ext);
             move_uploaded_file($_FILES['face_file']['tmp_name'], $cubeAbs . '/' . $jid . '/' . $name);
             $rel = 'assets/cubemaps/' . $jid . '/' . $name;
-            $pdo->prepare("INSERT INTO cubemap_faces (job_id, face, image_path, captured_at) VALUES (:jid,:face,:img,NOW()) ON DUPLICATE KEY UPDATE image_path=:img2, captured_at=NOW()")
-                ->execute(['jid' => $jid, 'face' => $face, 'img' => $rel, 'img2' => $rel]);
+            crud()->raw("INSERT INTO cubemap_faces (job_id, face, image_path, captured_at) VALUES (:jid,:face,:img,NOW()) ON DUPLICATE KEY UPDATE image_path=:img2, captured_at=NOW()", ['jid' => $jid, 'face' => $face, 'img' => $rel, 'img2' => $rel]);
             try {
-                $pdo->prepare("INSERT INTO media_assets (institution_id, uploaded_by, kind, file_path, original_name) VALUES (:iid,:me,'cubemap_face',:rel,:orig)")
-                    ->execute(['iid' => $iid, 'me' => $me, 'rel' => $rel, 'orig' => $_FILES['face_file']['name']]);
+                crud()->insert('media_assets', ['institution_id' => $iid, 'uploaded_by' => $me, 'kind' => 'cubemap_face', 'file_path' => $rel, 'original_name' => $_FILES['face_file']['name']]);
             } catch (Throwable $e) {}
-            $pdo->prepare("UPDATE ai_stitch_jobs SET status='uploading', guide_step=:gs WHERE id=:id")
-                ->execute(['gs' => $order[min(array_search($face, $order, true) + 1, 5)], 'id' => $jid]);
+            crud()->update('ai_stitch_jobs', ['status' => 'uploading', 'guide_step' => $order[min(array_search($face, $order, true) + 1, 5)]], ['id' => $jid]);
             flash('success', ucfirst($face) . ' face saved.');
             redirect('admin/staff/ai-stitch');
         }
         if ($action === 'stitch') {
             $jid = (int) ($_POST['job_id'] ?? 0);
-            $faces = $pdo->prepare("SELECT face, image_path FROM cubemap_faces WHERE job_id=:jid");
-            $faces->execute(['jid' => $jid]);
-            $faces = $faces->fetchAll();
+            $faces = crud()->select('cubemap_faces', 'face, image_path', ['job_id' => $jid]);
             if (count($faces) !== 6) throw new RuntimeException('All six faces are required.');
             $map = [];
             foreach ($faces as $f) {
@@ -66,15 +59,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             if (!is_dir($panoAbs)) mkdir($panoAbs, 0775, true);
             $out = $panoAbs . '/stitch-' . $jid . '-' . random_token(4) . '.jpg';
-            $pdo->prepare("UPDATE ai_stitch_jobs SET status='processing' WHERE id=:id")->execute(['id' => $jid]);
+            crud()->update('ai_stitch_jobs', ['status' => 'processing'], ['id' => $jid]);
             if (!cubemap_to_equirect($map, $out)) throw new RuntimeException('Stitch failed — faces must be square JPEG/PNG.');
             $rel = 'assets/panos/' . basename($out);
-            $pdo->prepare("UPDATE ai_stitch_jobs SET status='completed', output_equirect_path=:rel, guide_step='done', completed_at=NOW(), provider='builtin-gd' WHERE id=:id")
-                ->execute(['rel' => $rel, 'id' => $jid]);
+            crud()->raw("UPDATE ai_stitch_jobs SET status='completed', output_equirect_path=:rel, guide_step='done', completed_at=NOW(), provider='builtin-gd' WHERE id=:id", ['rel' => $rel, 'id' => $jid]);
             try {
                 $st = @getimagesize($out);
-                $pdo->prepare("INSERT INTO media_assets (institution_id, uploaded_by, kind, file_path, original_name, width, height) VALUES (:iid,:me,'pano',:rel,:orig,:w,:h)")
-                    ->execute(['iid' => $iid, 'me' => $me, 'rel' => $rel, 'orig' => 'stitched-360.jpg', 'w' => $st[0] ?? null, 'h' => $st[1] ?? null]);
+                crud()->insert('media_assets', ['institution_id' => $iid, 'uploaded_by' => $me, 'kind' => 'pano', 'file_path' => $rel, 'original_name' => 'stitched-360.jpg', 'width' => $st[0] ?? null, 'height' => $st[1] ?? null]);
             } catch (Throwable $e) {}
             audit('ai_stitch.complete', 'ai', 'job', $jid);
             flash('success', 'Stitched! Equirect ready — an admin can attach it to a tour scene.');
@@ -83,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'delete') {
             $jid = (int) ($_POST['id'] ?? 0);
             $dir = $cubeAbs . '/' . $jid;
-            $pdo->prepare("DELETE FROM ai_stitch_jobs WHERE id=:id AND institution_id=:iid")->execute(['id' => $jid, 'iid' => $iid]);
+            crud()->delete('ai_stitch_jobs', ['id' => $jid, 'institution_id' => $iid]);
             if (is_dir($dir)) rrmdir($dir);
             flash('success', 'Job removed.');
             redirect('admin/staff/ai-stitch');
@@ -94,11 +85,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$jobs = $pdo->prepare("SELECT j.*, (SELECT COUNT(*) FROM cubemap_faces f WHERE f.job_id=j.id) fc FROM ai_stitch_jobs j WHERE j.institution_id=? ORDER BY j.created_at DESC LIMIT 20");
-$jobs->execute([$iid]);
+$jobs = crud()->raw("SELECT j.*, (SELECT COUNT(*) FROM cubemap_faces f WHERE f.job_id=j.id) fc FROM ai_stitch_jobs j WHERE j.institution_id=:iid ORDER BY j.created_at DESC LIMIT 20", ['iid' => $iid]);
 
 $facesByJob = [];
-$faceRows = $pdo->query("SELECT job_id, face, image_path FROM cubemap_faces ORDER BY id");
+$faceRows = crud()->raw("SELECT job_id, face, image_path FROM cubemap_faces ORDER BY id");
 foreach ($faceRows as $fr) { $facesByJob[(int) $fr['job_id']][$fr['face']] = $fr['image_path']; }
 
 $order = ['front', 'back', 'left', 'right', 'up', 'down'];
