@@ -11,7 +11,6 @@ $pageTitle = 'Facilities';
 $pageSub = 'Libraries, cafeterias, gyms — link them to buildings, rooms or areas';
 $active = 'Facilities';
 
-$pdo = db();
 $inst = current_institution();
 $iid = (int) $inst['id'];
 $me = (int) current_user()['id'];
@@ -41,45 +40,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 move_uploaded_file($_FILES['image']['tmp_name'], $orgAbs . '/' . $nameF);
                 $featured = 'assets/facilities/' . $nameF;
                 try {
-                    $pdo->prepare("INSERT INTO media_assets (institution_id, uploaded_by, kind, file_path, original_name) VALUES (:iid,:me,'featured',:rel,:orig)")
-                        ->execute(['iid' => $iid, 'me' => $me, 'rel' => $featured, 'orig' => $_FILES['image']['name']]);
+                    crud()->insert('media_assets', ['institution_id' => $iid, 'uploaded_by' => $me, 'kind' => 'featured', 'file_path' => $featured, 'original_name' => $_FILES['image']['name']]);
                 } catch (Throwable $e) {}
             }
 
             if ($action === 'create') {
-                $pdo->prepare("INSERT INTO facilities (institution_id, building_id, room_id, campus_area_id, name, description, featured_image_path, info_json, created_by)
-                               VALUES (:iid,:bi,:ri,:ai,:name,:desc,:img,:info,:me)")
-                    ->execute([
-                        'iid' => $iid, 'bi' => (int) ($_POST['building_id'] ?? 0) ?: null, 'ri' => (int) ($_POST['room_id'] ?? 0) ?: null,
-                        'ai' => (int) ($_POST['campus_area_id'] ?? 0) ?: null, 'name' => $name, 'desc' => $desc ?: null,
-                        'img' => $featured ?: null, 'info' => $info, 'me' => $me,
+                $newId = crud()->insert('facilities', [
+                        'institution_id' => $iid, 'building_id' => (int) ($_POST['building_id'] ?? 0) ?: null,
+                        'room_id' => (int) ($_POST['room_id'] ?? 0) ?: null,
+                        'campus_area_id' => (int) ($_POST['campus_area_id'] ?? 0) ?: null,
+                        'name' => $name, 'description' => $desc ?: null,
+                        'featured_image_path' => $featured ?: null, 'info_json' => $info, 'created_by' => $me,
                     ]);
-                audit('facilities.create', 'content', 'facility', (int) $pdo->lastInsertId());
+                audit('facilities.create', 'content', 'facility', $newId);
                 flash('success', 'Facility added.');
             } else {
-                $pdo->prepare("UPDATE facilities SET name=:name, building_id=:bi, room_id=:ri, campus_area_id=:ai, description=:desc,
-                               featured_image_path=COALESCE(:img, featured_image_path), info_json=:info
-                               WHERE id=:id AND institution_id=:iid")
-                    ->execute([
-                        'name' => $name, 'bi' => (int) ($_POST['building_id'] ?? 0) ?: null, 'ri' => (int) ($_POST['room_id'] ?? 0) ?: null,
-                        'ai' => (int) ($_POST['campus_area_id'] ?? 0) ?: null, 'desc' => $desc ?: null, 'img' => $featured ?: null,
-                        'info' => $info, 'id' => $id, 'iid' => $iid,
-                    ]);
+                crud()->raw(
+                    'UPDATE facilities SET name=:name, building_id=:bi, room_id=:ri, campus_area_id=:ai, description=:desc, featured_image_path=COALESCE(:img, featured_image_path), info_json=:info WHERE id=:id AND institution_id=:iid',
+                    ['name' => $name, 'bi' => (int) ($_POST['building_id'] ?? 0) ?: null, 'ri' => (int) ($_POST['room_id'] ?? 0) ?: null,
+                     'ai' => (int) ($_POST['campus_area_id'] ?? 0) ?: null, 'desc' => $desc ?: null, 'img' => $featured ?: null,
+                     'info' => $info, 'id' => $id, 'iid' => $iid]
+                )->execute();
                 audit('facilities.update', 'content', 'facility', $id);
                 flash('success', 'Facility updated.');
             }
         }
         if ($action === 'delete') {
             $id = (int) ($_POST['id'] ?? 0);
-            $pdo->prepare("DELETE FROM facilities WHERE id=:id AND institution_id=:iid")->execute(['id' => $id, 'iid' => $iid]);
+            crud()->delete('facilities', ['id' => $id, 'institution_id' => $iid]);
             audit('facilities.delete', 'content', 'facility', $id);
             flash('success', 'Facility removed.');
         }
         if ($action === 'ai-describe') {
             $id = (int) ($_POST['id'] ?? 0);
-            $q = $pdo->prepare("SELECT name, description FROM facilities WHERE id=:id AND institution_id=:iid");
-            $q->execute(['id' => $id, 'iid' => $iid]);
-            $fac = $q->fetch();
+            $fac = crud()->raw('SELECT name, description FROM facilities WHERE id=:id AND institution_id=:iid LIMIT 1', ['id' => $id, 'iid' => $iid])->fetch();
             if (!$fac) throw new RuntimeException('Facility not found.');
             $out = sprintf(
                 "%s serves as an essential campus facility at %s%s. Find its full details, opening hours and directions on the campus floor plan, or explore it through the 360° tour.",
@@ -87,18 +81,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $inst['name'],
                 trim((string) $fac['description']) !== '' ? ' — ' . rtrim($fac['description'], '.') . '.' : ''
             );
-            $pdo->prepare("UPDATE facilities SET ai_description=:ai WHERE id=:id AND institution_id=:iid")->execute(['ai' => $out, 'id' => $id, 'iid' => $iid]);
-            $pdo->prepare("INSERT INTO ai_info_jobs (institution_id, created_by, target_type, target_id, prompt, output_text, status) VALUES (:iid,:me,'facility',:tid,NULL,:out,'completed')")
-                ->execute(['iid' => $iid, 'me' => $me, 'tid' => $id, 'out' => $out]);
+            crud()->update('facilities', ['ai_description' => $out], ['id' => $id, 'institution_id' => $iid]);
+            crud()->insert('ai_info_jobs', ['institution_id' => $iid, 'created_by' => $me, 'target_type' => 'facility', 'target_id' => $id, 'prompt' => null, 'output_text' => $out, 'status' => 'completed']);
             audit('ai_info.generate', 'ai', 'facility', $id);
             flash('success', 'AI description generated.');
         }
         if ($action === 'remove-image') {
             $id = (int) ($_POST['id'] ?? 0);
-            $q = $pdo->prepare("SELECT featured_image_path FROM facilities WHERE id=:id AND institution_id=:iid");
-            $q->execute(['id' => $id, 'iid' => $iid]);
-            $img = $q->fetchColumn();
-            $pdo->prepare("UPDATE facilities SET featured_image_path=NULL WHERE id=:id AND institution_id=:iid")->execute(['id' => $id, 'iid' => $iid]);
+            $row = crud()->raw('SELECT featured_image_path FROM facilities WHERE id=:id AND institution_id=:iid LIMIT 1', ['id' => $id, 'iid' => $iid])->fetch();
+            $img = $row['featured_image_path'] ?? null;
+            crud()->update('facilities', ['featured_image_path' => null], ['id' => $id, 'institution_id' => $iid]);
             if ($img && is_file(ROOT_PATH . '/' . ltrim($img, '/'))) unlink(ROOT_PATH . '/' . ltrim($img, '/'));
             flash('success', 'Featured image removed.');
         }
@@ -108,22 +100,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('admin/staff/facilities');
 }
 
-$facilities = $pdo->prepare(
-    "SELECT f.*, b.name building_name, r.name room_name, a.name area_name
-     FROM facilities f
-     LEFT JOIN buildings b ON b.id=f.building_id
-     LEFT JOIN rooms r ON r.id=f.room_id
-     LEFT JOIN campus_areas a ON a.id=f.campus_area_id
-     WHERE f.institution_id=? ORDER BY f.name"
-);
-$facilities->execute([$iid]);
+$facilities = crud()->raw(
+    'SELECT f.*, b.name building_name, r.name room_name, a.name area_name FROM facilities f LEFT JOIN buildings b ON b.id=f.building_id LEFT JOIN rooms r ON r.id=f.room_id LEFT JOIN campus_areas a ON a.id=f.campus_area_id WHERE f.institution_id=:iid ORDER BY f.name',
+    [':iid' => $iid]
+)->fetchAll();
 
-$buildings = $pdo->prepare("SELECT id,name FROM buildings WHERE institution_id=? AND deleted_at IS NULL ORDER BY name"); $buildings->execute([$iid]);
-$rooms = $pdo->prepare("SELECT id,name FROM rooms WHERE institution_id=? AND deleted_at IS NULL ORDER BY name"); $rooms->execute([$iid]);
-$areas = $pdo->prepare("SELECT id,name FROM campus_areas WHERE institution_id=? ORDER BY name"); $areas->execute([$iid]);
+$buildings = crud()->select('buildings', 'id,name', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY name');
+$rooms = crud()->select('rooms', 'id,name', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY name');
+$areas = crud()->select('campus_areas', 'id,name', ['institution_id' => $iid], 'ORDER BY name');
 ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <p class="mb-1" style="color:var(--ia-muted);font-size:13.5px"><?= $facilities->rowCount() ?> facility record(s)</p>
+  <p class="mb-1" style="color:var(--ia-muted);font-size:13.5px"><?= count($facilities) ?> facility record(s)</p>
   <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#fac-modal" data-mode="create"><?= ia_icon('building', 16) ?> Add facility</button>
 </div>
 
@@ -191,7 +178,7 @@ $areas = $pdo->prepare("SELECT id,name FROM campus_areas WHERE institution_id=? 
     </div>
   <?php endforeach; ?>
 
-  <?php if ($facilities->rowCount() === 0): ?>
+  <?php if (count($facilities) === 0): ?>
     <div class="col-12"><div class="ia-card"><div class="empty-state"><div class="empty-icon"><?= ia_icon('building', 26) ?></div><h4>No facilities yet</h4><p>Add libraries, cafeterias, clinics, gyms — each can carry hours, contact and an AI description.</p></div></div></div>
   <?php endif; ?>
 </div>

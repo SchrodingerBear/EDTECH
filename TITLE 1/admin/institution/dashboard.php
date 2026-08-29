@@ -11,16 +11,16 @@ $pageTitle = 'Institution Dashboard';
 $pageSub = 'Manage your campus content';
 $active = 'Overview';
 
-$pdo = db();
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
 $iid = (int) $inst['id'];
 
-$stats = ['buildings' => 0, 'rooms' => 0, 'scenes' => 0, 'floorplans' => 0];
-$stmt = $pdo->prepare("SELECT COUNT(*) FROM buildings WHERE institution_id=? AND deleted_at IS NULL"); $stmt->execute([$iid]); $stats['buildings'] = (int) $stmt->fetchColumn();
-$stmt = $pdo->prepare("SELECT COUNT(*) FROM rooms WHERE institution_id=?"); $stmt->execute([$iid]); $stats['rooms'] = (int) $stmt->fetchColumn();
-$stmt = $pdo->prepare("SELECT COUNT(*) FROM tour_scenes WHERE institution_id=? AND deleted_at IS NULL"); $stmt->execute([$iid]); $stats['scenes'] = (int) $stmt->fetchColumn();
-$stmt = $pdo->prepare("SELECT COUNT(*) FROM floor_plans WHERE institution_id=?"); $stmt->execute([$iid]); $stats['floorplans'] = (int) $stmt->fetchColumn();
+$stats = [
+    'buildings'  => crud()->count('buildings',  ['institution_id' => $iid, 'deleted_at' => ['IS', null]]),
+    'rooms'      => crud()->count('rooms',       ['institution_id' => $iid]),
+    'scenes'     => crud()->count('tour_scenes', ['institution_id' => $iid, 'deleted_at' => ['IS', null]]),
+    'floorplans' => crud()->count('floor_plans', ['institution_id' => $iid]),
+];
 
 $mode = $inst['landing_mode'] ?? '360_rotation';
 $folder = trim($inst['folder_path'] ?? '', '/');
@@ -28,18 +28,22 @@ $folderOk = $folder !== '' && is_dir(ROOT_PATH . '/' . $folder);
 
 // landing start info
 $startInfo = null;
-$q = $pdo->prepare("SELECT id, title FROM tour_scenes WHERE id=? AND institution_id=?");
 if ($mode === '360_rotation' && !empty($inst['starting_scene_id'])) {
-    $q->execute([(int) $inst['starting_scene_id'], $iid]);
-    $startInfo = $q->fetch();
+    $startInfo = crud()->raw(
+        'SELECT id, title FROM tour_scenes WHERE id=:id AND institution_id=:iid LIMIT 1',
+        [':id' => (int) $inst['starting_scene_id'], ':iid' => $iid]
+    )->fetch();
 } elseif ($mode === 'floor_plan' && !empty($inst['starting_floor_plan_id'])) {
-    $q = $pdo->prepare("SELECT id, title FROM floor_plans WHERE id=? AND institution_id=?");
-    $q->execute([(int) $inst['starting_floor_plan_id'], $iid]);
-    $startInfo = $q->fetch();
+    $startInfo = crud()->raw(
+        'SELECT id, title FROM floor_plans WHERE id=:id AND institution_id=:iid LIMIT 1',
+        [':id' => (int) $inst['starting_floor_plan_id'], ':iid' => $iid]
+    )->fetch();
 }
 
-$recentScenes = $pdo->prepare("SELECT id, title, featured_image_path, is_landing_start FROM tour_scenes WHERE institution_id=? AND deleted_at IS NULL ORDER BY sort_order, id DESC LIMIT 5");
-$recentScenes->execute([$iid]);
+$recentScenes = crud()->raw(
+    'SELECT id, title, featured_image_path, is_landing_start FROM tour_scenes WHERE institution_id=:iid AND deleted_at IS NULL ORDER BY sort_order, id DESC LIMIT 5',
+    [':iid' => $iid]
+)->fetchAll();
 ?>
 <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
   <div>

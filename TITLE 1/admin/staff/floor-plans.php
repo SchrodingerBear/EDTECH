@@ -11,7 +11,6 @@ $pageTitle = 'Floor Plans';
 $pageSub = 'Upload campus maps and drop markers (percentages keep them responsive)';
 $active = 'Floor Plans';
 
-$pdo = db();
 $inst = current_institution();
 $iid = (int) $inst['id'];
 $me = (int) current_user()['id'];
@@ -30,20 +29,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION)) ?: 'jpg';
             $name = random_token(6) . '.' . $ext;
             move_uploaded_file($_FILES['image']['tmp_name'], $orgDir . '/' . $name);
-            $pdo->prepare(
-                "INSERT INTO floor_plans (institution_id, title, image_path, original_width, original_height, aspect_ratio, object_fit, created_by)
-                 VALUES (:iid,:t,:img,:w,:h,:ar,'contain',:me)"
-            )->execute(['iid' => $iid, 't' => $title, 'img' => 'assets/floorplans/' . $name, 'w' => $w, 'h' => $h, 'ar' => $w / max(1, $h), 'me' => $me]);
-            audit('floor_plans.create', 'content', 'floor_plan', (int) $pdo->lastInsertId());
+            $newPlanId = crud()->insert('floor_plans', [
+                'institution_id' => $iid, 'title' => $title, 'image_path' => 'assets/floorplans/' . $name,
+                'original_width' => $w, 'original_height' => $h, 'aspect_ratio' => $w / max(1, $h),
+                'object_fit' => 'contain', 'created_by' => $me,
+            ]);
+            audit('floor_plans.create', 'content', 'floor_plan', $newPlanId);
             flash('success', 'Floor plan uploaded.');
             redirect('admin/staff/floor-plans');
         }
         if ($action === 'delete') {
             $id = (int) ($_POST['id'] ?? 0);
-            $q = $pdo->prepare("SELECT image_path FROM floor_plans WHERE id=:id AND institution_id=:iid");
-            $q->execute(['id' => $id, 'iid' => $iid]);
-            $img = $q->fetchColumn();
-            $pdo->prepare("DELETE FROM floor_plans WHERE id=:id AND institution_id=:iid")->execute(['id' => $id, 'iid' => $iid]);
+            $row = crud()->raw('SELECT image_path FROM floor_plans WHERE id=:id AND institution_id=:iid LIMIT 1', ['id' => $id, 'iid' => $iid])->fetch();
+            $img = $row['image_path'] ?? null;
+            crud()->delete('floor_plans', ['id' => $id, 'institution_id' => $iid]);
             if ($img && is_file(ROOT_PATH . '/' . ltrim($img, '/'))) unlink(ROOT_PATH . '/' . ltrim($img, '/'));
             flash('success', 'Floor plan removed.');
             redirect('admin/staff/floor-plans');
@@ -51,34 +50,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'marker-add') {
             $label = trim($_POST['label'] ?? '');
             if ($label === '') throw new RuntimeException('Marker label required.');
-            $pdo->prepare(
-                "INSERT INTO floor_plan_markers (institution_id, floor_plan_id, label, x_percent, y_percent, size_percent, popup_title, popup_html, sort_order)
-                 VALUES (:iid,:plan,:label,:x,:y,4,:pt,:ph,0)"
-            )->execute([
-                'iid' => $iid, 'plan' => (int) ($_POST['plan_id'] ?? 0), 'label' => $label,
-                'x' => (float) ($_POST['x'] ?? 50), 'y' => (float) ($_POST['y'] ?? 50),
-                'pt' => trim($_POST['popup_title'] ?? '') ?: null,
-                'ph' => trim($_POST['popup_html'] ?? '') ?: null,
+            crud()->insert('floor_plan_markers', [
+                'institution_id' => $iid, 'floor_plan_id' => (int) ($_POST['plan_id'] ?? 0), 'label' => $label,
+                'x_percent' => (float) ($_POST['x'] ?? 50), 'y_percent' => (float) ($_POST['y'] ?? 50),
+                'size_percent' => 4, 'popup_title' => trim($_POST['popup_title'] ?? '') ?: null,
+                'popup_html' => trim($_POST['popup_html'] ?? '') ?: null, 'sort_order' => 0,
             ]);
             flash('success', 'Marker added.');
             redirect('admin/staff/floor-plans?plan=' . (int) ($_POST['plan_id'] ?? 0));
         }
         if ($action === 'marker-save') {
             $id = (int) ($_POST['id'] ?? 0);
-            $pdo->prepare(
-                "UPDATE floor_plan_markers SET x_percent=:x, y_percent=:y, label=:l, popup_title=:pt, popup_html=:ph
-                 WHERE id=:id AND institution_id=:iid"
-            )->execute([
-                'x' => max(0, min(100, (float) ($_POST['x'] ?? 0))), 'y' => max(0, min(100, (float) ($_POST['y'] ?? 0))),
-                'l' => trim($_POST['label'] ?? '') ?: 'Marker', 'pt' => trim($_POST['popup_title'] ?? '') ?: null,
-                'ph' => trim($_POST['popup_html'] ?? '') ?: null, 'id' => $id, 'iid' => $iid,
-            ]);
+            crud()->update('floor_plan_markers',
+                [
+                    'x_percent' => max(0, min(100, (float) ($_POST['x'] ?? 0))),
+                    'y_percent' => max(0, min(100, (float) ($_POST['y'] ?? 0))),
+                    'label' => trim($_POST['label'] ?? '') ?: 'Marker',
+                    'popup_title' => trim($_POST['popup_title'] ?? '') ?: null,
+                    'popup_html' => trim($_POST['popup_html'] ?? '') ?: null,
+                ],
+                ['id' => $id, 'institution_id' => $iid]
+            );
             flash('success', 'Marker saved.');
             redirect('admin/staff/floor-plans?plan=' . (int) ($_POST['plan_id'] ?? 0));
         }
         if ($action === 'marker-delete') {
-            $pdo->prepare("DELETE FROM floor_plan_markers WHERE id=:id AND institution_id=:iid")
-                ->execute(['id' => (int) ($_POST['id'] ?? 0), 'iid' => $iid]);
+            crud()->delete('floor_plan_markers', ['id' => (int) ($_POST['id'] ?? 0), 'institution_id' => $iid]);
             flash('success', 'Marker removed.');
             redirect('admin/staff/floor-plans?plan=' . (int) ($_POST['plan_id'] ?? 0));
         }
@@ -88,18 +85,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$plans = $pdo->prepare("SELECT fp.*, (SELECT COUNT(*) FROM floor_plan_markers m WHERE m.floor_plan_id=fp.id) mc FROM floor_plans fp WHERE fp.institution_id=? ORDER BY fp.created_at DESC");
-$plans->execute([$iid]);
+$plans = crud()->raw(
+    'SELECT fp.*, (SELECT COUNT(*) FROM floor_plan_markers m WHERE m.floor_plan_id=fp.id) mc FROM floor_plans fp WHERE fp.institution_id=:iid ORDER BY fp.created_at DESC',
+    [':iid' => $iid]
+)->fetchAll();
 
 $plan = null; $markers = [];
 if ($planId) {
-    $pq = $pdo->prepare("SELECT * FROM floor_plans WHERE id=:id AND institution_id=:iid");
-    $pq->execute(['id' => $planId, 'iid' => $iid]);
-    $plan = $pq->fetch() ?: null;
+    $plan = crud()->raw('SELECT * FROM floor_plans WHERE id=:id AND institution_id=:iid LIMIT 1', ['id' => $planId, 'iid' => $iid])->fetch() ?: null;
     if ($plan) {
-        $mq = $pdo->prepare("SELECT * FROM floor_plan_markers WHERE floor_plan_id=? AND institution_id=? ORDER BY sort_order, id");
-        $mq->execute([$planId, $iid]);
-        $markers = $mq->fetchAll();
+        $markers = crud()->select('floor_plan_markers', '*', ['floor_plan_id' => $planId, 'institution_id' => $iid], 'ORDER BY sort_order, id');
     }
 }
 ?>
@@ -143,14 +138,14 @@ if ($planId) {
   </div></div>
 <?php else: ?>
   <div class="d-flex align-items-center justify-content-between mb-3">
-    <p class="mb-1" style="color:var(--ia-muted);font-size:13.5px"><?= $plans->rowCount() ?> floor plan(s)</p>
+    <p class="mb-1" style="color:var(--ia-muted);font-size:13.5px"><?= count($plans) ?> floor plan(s)</p>
     <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#up-modal"><?= ia_icon('upload', 16) ?> Upload floor plan</button>
   </div>
   <div class="ia-card">
     <div class="table-responsive"><table class="table table-ia">
       <thead><tr><th>Plan</th><th>Preview</th><th>Markers</th><th class="text-end">Actions</th></tr></thead>
       <tbody>
-        <?php foreach ($plans as $p): ?>
+        <?php foreach (($plans ?: []) as $p): ?>
           <tr>
             <td style="font-weight:700"><?= h($p['title']) ?></td>
             <td><img src="<?= h(org_url($inst['slug'], $p['image_path'])) ?>" style="width:110px;height:52px;object-fit:contain;border-radius:8px;border:1px solid var(--ia-border)" alt=""></td>
@@ -166,7 +161,7 @@ if ($planId) {
             </td>
           </tr>
         <?php endforeach; ?>
-        <?php if ($plans->rowCount() === 0): ?>
+        <?php if (count($plans) === 0): ?>
           <tr><td colspan="4"><div class="empty-state"><div class="empty-icon"><?= ia_icon('map', 26) ?></div><h4>No floor plans</h4><p>Upload a campus map image first — then open it to place markers.</p></div></td></tr>
         <?php endif; ?>
       </tbody>

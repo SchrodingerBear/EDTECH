@@ -11,21 +11,24 @@ $pageTitle = 'Staff Overview';
 $pageSub = display_name(current_user()) . ' · ' . (current_institution()['name'] ?? '—');
 $active = 'Overview';
 
-$pdo = db();
 $iid = (int) current_institution()['id'];
 $me = (int) current_user()['id'];
 
-$facilities = (int) $pdo->query("SELECT COUNT(*) FROM facilities WHERE institution_id=" . $iid)->fetchColumn();
-$floorPlans = (int) $pdo->query("SELECT COUNT(*) FROM floor_plans WHERE institution_id=" . $iid)->fetchColumn();
-$scenes = (int) $pdo->query("SELECT COUNT(*) FROM tour_scenes WHERE institution_id=" . $iid . " AND deleted_at IS NULL")->fetchColumn();
-$media = (int) $pdo->query("SELECT COUNT(*) FROM media_assets WHERE institution_id=" . $iid)->fetchColumn();
-$myStitch = (int) $pdo->query("SELECT COUNT(*) FROM ai_stitch_jobs WHERE institution_id=" . $iid . " AND created_by=" . $me)->fetchColumn();
+$facilities = crud()->count('facilities',     ['institution_id' => $iid]);
+$floorPlans = crud()->count('floor_plans',    ['institution_id' => $iid]);
+$scenes     = crud()->count('tour_scenes',    ['institution_id' => $iid, 'deleted_at' => ['IS', null]]);
+$media      = crud()->count('media_assets',   ['institution_id' => $iid]);
+$myStitch   = crud()->count('ai_stitch_jobs', ['institution_id' => $iid, 'created_by' => $me]);
 
-$recentStitch = $pdo->prepare("SELECT j.*, (SELECT COUNT(*) FROM cubemap_faces f WHERE f.job_id=j.id) fc FROM ai_stitch_jobs j WHERE j.institution_id=? ORDER BY j.created_at DESC LIMIT 4");
-$recentStitch->execute([$iid]);
+$recentStitch = crud()->raw(
+    'SELECT j.*, (SELECT COUNT(*) FROM cubemap_faces f WHERE f.job_id=j.id) fc FROM ai_stitch_jobs j WHERE j.institution_id=:iid ORDER BY j.created_at DESC LIMIT 4',
+    [':iid' => $iid]
+)->fetchAll();
 
-$recentMedia = $pdo->prepare("SELECT m.* FROM media_assets m WHERE m.institution_id=? ORDER BY m.created_at DESC LIMIT 8");
-$recentMedia->execute([$iid]);
+$recentMedia = crud()->raw(
+    'SELECT m.* FROM media_assets m WHERE m.institution_id=:iid ORDER BY m.created_at DESC LIMIT 8',
+    [':iid' => $iid]
+)->fetchAll();
 
 $stats = [
     ['label' => 'Facilities', 'num' => $facilities, 'icon' => 'building', 'to' => 'admin/staff/facilities'],
@@ -74,7 +77,7 @@ $stats = [
                 <td style="color:var(--ia-muted);white-space:nowrap"><?= h(date('M j, g:i A', strtotime($j['created_at']))) ?></td>
               </tr>
             <?php endforeach; ?>
-            <?php if ($recentStitch->rowCount() === 0): ?>
+            <?php if (!$recentStitch): ?>
               <tr><td colspan="4"><div class="empty-state"><div class="empty-icon"><?= ia_icon('camera', 22) ?></div><h4>No stitch jobs yet</h4><p>Capture six cube faces (or upload them) to auto-stitch a 360 panorama.</p></div></td></tr>
             <?php endif; ?>
           </tbody>
@@ -93,7 +96,7 @@ $stats = [
               <img src="<?= h(org_url(current_institution()['slug'], $m['file_path'])) ?>" class="avatar-sm rounded-3" style="width:64px;height:64px;object-fit:cover" alt="media">
             <?php endif; ?>
           <?php endforeach; ?>
-          <?php if ($recentMedia->rowCount() === 0): ?>
+          <?php if (!$recentMedia): ?>
             <p class="text-muted mb-0" style="font-size:13px">No media yet — upload photos for buildings, rooms and floor plans.</p>
           <?php endif; ?>
         </div>

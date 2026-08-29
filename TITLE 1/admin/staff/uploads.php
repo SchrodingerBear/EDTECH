@@ -11,7 +11,6 @@ $pageTitle = 'Media Uploads';
 $pageSub = 'Featured and gallery images for buildings, rooms and tours';
 $active = 'Media Uploads';
 
-$pdo = db();
 $inst = current_institution();
 $iid = (int) $inst['id'];
 $me = (int) current_user()['id'];
@@ -34,12 +33,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     move_uploaded_file($_FILES['files']['tmp_name'][$i], $uploadsAbs . '/' . $name);
                     $rel = 'assets/uploads/' . $name;
                     $st = @getimagesize($uploadsAbs . '/' . $name);
-                    $pdo->prepare(
-                        "INSERT INTO media_assets (institution_id, uploaded_by, kind, file_path, original_name, mime_type, width, height)
-                         VALUES (:iid,:me,:kind,:rel,:orig,:mime,:w,:h)"
-                    )->execute([
-                        'iid' => $iid, 'me' => $me, 'kind' => $kind, 'rel' => $rel, 'orig' => $orig,
-                        'mime' => $_FILES['files']['type'][$i] ?? null, 'w' => $st[0] ?? null, 'h' => $st[1] ?? null,
+                    crud()->insert('media_assets', [
+                        'institution_id' => $iid, 'uploaded_by' => $me, 'kind' => $kind,
+                        'file_path' => $rel, 'original_name' => $orig,
+                        'mime_type' => $_FILES['files']['type'][$i] ?? null,
+                        'width' => $st[0] ?? null, 'height' => $st[1] ?? null,
                     ]);
                     $count++;
                 }
@@ -50,10 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if ($action === 'delete') {
             $mid = (int) ($_POST['id'] ?? 0);
-            $q = $pdo->prepare("SELECT file_path FROM media_assets WHERE id=:id AND institution_id=:iid");
-            $q->execute(['id' => $mid, 'iid' => $iid]);
-            $img = $q->fetchColumn();
-            $pdo->prepare("DELETE FROM media_assets WHERE id=:id AND institution_id=:iid")->execute(['id' => $mid, 'iid' => $iid]);
+            $asset = crud()->raw('SELECT file_path FROM media_assets WHERE id=:id AND institution_id=:iid LIMIT 1', ['id' => $mid, 'iid' => $iid])->fetch();
+            $img = $asset['file_path'] ?? null;
+            crud()->delete('media_assets', ['id' => $mid, 'institution_id' => $iid]);
             if ($img && str_starts_with($img, 'assets/uploads/')) {
                 $abs = ROOT_PATH . '/' . ltrim($img, '/');
                 if (is_file($abs)) unlink($abs);
@@ -66,14 +63,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('admin/staff/uploads');
 }
 
-$media = $pdo->prepare("SELECT * FROM media_assets WHERE institution_id=? ORDER BY created_at DESC LIMIT 200");
-$media->execute([$iid]);
+$media = crud()->select('media_assets', '*', ['institution_id' => $iid], 'ORDER BY created_at DESC LIMIT 200');
 
 $kinds = ['gallery' => 'Gallery', 'featured' => 'Featured', 'pano' => 'Panorama', 'floor_plan' => 'Floor plan', 'ar_target' => 'AR target', 'logo' => 'Logo', 'other' => 'Other'];
 $badge = ['gallery' => 'badge-draft', 'featured' => 'badge-live', 'pano' => 'badge-live', 'floor_plan' => 'badge-live', 'ar_target' => 'badge-live', 'logo' => 'badge-live', 'other' => 'badge-off'];
 ?>
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-  <p class="mb-1" style="color:var(--ia-muted);font-size:13.5px"><?= $media->rowCount() ?> asset(s) in <code>assets/uploads/</code></p>
+  <p class="mb-1" style="color:var(--ia-muted);font-size:13.5px"><?= count($media) ?> asset(s) in <code>assets/uploads/</code></p>
   <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#up-modal"><?= ia_icon('upload', 16) ?> Upload media</button>
 </div>
 
@@ -99,7 +95,7 @@ $badge = ['gallery' => 'badge-draft', 'featured' => 'badge-live', 'pano' => 'bad
         </div>
       <?php endforeach; ?>
 
-      <?php if ($media->rowCount() === 0): ?>
+      <?php if (count($media) === 0): ?>
         <div class="w-100"><div class="empty-state"><div class="empty-icon"><?= ia_icon('image', 26) ?></div><h4>No media yet</h4><p>Batch upload photos for buildings, rooms, facilities and tours.</p></div></div>
       <?php endif; ?>
     </div>

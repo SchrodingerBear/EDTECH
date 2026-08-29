@@ -10,25 +10,21 @@ $pageTitle = 'System Overview';
 $pageSub = 'Platform health for the Innovatech team';
 $active = 'Dashboard';
 
-$pdo = db();
-
 $stats = [
-    'institutions' => (int) $pdo->query("SELECT COUNT(*) FROM institutions WHERE deleted_at IS NULL")->fetchColumn(),
-    'active'       => (int) $pdo->query("SELECT COUNT(*) FROM institutions WHERE is_active=1 AND is_published=1 AND deleted_at IS NULL")->fetchColumn(),
-    'org_admins'   => (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role_id=2 AND deleted_at IS NULL")->fetchColumn(),
-    'org_staff'    => (int) $pdo->query("SELECT COUNT(*) FROM users WHERE role_id=3 AND deleted_at IS NULL")->fetchColumn(),
-    'scenes'       => (int) $pdo->query("SELECT COUNT(*) FROM tour_scenes WHERE deleted_at IS NULL")->fetchColumn(),
-    'logins'       => (int) $pdo->query("SELECT COUNT(*) FROM audit_logs WHERE action='auth.login'")->fetchColumn(),
+    'institutions' => crud()->count('institutions', ['deleted_at' => ['IS', null]]),
+    'active'       => crud()->count('institutions', ['is_active' => 1, 'is_published' => 1, 'deleted_at' => ['IS', null]]),
+    'org_admins'   => crud()->count('users', ['role_id' => 2, 'deleted_at' => ['IS', null]]),
+    'org_staff'    => crud()->count('users', ['role_id' => 3, 'deleted_at' => ['IS', null]]),
+    'scenes'       => crud()->count('tour_scenes', ['deleted_at' => ['IS', null]]),
+    'logins'       => crud()->count('audit_logs', ['action' => 'auth.login']),
 ];
 
-$recentInstitutions = $pdo->query(
-    "SELECT i.id, i.name, i.short_name, i.slug, i.landing_mode, i.is_published, i.is_active, i.created_at
-     FROM institutions i WHERE i.deleted_at IS NULL ORDER BY i.created_at DESC LIMIT 8"
+$recentInstitutions = crud()->raw(
+    'SELECT i.id, i.name, i.short_name, i.slug, i.landing_mode, i.is_published, i.is_active, i.created_at FROM institutions i WHERE i.deleted_at IS NULL ORDER BY i.created_at DESC LIMIT 8'
 )->fetchAll();
 
-$recentLogins = $pdo->query(
-    "SELECT a.*, u.email FROM audit_logs a LEFT JOIN users u ON u.id=a.actor_user_id
-     WHERE a.action='auth.login' ORDER BY a.created_at DESC LIMIT 6"
+$recentLogins = crud()->raw(
+    "SELECT a.*, u.email FROM audit_logs a LEFT JOIN users u ON u.id=a.actor_user_id WHERE a.action='auth.login' ORDER BY a.created_at DESC LIMIT 6"
 )->fetchAll();
 ?>
 <div class="row g-4 mb-4">
