@@ -8,11 +8,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
 SET time_zone = '+08:00';
 
-CREATE DATABASE IF NOT EXISTS `lavadora_laundry`
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE `lavadora_laundry`;
 
 -- -----------------------------------------------------------------------------
 -- DROP TABLES (safe re-import). Reverse dependency order; FK checks are off.
@@ -86,12 +81,6 @@ SELECT 2, `id` FROM `permissions`
 WHERE `slug` IN ('orders.manage', 'customers.manage');
 
 -- per-account page access (owner-controlled; empty set = full access)
-CREATE TABLE `user_page_access` (
-  `user_id` INT UNSIGNED NOT NULL,
-  `page_key` VARCHAR(64) NOT NULL,
-  PRIMARY KEY (`user_id`, `page_key`),
-  CONSTRAINT `fk_up_acc_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `users` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -123,6 +112,13 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `role_id`, `email`, `username`, `password_hash`, `first_name`, `last_name`, `phone`, `is_active`) VALUES
 (1, 1, 'thesis_2_owner@lavadora.local', 'thesis_2_owner', '$2y$10$fsuIqA7lHffMsgpsk2Y3l.S2sCnwbpwxbUkUqWM/cpJgBSh/nHODW', 'Thesis 2', 'Owner', '0917-000-0001', 1),
 (2, 2, 'thesis_2_staff@lavadora.local', 'thesis_2_staff', '$2y$10$fsuIqA7lHffMsgpsk2Y3l.S2sCnwbpwxbUkUqWM/cpJgBSh/nHODW', 'Thesis 2', 'Staff', '0917-000-0002', 1);
+
+CREATE TABLE `user_page_access` (
+  `user_id` INT UNSIGNED NOT NULL,
+  `page_key` VARCHAR(64) NOT NULL,
+  PRIMARY KEY (`user_id`, `page_key`),
+  CONSTRAINT `fk_up_acc_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `password_resets` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

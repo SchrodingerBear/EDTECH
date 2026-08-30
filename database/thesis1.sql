@@ -1,9 +1,9 @@
 -- =============================================================================
--- THESIS 1 — Innovatech PH (AI-Assisted AR 360 Virtual Campus Navigation)
+-- THESIS 1 - Innovatech PH (AI-Assisted AR 360 Virtual Campus Navigation)
 --   Database : `u467106394_thesis`
 --   Import   : create `u467106394_thesis` in hPanel first, then import this file (phpMyAdmin)
 --   Idempotent : DROP-all + re-create; safe to re-import.
---   Accounts (password = password for ALL — change after first login):
+--   Accounts (password = password for ALL - change after first login):
 --     thesis_1_owner@innovatech.ph    role owner        -> admin/owner/dashboard
 --     thesis_1_sysadmin@innovatech.ph role system_admin -> admin/system/dashboard
 --     thesis_1_sysstaff@innovatech.ph role system_staff -> admin/system/dashboard
@@ -18,6 +18,7 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
 SET time_zone = '+08:00';
+
 
 
 -- -----------------------------------------------------------------------------
@@ -177,12 +178,6 @@ WHERE `slug` IN (
 
 -- per-account page access (owner's role management system)
 -- empty set = full access
-CREATE TABLE `user_page_access` (
-  `user_id` INT UNSIGNED NOT NULL,
-  `page_key` VARCHAR(64) NOT NULL,
-  PRIMARY KEY (`user_id`, `page_key`),
-  CONSTRAINT `fk_up_acc_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `users` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -210,6 +205,15 @@ CREATE TABLE `users` (
   KEY `idx_users_institution` (`institution_id`),
   CONSTRAINT `fk_users_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`),
   CONSTRAINT `fk_users_supervisor` FOREIGN KEY (`supervisor_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- per-account page access (owner's role management system)
+-- empty set = full access
+CREATE TABLE `user_page_access` (
+  `user_id` INT UNSIGNED NOT NULL,
+  `page_key` VARCHAR(64) NOT NULL,
+  PRIMARY KEY (`user_id`, `page_key`),
+  CONSTRAINT `fk_up_acc_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `password_resets` (

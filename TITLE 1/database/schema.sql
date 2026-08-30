@@ -168,12 +168,6 @@ WHERE `slug` IN (
 
 -- per-account page access (owner's role management system)
 -- empty set = full access
-CREATE TABLE `user_page_access` (
-  `user_id` INT UNSIGNED NOT NULL,
-  `page_key` VARCHAR(64) NOT NULL,
-  PRIMARY KEY (`user_id`, `page_key`),
-  CONSTRAINT `fk_up_acc_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `users` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -201,6 +195,15 @@ CREATE TABLE `users` (
   KEY `idx_users_institution` (`institution_id`),
   CONSTRAINT `fk_users_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`),
   CONSTRAINT `fk_users_supervisor` FOREIGN KEY (`supervisor_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- per-account page access (owner's role management system)
+-- empty set = full access
+CREATE TABLE `user_page_access` (
+  `user_id` INT UNSIGNED NOT NULL,
+  `page_key` VARCHAR(64) NOT NULL,
+  PRIMARY KEY (`user_id`, `page_key`),
+  CONSTRAINT `fk_up_acc_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `password_resets` (
