@@ -530,6 +530,7 @@ CREATE TABLE `floor_plans` (
   `created_by` INT UNSIGNED DEFAULT NULL,
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` DATETIME DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_floor_plans_institution` (`institution_id`),
   CONSTRAINT `fk_floor_plans_institution` FOREIGN KEY (`institution_id`) REFERENCES `institutions` (`id`) ON DELETE CASCADE
@@ -551,6 +552,7 @@ CREATE TABLE `floor_plan_markers` (
   `target_room_id` INT UNSIGNED DEFAULT NULL,
   `target_building_id` INT UNSIGNED DEFAULT NULL,
   `target_facility_id` INT UNSIGNED DEFAULT NULL,
+  `target_floor_plan_id` INT UNSIGNED DEFAULT NULL,
   `popup_title` VARCHAR(191) DEFAULT NULL,
   `popup_html` TEXT DEFAULT NULL,
   `sort_order` INT NOT NULL DEFAULT 0,
@@ -561,7 +563,8 @@ CREATE TABLE `floor_plan_markers` (
   CONSTRAINT `fk_markers_scene` FOREIGN KEY (`target_scene_id`) REFERENCES `tour_scenes` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_markers_room` FOREIGN KEY (`target_room_id`) REFERENCES `rooms` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_markers_building` FOREIGN KEY (`target_building_id`) REFERENCES `buildings` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_markers_facility` FOREIGN KEY (`target_facility_id`) REFERENCES `facilities` (`id`) ON DELETE SET NULL
+  CONSTRAINT `fk_markers_facility` FOREIGN KEY (`target_facility_id`) REFERENCES `facilities` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_markers_floor_plan` FOREIGN KEY (`target_floor_plan_id`) REFERENCES `floor_plans` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -----------------------------------------------------------------------------
@@ -574,7 +577,7 @@ CREATE TABLE `ai_stitch_jobs` (
   `institution_id` INT UNSIGNED NOT NULL,
   `created_by` INT UNSIGNED NOT NULL,
   `source_type` ENUM('cubemap_upload', 'in_app_capture') NOT NULL,
-  `status` ENUM('draft', 'uploading', 'queued', 'processing', 'completed', 'failed') NOT NULL DEFAULT 'draft',
+  `status` ENUM('draft', 'uploading', 'queued', 'processing', 'ready', 'completed', 'failed') NOT NULL DEFAULT 'draft',
   `guide_step` ENUM('front', 'back', 'left', 'right', 'up', 'down', 'done') DEFAULT NULL,
   `output_equirect_path` VARCHAR(255) DEFAULT NULL,
   `output_scene_id` INT UNSIGNED DEFAULT NULL,

@@ -17,11 +17,6 @@ SET FOREIGN_KEY_CHECKS = 0;
 SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
 SET time_zone = '+08:00';
 
-CREATE DATABASE IF NOT EXISTS `u467106394_thesis2`
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE `u467106394_thesis2`;
 
 -- -----------------------------------------------------------------------------
 -- DROP TABLES (safe re-import). Reverse dependency order; FK checks are off.
