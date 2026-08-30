@@ -1,4 +1,14 @@
 -- =============================================================================
+-- THESIS 1 — Innovatech PH (AI-Assisted AR 360 Virtual Campus Navigation)
+--   Database : `u467106394_thesis`
+--   Import   : create `u467106394_thesis` in hPanel first, then import this file (phpMyAdmin)
+--   Idempotent : DROP-all + re-create; safe to re-import.
+--   Accounts (password = password for ALL — change after first login):
+--     thesis_1_owner@innovatech.ph    role owner        -> admin/owner/dashboard
+--     thesis_1_sysadmin@innovatech.ph role system_admin -> admin/system/dashboard
+--     thesis_1_sysstaff@innovatech.ph role system_staff -> admin/system/dashboard
+-- =============================================================================
+-- =============================================================================
 -- Innovatech PH — AI-Assisted AR 360° Virtual Campus Navigation
 -- Canonical MySQL / MariaDB schema (utf8mb4, InnoDB)
 -- Legacy dump u467106394_numuseum.sql is the OLD museum system. Do not mix.
@@ -8,7 +18,6 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
 SET time_zone = '+08:00';
-
 
 
 -- -----------------------------------------------------------------------------
@@ -722,3 +731,4 @@ INSERT INTO `users` (
 (6, 'thesis_1_sysstaff@innovatech.ph', 'thesis_1_sysstaff',
  '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
  'Thesis 1', 'System Staff', 1, NOW());
+

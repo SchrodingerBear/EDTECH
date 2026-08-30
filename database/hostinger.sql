@@ -1,30 +1,35 @@
 -- =============================================================================
 -- HOSTINGER combined SQL — BOTH theses in ONE file
---   TITLE 1 (Innovatech PH / AI Campus Navigation) -> `u467106394_thesis1`
+--   TITLE 1 (Innovatech PH / AI Campus Navigation) -> `u467106394_thesis`
 --   TITLE 2 (Lavadora / Laundry Management System) -> `u467106394_thesis2`
 --
--- Import this single file into Hostinger phpMyAdmin; it creates/overwrites the
--- two databases and seeds all login accounts (password for every account is:
---                      password   <- change after first login)
+-- IMPORTANT (Hostinger access):
+--   The Hostinger MySQL user only has access to databases it was granted, so:
+--   * `u467106394_thesis` already exists on your account (your old thesis 1 DB) — reuse it.
+--   * `u467106394_thesis2` MUST be created first in hPanel:
+--       hPanel -> Databases -> MySQL Databases -> "Add Database"
+--       name: u467106394_thesis2
+--       then link it to your SAME MySQL user (u467106394_thesis).
+--   After that, importing this file works (CREATE DATABASE IF NOT EXISTS just
+--   becomes a no-op since both DBs already exist).
 --
---   TITLE 1 accounts:
+-- Seeded login accounts (password = password for ALL — change after first login):
+--   TITLE 1:
 --     thesis_1_owner@innovatech.ph    role owner
 --     thesis_1_sysadmin@innovatech.ph role system_admin
 --     thesis_1_sysstaff@innovatech.ph role system_staff
---   TITLE 2 accounts:
+--   TITLE 2:
 --     thesis_2_owner@lavadora.local   role owner
 --     thesis_2_staff@lavadora.local   role staff
 --
--- Idempotent: safe to re-import (drops all tables first). Requires the Hostinger
--- MySQL user to have CREATE privileges on both databases, or create the two
--- databases in the hosting panel first and keep only the USE/table sections.
+-- Idempotent: safe to drop & re-import (DROPs all tables first).
 -- =============================================================================
 
 SET NAMES utf8mb4;
 SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
 SET time_zone = '+08:00';
 /* =============================================================================== */
-/* ============================ THESIS 1 — u467106394_thesis1 ============================ */
+/* ============================ THESIS 1 — u467106394_thesis ============================ */
 /* =============================================================================== */
 
 -- =============================================================================
@@ -38,11 +43,11 @@ SET FOREIGN_KEY_CHECKS = 0;
 SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
 SET time_zone = '+08:00';
 
-CREATE DATABASE IF NOT EXISTS `u467106394_thesis1`
+CREATE DATABASE IF NOT EXISTS `u467106394_thesis`
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-USE `u467106394_thesis1`;
+USE `u467106394_thesis`;
 
 -- -----------------------------------------------------------------------------
 -- DROP TABLES (safe re-import). Reverse dependency order; FK checks are off.
