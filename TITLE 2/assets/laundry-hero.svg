@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e293b"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <linearGradient id="bub" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#7dd3fc"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="640" fill="url(#bg)"/>
+  <g opacity=".1" fill="#fff">
+    <circle cx="120" cy="90" r="3"/><circle cx="980" cy="500" r="4"/><circle cx="760" cy="80" r="2"/>
+    <circle cx="180" cy="560" r="3"/><circle cx="1080" cy="180" r="2"/><circle cx="500" cy="40" r="3"/>
+  </g>
+  <g fill="url(#bub)" opacity=".25">
+    <circle cx="240" cy="140" r="34"/><circle cx="290" cy="110" r="14"/><circle cx="210" cy="100" r="10"/>
+    <circle cx="840" cy="200" r="40"/><circle cx="905" cy="170" r="16"/><circle cx="800" cy="170" r="12"/>
+  </g>
+  <g fill="#ffffff">
+    <rect x="430" y="200" width="340" height="150" rx="20"/>
+    <circle cx="520" cy="275" r="30" fill="#7dd3fc"/>
+    <circle cx="600" cy="275" r="30" fill="#6366f1"/>
+    <circle cx="680" cy="275" r="30" fill="#38bdf8"/>
+    <circle cx="520" cy="330" r="30" fill="#a5b4fc"/>
+    <circle cx="600" cy="330" r="30" fill="#67e8f9"/>
+    <circle cx="680" cy="330" r="30" fill="#e0f2fe"/>
+  </g>
+  <path d="M420 210 H780" stroke="#94a3b8" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+  <text x="600" y="520" text-anchor="middle" fill="#ffffff" font-family="Inter, sans-serif" font-size="90" font-weight="900">Lavadora</text>
+  <text x="600" y="565" text-anchor="middle" fill="#bae6fd" font-family="Inter, sans-serif" font-size="24">fresh · clean · delivered</text>
+</svg>
