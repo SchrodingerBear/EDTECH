@@ -59,9 +59,9 @@ define('BASE_URL', (function () {
 /* ---------------------------------- database -------------------------------- */
 define('DB_HOST', env('DB_HOST', 'localhost'));
 define('DB_PORT', (int) (env('DB_PORT', '3306') ?: '3306'));
-define('DB_NAME', env('DB_NAME', 'lavadora_laundry'));
-define('DB_USER', env('DB_USER', 'root'));
-define('DB_PASS', env('DB_PASS', 'root'));
+define('DB_NAME', env('DB_NAME', 'u467106394_thesis2'));
+define('DB_USER', env('DB_USER', 'u467106394_thesis'));
+define('DB_PASS', env('DB_PASS', '@saaK66PXJG1'));
 
 /* ---------------------------------- session --------------------------------- */
 const SESSION_NAME = 'lavadora_session';

@@ -12,7 +12,7 @@ $landing = [
     'contact_email' => 'support@innovatechservicesph.com',
     'logo_path' => null,
     'hero_image_path' => 'public/campus-hero.png',
-    'login_url' => '../admin/index.php',
+    'login_url' => url('admin/index'),
 ];
 
 $campuses = [];

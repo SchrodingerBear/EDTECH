@@ -18,7 +18,7 @@ ob_start();
 // to the dev defaults below when .env is missing. .env is git-ignored and
 // blocked by the root .htaccess.
 // --------------------------------------------------------------------------
-foreach (array_filter(file_exists(__DIR__ . '/.env') ? file(__DIR__ . '/.env') : [], fn ($l) => trim($l) !== '' && $l[0] !== '#' && str_contains($l, '=')) as $__line) {
+foreach (array_filter(file_exists(dirname(__DIR__) . '/.env') ? file(dirname(__DIR__) . '/.env') : [], fn ($l) => trim($l) !== '' && $l[0] !== '#' && str_contains($l, '=')) as $__line) {
     [$__k, $__v] = explode('=', trim($__line), 2);
     $__k = trim($__k);
     $__v = trim($__v);
@@ -83,9 +83,9 @@ define('TEMPLATE_PACK', ROOT_PATH . '/templates/org_pack');
 // dev fallback so the app boots even before .env is created.
 define('DB_HOST', env('DB_HOST', 'localhost'));
 define('DB_PORT', (int) (env('DB_PORT', '3306') ?: '3306'));
-define('DB_NAME', env('DB_NAME', 'innovatech_campus'));
-define('DB_USER', env('DB_USER', 'root'));
-define('DB_PASS', env('DB_PASS', 'innovatechph'));
+define('DB_NAME', env('DB_NAME', 'u467106394_thesis'));
+define('DB_USER', env('DB_USER', 'u467106394_thesis'));
+define('DB_PASS', env('DB_PASS', '#j>7Rl2W:8m'));
 
 /* ---------------------------------- session --------------------------------- */
 
