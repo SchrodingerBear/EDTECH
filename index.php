@@ -35,6 +35,30 @@ $systems = [
       ['title' => 'Natural Language Processing Facility Description Generator', 'desc' => 'Administrative AI subsystem using OpenAI API to synthesize spatial parameters and automate semantic summary generation for campus facilities.'],
       ['title' => 'Multi-School Configuration Interface (Multi-Tenant SaaS Engine)', 'desc' => 'Multi-tenant database architecture partitioning school data to allow separate institutions to deploy independent branded instances.']
     ]
+  ],
+
+  [
+    'id' => 'smart-laundry',
+    'index' => '02',
+    'shortTitle' => 'Smart Laundry Management',
+    'officialTitle' => 'AI-Assisted Smart Laundry Management, Inventory Forecasting, and Scheduling Web-Application',
+    'client' => 'Laundry Service Establishment',
+    'clientNote' => 'Service Operations / Business Management Department',
+    'framework' => 'Web-Based Application using Three-Tier Architecture (Presentation Layer, Application Logic Layer, Data Layer)',
+    'locale' => 'Local Laundry Business, Philippines',
+    'accent' => 'emerald',
+    'folder' => 'TITLE 2',
+    'portalUrl' => 'TITLE 2/',
+    'adminUrl' => 'TITLE 2/admin/index.php',
+    'summary' => 'An AI-powered web application that streamlines laundry business operations through intelligent order management, automated inventory forecasting using machine learning demand prediction, and smart scheduling algorithms that optimize machine utilization and staff workflow.',
+    'domains' => [
+      ['title' => 'AI-Driven Inventory Forecasting & Demand Prediction', 'desc' => 'Machine learning models analyzing historical consumption patterns to automatically forecast detergent, fabric softener, and supply replenishment needs before stockouts occur.'],
+      ['title' => 'Smart Scheduling & Queue Management Engine', 'desc' => 'Algorithmic scheduling system that dynamically assigns laundry orders to available machines and time slots, minimizing idle time and maximizing throughput capacity.'],
+      ['title' => 'Automated Order Tracking & Status Notifications', 'desc' => 'Real-time order lifecycle management from drop-off to pick-up with automated customer SMS/email status updates and estimated completion time predictions.'],
+      ['title' => 'Intelligent Pricing & Revenue Analytics Dashboard', 'desc' => 'AI-assisted dynamic pricing engine with comprehensive business analytics reporting on revenue trends, peak hours, and service performance KPIs.'],
+      ['title' => 'Customer Relationship & Loyalty Management', 'desc' => 'Integrated CRM module tracking customer preferences, order history, and loyalty points to drive repeat business and personalized service recommendations.'],
+      ['title' => 'Inventory & Supplies Procurement Management', 'desc' => 'Automated low-stock alerting system with supplier management module and purchase order generation based on AI-forecasted replenishment schedules.']
+    ]
   ]
 
 ];
@@ -132,7 +156,7 @@ $panel = [
       left: 0;
       right: 0;
       z-index: 50;
-      background: rgba(7, 9, 14, 0.8);
+      background: rgba(7, 9, 14, 0.85);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--card-border);
@@ -152,6 +176,7 @@ $panel = [
       gap: 12px;
       text-decoration: none;
       color: #fff;
+      flex-shrink: 0;
     }
 
     .logo-badge {
@@ -163,6 +188,7 @@ $panel = [
       display: grid;
       place-items: center;
       font-size: 20px;
+      flex-shrink: 0;
     }
 
     .logo-text h4 {
@@ -177,23 +203,167 @@ $panel = [
       color: var(--muted);
     }
 
+    /* Desktop nav links */
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 2rem;
+      gap: 1.6rem;
       list-style: none;
     }
 
     .nav-links a {
       color: var(--muted);
       text-decoration: none;
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 500;
       transition: color 0.2s;
+      white-space: nowrap;
     }
 
     .nav-links a:hover {
       color: #fff;
+    }
+
+    /* Hamburger button */
+    .nav-hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--card-border);
+      cursor: pointer;
+      transition: background 0.2s;
+      padding: 0;
+      flex-shrink: 0;
+    }
+
+    .nav-hamburger:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .nav-hamburger span {
+      display: block;
+      width: 18px;
+      height: 2px;
+      background: #e2e8f0;
+      border-radius: 2px;
+      transition: all 0.3s ease;
+      transform-origin: center;
+    }
+
+    /* Hamburger open state — animate to X */
+    .nav-hamburger.open span:nth-child(1) {
+      transform: translateY(7px) rotate(45deg);
+    }
+    .nav-hamburger.open span:nth-child(2) {
+      opacity: 0;
+      transform: scaleX(0);
+    }
+    .nav-hamburger.open span:nth-child(3) {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+
+    /* Mobile drawer */
+    .nav-mobile-drawer {
+      display: none;
+      position: absolute;
+      top: 72px;
+      left: 0;
+      right: 0;
+      background: rgba(7, 9, 14, 0.97);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
+      z-index: 49;
+    }
+
+    .nav-mobile-drawer.open {
+      max-height: 420px;
+      padding: 12px 0 20px;
+    }
+
+    .nav-mobile-links {
+      list-style: none;
+      padding: 0 1.5rem;
+    }
+
+    .nav-mobile-links li {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .nav-mobile-links li:last-child {
+      border-bottom: none;
+    }
+
+    .nav-mobile-links a {
+      display: block;
+      padding: 14px 4px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-mobile-links a:hover,
+    .nav-mobile-links a:active {
+      color: #fff;
+    }
+
+    .nav-mobile-cta {
+      margin: 12px 1.5rem 0;
+    }
+
+    .nav-mobile-cta a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 20px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.2s;
+    }
+
+    /* Responsive breakpoints */
+    @media (max-width: 900px) {
+      .nav-links {
+        display: none;
+      }
+      .btn-portal {
+        display: none;
+      }
+      .nav-hamburger {
+        display: flex;
+      }
+      .nav-mobile-drawer {
+        display: block;
+      }
+    }
+
+    /* Shrink logo text on very small screens */
+    @media (max-width: 400px) {
+      .logo-text h4 {
+        font-size: 12px;
+      }
+      .logo-text p {
+        display: none;
+      }
     }
 
     .btn-portal {
@@ -686,7 +856,7 @@ $panel = [
   <div class="grid-pattern"></div>
 
   <!-- Header -->
-  <header>
+  <header id="site-header">
     <div class="container nav-inner">
       <a href="#top" class="logo-group">
         <div class="logo-badge">🏛️</div>
@@ -696,9 +866,12 @@ $panel = [
         </div>
       </a>
 
+      <!-- Desktop nav -->
       <ul class="nav-links">
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#systems">The Two Systems</a></li>
+        <li><a href="#systems">The Systems</a></li>
+        <li><a href="#ar-navigation">AR Navigation</a></li>
+        <li><a href="#smart-laundry">Smart Laundry</a></li>
         <li><a href="#framework">Framework</a></li>
         <li><a href="#proponents">Proponents</a></li>
       </ul>
@@ -706,7 +879,29 @@ $panel = [
       <a href="#systems" class="btn-portal">
         View Thesis Systems ↓
       </a>
+
+      <!-- Mobile hamburger -->
+      <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle navigation" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
+
+    <!-- Mobile drawer (inside header so position:absolute works relative to header) -->
+    <nav class="nav-mobile-drawer" id="nav-mobile-drawer" aria-hidden="true">
+      <ul class="nav-mobile-links">
+        <li><a href="#overview"   class="mobile-nav-link">📋 Overview</a></li>
+        <li><a href="#systems"    class="mobile-nav-link">🔬 The Systems</a></li>
+        <li><a href="#ar-navigation" class="mobile-nav-link">🥽 AR Navigation</a></li>
+        <li><a href="#smart-laundry" class="mobile-nav-link">👕 Smart Laundry</a></li>
+        <li><a href="#framework"  class="mobile-nav-link">📐 Framework</a></li>
+        <li><a href="#proponents" class="mobile-nav-link">👥 Proponents</a></li>
+      </ul>
+      <div class="nav-mobile-cta">
+        <a href="#systems" class="mobile-nav-link">🚀 View Thesis Systems ↓</a>
+      </div>
+    </nav>
   </header>
 
   <!-- Hero -->
@@ -718,14 +913,14 @@ $panel = [
 
       <h1 class="hero-title">
         Two AI-Integrated Systems for
-        <span class="gradient-text">Real-World Institutional Challenges</span>
+        <span class="gradient-text">Real-World Service & Institutional Challenges</span>
       </h1>
 
       <p class="hero-desc">
         A formal capstone research manuscript submitted to the <strong style="color:#fff">College of Computer
           Studies</strong>,
         <strong style="color:#fff">Immaculada Concepcion College</strong>, presenting the architectural frameworks,
-        functional domains, and technical specifications of Two developed systems.
+        functional domains, and technical specifications of two developed systems: an <strong style="color:#a5b4fc">AI-Assisted AR Campus Navigation Platform</strong> and an <strong style="color:#34d399">AI-Assisted Smart Laundry Management, Inventory Forecasting, and Scheduling Web-Application</strong>.
       </p>
 
       <div class="hero-actions">
@@ -754,8 +949,7 @@ $panel = [
           <div style="font-size: 28px; margin-bottom: 14px;">🎯</div>
           <h3>Research Objective</h3>
           <p>
-            Develop and evaluate Two AI-integrated systems addressing distinct institutional domains: educational
-            navigation, residential property management, and municipal emergency response.
+            Develop and evaluate two AI-integrated systems addressing distinct operational domains: educational campus navigation through augmented reality, and smart laundry business management through inventory forecasting and intelligent scheduling.
           </p>
         </div>
         <div class="info-card">
@@ -776,7 +970,7 @@ $panel = [
         <div class="section-eyebrow">Thesis Deliverables</div>
         <h2 class="section-title">The Two Developed Systems</h2>
         <p class="section-desc">
-          Direct portal access and administrative command centers for each research application.
+          Direct portal access and administrative command centers for each research application — an AR Campus Navigation platform and a Smart Laundry Management system.
         </p>
       </div>
 
@@ -921,6 +1115,43 @@ $panel = [
         rights reserved.</p>
     </div>
   </footer>
+
+  <script>
+    (function () {
+      const btn    = document.getElementById('nav-hamburger');
+      const drawer = document.getElementById('nav-mobile-drawer');
+
+      if (!btn || !drawer) return;
+
+      function openMenu() {
+        btn.classList.add('open');
+        drawer.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+        drawer.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeMenu() {
+        btn.classList.remove('open');
+        drawer.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+        drawer.setAttribute('aria-hidden', 'true');
+      }
+
+      btn.addEventListener('click', function () {
+        btn.classList.contains('open') ? closeMenu() : openMenu();
+      });
+
+      // Close drawer when any mobile link is tapped
+      drawer.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', closeMenu);
+      });
+
+      // Close drawer on outside click
+      document.addEventListener('click', function (e) {
+        if (!e.target.closest('#site-header')) closeMenu();
+      });
+    })();
+  </script>
 
 </body>
 
