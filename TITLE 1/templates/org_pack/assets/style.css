@@ -68,6 +68,63 @@ a-scene { width: 100%; height: 100%; }
 .info-panel .round-btn { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; font-size: 14px; }
 .info-panel.hidden { display: none; }
 
+/* 360 scene carousel */
+.scene-carousel {
+  position: fixed; z-index: 25;
+  left: 14px; right: 14px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 74px);
+  display: flex;
+  gap: 9px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding: 9px;
+  border-radius: 18px;
+  background: rgba(11, 13, 22, .55);
+  border: 1px solid var(--ia-border);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  scrollbar-width: none;
+}
+.scene-carousel::-webkit-scrollbar { display: none; }
+.scene-carousel.hidden { display: none; }
+
+.scene-carousel-track { display: flex; gap: 9px; }
+
+.scene-card {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+  width: 96px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--ia-surface);
+  cursor: pointer;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .16s ease, border-color .16s ease;
+}
+.scene-card:hover { transform: translateY(-2px); }
+.scene-card.active { border-color: var(--ia-accent); box-shadow: 0 0 0 1px var(--ia-accent); }
+
+.scene-card-thumb { display: block; width: 100%; height: 64px; background: var(--ia-bg); }
+.scene-card-thumb img { display: block; width: 100%; height: 64px; object-fit: cover; }
+
+.scene-card-placeholder {
+  display: grid; place-items: center; width: 100%; height: 64px;
+  background: linear-gradient(135deg, var(--ia-primary), var(--ia-secondary));
+  color: #fff; font-weight: 800; font-size: 22px;
+}
+
+.scene-card-title {
+  display: block;
+  padding: 6px 8px;
+  max-width: 96px;
+  font-size: 11px; font-weight: 700; line-height: 1.25;
+  color: var(--ia-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
 /* floor plan stage: strict aspect via object-fit, markers in % */
 .fp-stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--ia-bg); }
 /* fp-wrap: sized to the actual rendered image rectangle, markers positioned within it */

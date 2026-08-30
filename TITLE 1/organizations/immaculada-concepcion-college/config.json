@@ -2,7 +2,7 @@
     "institution_id": 1,
     "name": "Immaculada Concepcion College",
     "short_name": "ICC",
-    "landing_mode": "floor_plan",
+    "landing_mode": "360_rotation",
     "require_landscape_mobile": true,
     "theme": {
         "primary": "#1a365d",
@@ -11,7 +11,24 @@
         "popup_animation": "fade",
         "marker_glow": false
     },
-    "scenes": [],
+    "scenes": {
+        "1": {
+            "id": 1,
+            "title": "Front Entrance",
+            "featured_image_path": "",
+            "equirect_path": "assets/scenes/ae72511ab1f73793.jpg",
+            "initial_yaw": 0,
+            "initial_pitch": 0,
+            "hotspots": []
+        }
+    },
+    "starting_scene": {
+        "id": 1,
+        "title": "Front Entrance",
+        "equirect_path": "assets/scenes/ae72511ab1f73793.jpg",
+        "initial_yaw": 0,
+        "initial_pitch": 0
+    },
     "starting_floor_plan": {
         "id": 1,
         "title": "Campus",

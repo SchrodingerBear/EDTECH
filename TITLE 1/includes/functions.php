@@ -819,12 +819,13 @@ function sync_institution_config(int $iid): void
         }, $hotspots);
 
         $cfg['scenes'][(int)$sc['id']] = [
-            'id'            => (int) $sc['id'],
-            'title'         => $sc['title'],
-            'equirect_path' => $stripOrg($sc['equirect_path'] ?? ''),
-            'initial_yaw'   => (float) ($sc['initial_yaw'] ?? 0),
-            'initial_pitch' => (float) ($sc['initial_pitch'] ?? 0),
-            'hotspots'      => $hsData
+            'id'                  => (int) $sc['id'],
+            'title'               => $sc['title'],
+            'featured_image_path' => $stripOrg($sc['featured_image_path'] ?? ''),
+            'equirect_path'       => $stripOrg($sc['equirect_path'] ?? ''),
+            'initial_yaw'         => (float) ($sc['initial_yaw'] ?? 0),
+            'initial_pitch'       => (float) ($sc['initial_pitch'] ?? 0),
+            'hotspots'            => $hsData
         ];
     }
 

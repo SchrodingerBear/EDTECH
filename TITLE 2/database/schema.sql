@@ -15,6 +15,23 @@ CREATE DATABASE IF NOT EXISTS `lavadora_laundry`
 USE `lavadora_laundry`;
 
 -- -----------------------------------------------------------------------------
+-- DROP TABLES (safe re-import). Reverse dependency order; FK checks are off.
+-- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `order_items`;
+DROP TABLE IF EXISTS `laundry_orders`;
+DROP TABLE IF EXISTS `employees`;
+DROP TABLE IF EXISTS `customers`;
+DROP TABLE IF EXISTS `services`;
+DROP TABLE IF EXISTS `audit_logs`;
+DROP TABLE IF EXISTS `settings`;
+DROP TABLE IF EXISTS `password_resets`;
+DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS `user_page_access`;
+DROP TABLE IF EXISTS `role_permissions`;
+DROP TABLE IF EXISTS `permissions`;
+DROP TABLE IF EXISTS `roles`;
+
+-- -----------------------------------------------------------------------------
 -- 1. ROLES & USERS
 -- owner = full access (laundry owner/managers)
 -- staff = laundry staff (process orders, manage customers)
@@ -99,11 +116,13 @@ CREATE TABLE `users` (
   CONSTRAINT `fk_users_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Default accounts (password for both is: password)
--- owner@lavadora.local / staff@lavadora.local
+-- Labeled accounts (password for BOTH is: password). Labeled so it's obvious
+-- which thesis you're logging into when both systems share the same host.
+--   thesis_2_owner@lavadora.local -> role owner (admin/dashboard)
+--   thesis_2_staff@lavadora.local -> role staff (admin/dashboard)
 INSERT INTO `users` (`id`, `role_id`, `email`, `username`, `password_hash`, `first_name`, `last_name`, `phone`, `is_active`) VALUES
-(1, 1, 'owner@lavadora.local', 'owner', '$2y$10$fsuIqA7lHffMsgpsk2Y3l.S2sCnwbpwxbUkUqWM/cpJgBSh/nHODW', 'Lavadora', 'Owner', '0917-000-0001', 1),
-(2, 2, 'staff@lavadora.local', 'staff', '$2y$10$fsuIqA7lHffMsgpsk2Y3l.S2sCnwbpwxbUkUqWM/cpJgBSh/nHODW', 'Lavadora', 'Staff', '0917-000-0002', 1);
+(1, 1, 'thesis_2_owner@lavadora.local', 'thesis_2_owner', '$2y$10$fsuIqA7lHffMsgpsk2Y3l.S2sCnwbpwxbUkUqWM/cpJgBSh/nHODW', 'Thesis 2', 'Owner', '0917-000-0001', 1),
+(2, 2, 'thesis_2_staff@lavadora.local', 'thesis_2_staff', '$2y$10$fsuIqA7lHffMsgpsk2Y3l.S2sCnwbpwxbUkUqWM/cpJgBSh/nHODW', 'Thesis 2', 'Staff', '0917-000-0002', 1);
 
 CREATE TABLE `password_resets` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

@@ -42,6 +42,10 @@
       <h2 id="info-title"></h2>
       <div id="info-body"></div>
     </div>
+
+    <div id="scene-carousel" class="scene-carousel hidden">
+      <div id="scene-carousel-track" class="scene-carousel-track"></div>
+    </div>
   </div>
 
   <!-- ========================= FLOOR-PLAN MODE ========================= -->
@@ -77,6 +81,7 @@
     let config       = null;
     let fpStack      = [];   // navigation stack of floor plan states [{image, markers, title}]
     let currentMode  = null; // 'floor' | '360'
+    let sceneCount   = 0;    // number of scenes available for the carousel
 
     // Helper to convert yaw/pitch to XYZ on sphere of radius r
     function yawPitchToXYZ(yawDeg, pitchDeg, r = 8) {
@@ -111,6 +116,9 @@
         if (config.theme.secondary) r.setProperty('--ia-secondary', config.theme.secondary);
       }
 
+      // Render the 360 scene carousel from config
+      renderSceneCarousel();
+
       if (config.landing_mode === 'floor_plan' && config.starting_floor_plan && config.starting_floor_plan.image_path) {
         openFloorPlan(config.starting_floor_plan.image_path, config.floor_plan_markers || [], config.short_name || 'ICC', false);
       } else if (config.starting_scene && config.starting_scene.equirect_path) {
@@ -126,6 +134,8 @@
       els.m360.classList.toggle('hidden', mode !== '360');
       els.mfp.classList.toggle('hidden',  mode !== 'floor');
       els.loader.classList.add('hidden');
+      const showCarousel = mode === '360' && sceneCount > 1;
+      $('#scene-carousel').classList.toggle('hidden', !showCarousel);
     }
 
     // ─── floor plan ──────────────────────────────────────────────────────────
@@ -194,6 +204,10 @@
       const skyEl  = $('#sky');
       const hintEl = $('#scene-hint');
 
+      // Dismiss any open popup and highlight the active carousel card
+      $('#info-panel').classList.add('hidden');
+      setActiveScene(scene.id);
+
       panoEl.onload = () => {
         skyEl.setAttribute('src', '#pano');
         skyEl.setAttribute('rotation', `0 ${scene.initial_yaw || 0} 0`);
@@ -258,6 +272,73 @@
       } else {
         activate('360');
       }
+    }
+
+    // ─── 360 scene carousel ───────────────────────────────────────────────────
+    function renderSceneCarousel() {
+      const track = $('#scene-carousel-track');
+      track.innerHTML = '';
+      sceneCount = 0;
+
+      if (!config.scenes) return;
+      const scenes = Object.values(config.scenes);
+      sceneCount = scenes.length;
+      if (sceneCount === 0) return;
+
+      scenes.forEach((scene) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'scene-card';
+        card.dataset.sceneId = scene.id;
+        card.setAttribute('aria-label', scene.title || 'Open scene');
+        card.title = scene.title || '';
+
+        const thumb = document.createElement('span');
+        thumb.className = 'scene-card-thumb';
+
+        if (scene.featured_image_path) {
+          const img = document.createElement('img');
+          img.alt = '';
+          img.loading = 'lazy';
+          img.src = scene.featured_image_path;
+          thumb.appendChild(img);
+        } else {
+          const ph = document.createElement('span');
+          ph.className = 'scene-card-placeholder';
+          ph.textContent = (scene.title || '?').trim().charAt(0).toUpperCase();
+          thumb.appendChild(ph);
+        }
+        card.appendChild(thumb);
+
+        const label = document.createElement('span');
+        label.className = 'scene-card-title';
+        label.textContent = scene.title || '';
+        card.appendChild(label);
+
+        card.addEventListener('click', () => {
+          openScene({
+            id:            scene.id,
+            title:         scene.title,
+            equirect_path: scene.equirect_path,
+            initial_yaw:   scene.initial_yaw,
+            initial_pitch: scene.initial_pitch,
+          });
+        });
+
+        track.appendChild(card);
+      });
+    }
+
+    function setActiveScene(id) {
+      const cards = document.querySelectorAll('#scene-carousel-track .scene-card');
+      cards.forEach((card) => {
+        const isActive = Number(card.dataset.sceneId) === Number(id);
+        card.classList.toggle('active', isActive);
+        if (isActive) {
+          try { card.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }); }
+          catch (e) { card.scrollIntoView(true); }
+        }
+      });
     }
 
     // ─── info popup ──────────────────────────────────────────────────────────
