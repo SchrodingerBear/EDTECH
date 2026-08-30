@@ -10,6 +10,7 @@ require_once __DIR__ . '/../layout/header.php';
 $pageTitle = 'Facilities';
 $pageSub = 'Libraries, cafeterias, gyms — link them to buildings, rooms or areas';
 $active = 'Facilities';
+$bodyClass = 'page-facilities';
 
 $inst = current_institution();
 $iid = (int) $inst['id'];
@@ -110,7 +111,7 @@ $rooms = crud()->select('rooms', 'id,name', ['institution_id' => $iid, 'deleted_
 $areas = crud()->select('campus_areas', 'id,name', ['institution_id' => $iid], 'ORDER BY name');
 ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <p class="mb-1" style="color:var(--ia-muted);font-size:13.5px"><?= count($facilities) ?> facility record(s)</p>
+  <p class="mb-1 ia-meta-lg"><?= count($facilities) ?> facility record(s)</p>
   <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#fac-modal" data-mode="create"><?= ia_icon('building', 16) ?> Add facility</button>
 </div>
 
@@ -152,9 +153,9 @@ $areas = crud()->select('campus_areas', 'id,name', ['institution_id' => $iid], '
             <p class="fac-desc"><?= h(mb_strimwidth($f['description'], 0, 130, '…')) ?></p>
           <?php endif; ?>
           <div class="fac-tags">
-            <?php if ($info['hours'] ?? null): ?><span class="badge" style="background:var(--ia-surface-2)"><?= ia_icon('clock', 11) ?> <?= h($info['hours']) ?></span><?php endif; ?>
-            <?php if ($info['phone'] ?? null): ?><span class="badge" style="background:var(--ia-surface-2)"><?= ia_icon('info', 11) ?> <?= h($info['phone']) ?></span><?php endif; ?>
-            <?php if ($info['capacity'] ?? null): ?><span class="badge" style="background:var(--ia-surface-2)"><?= (int) $info['capacity'] ?> seats</span><?php endif; ?>
+            <?php if ($info['hours'] ?? null): ?><span class="badge badge-surface"><?= ia_icon('clock', 11) ?> <?= h($info['hours']) ?></span><?php endif; ?>
+            <?php if ($info['phone'] ?? null): ?><span class="badge badge-surface"><?= ia_icon('info', 11) ?> <?= h($info['phone']) ?></span><?php endif; ?>
+            <?php if ($info['capacity'] ?? null): ?><span class="badge badge-surface"><?= (int) $info['capacity'] ?> seats</span><?php endif; ?>
             <?php if (!$f['featured_image_path']): ?><span class="badge badge-draft">no image</span><?php endif; ?>
           </div>
           <div class="fac-actions">
@@ -220,21 +221,6 @@ $areas = crud()->select('campus_areas', 'id,name', ['institution_id' => $iid], '
     </form>
   </div></div>
 </div>
-
-<style>
-  .fac-card { background: var(--ia-surface); border:1px solid var(--ia-border); border-radius: var(--ia-radius); overflow:hidden; box-shadow: var(--ia-shadow); height:100%; display:flex; flex-direction:column; transition:transform .2s, box-shadow .2s; }
-  .fac-card:hover { transform: translateY(-3px); box-shadow: var(--ia-shadow-lg); }
-  .fac-img { aspect-ratio:16/9; background: var(--ia-surface-2); overflow:hidden; }
-  .fac-img img { width:100%; height:100%; object-fit:cover; }
-  .fac-img-placeholder { width:100%; height:100%; display:grid; place-items:center; color:var(--ia-muted); }
-  .fac-body { padding:16px; display:flex; flex-direction:column; gap:9px; flex-grow:1; }
-  .fac-title { font-size:16px; font-weight:800; margin:0; }
-  .fac-loc { font-size:12.5px; color:var(--ia-muted); }
-  .fac-desc, .fac-ai { font-size:13px; color:var(--ia-muted); margin:0; line-height:1.55; }
-  .fac-ai { color: var(--ia-text); }
-  .fac-tags { display:flex; flex-wrap:wrap; gap:6px; }
-  .fac-actions { margin-top:auto; padding-top:6px; display:flex; gap:6px; align-items:center; }
-</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {

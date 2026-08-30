@@ -15,14 +15,7 @@ $landing = [
     'login_url' => '../admin/index.php',
 ];
 
-$campuses = [
-    ['id' => 'ust', 'slug' => 'ust', 'name' => 'University of Santo Tomas', 'short' => 'UST', 'location' => 'Manila, Metro Manila', 'type' => 'University', 'buildings' => 18, 'status' => 'live', 'cover' => 'public/campus-hero.png'],
-    ['id' => 'admu', 'slug' => 'admu', 'name' => 'Ateneo de Manila University', 'short' => 'ADMU', 'location' => 'Quezon City, Metro Manila', 'type' => 'University', 'buildings' => 24, 'status' => 'live', 'cover' => 'public/campus-hero.png'],
-    ['id' => 'mapua', 'slug' => 'mapua', 'name' => 'Mapúa University', 'short' => 'MU', 'location' => 'Intramuros, Manila', 'type' => 'University', 'buildings' => 12, 'status' => 'coming soon', 'cover' => 'public/campus-hero.png'],
-    ['id' => 'dlsu', 'slug' => 'dlsu', 'name' => 'De La Salle University', 'short' => 'DLSU', 'location' => 'Taft, Manila', 'type' => 'University', 'buildings' => 15, 'status' => 'live', 'cover' => 'public/campus-hero.png'],
-    ['id' => 'ceu', 'slug' => 'ceu', 'name' => 'Centro Escolar University', 'short' => 'CEU', 'location' => 'Mendiola, Manila', 'type' => 'College', 'buildings' => 9, 'status' => 'coming soon', 'cover' => 'public/campus-hero.png'],
-    ['id' => 'nu', 'slug' => 'nu', 'name' => 'National University', 'short' => 'NU', 'location' => 'Manila, Metro Manila', 'type' => 'College', 'buildings' => 11, 'status' => 'live', 'cover' => 'public/campus-hero.png'],
-];
+$campuses = [];
 
 $featureImages = [
     '360° Virtual Tours'            => 'assets/360° Virtual Tours.png',
@@ -59,10 +52,14 @@ $why = [
 try {
     $settings = crud()->get('platform_settings', 1);
     if ($settings) {
-        foreach (['company_name', 'product_name', 'contact_email', 'logo_path', 'hero_image_path'] as $key) {
+        foreach (['company_name', 'product_name', 'contact_email', 'logo_path'] as $key) {
             if (!empty($settings[$key])) {
                 $landing[$key] = $settings[$key];
             }
+        }
+        // hero_image_path: stored as relative path, convert to absolute URL
+        if (!empty($settings['hero_image_path'])) {
+            $landing['hero_image_path'] = media_url($settings['hero_image_path']);
         }
         // Load editable content fields from landing_html JSON
         $lj = json_decode($settings['landing_html'] ?? 'null', true) ?: [];
@@ -72,19 +69,26 @@ try {
         if (!empty($lj['quote']))         $landing['quote']         = $lj['quote'];
         if (!empty($lj['quote_name']))    $landing['quote_name']    = $lj['quote_name'];
         if (!empty($lj['quote_role']))    $landing['quote_role']    = $lj['quote_role'];
-        if (!empty($lj['why_bg']))        $landing['why_bg']        = $lj['why_bg'];
-        if (!empty($lj['cta_bg']))        $landing['cta_bg']        = $lj['cta_bg'];
         if (!empty($lj['cta']))           $landing['cta']           = $lj['cta'];
-        
+
+        // Background images — convert relative paths to absolute URLs
+        foreach (['why_bg', 'cta_bg', 'quote_bg'] as $bgKey) {
+            if (!empty($lj[$bgKey])) {
+                $landing[$bgKey] = media_url($lj[$bgKey]);
+            }
+        }
+
         if (!empty($lj['why']) && is_array($lj['why'])) {
             $why = $lj['why'];
         }
         
         if (!empty($lj['features']) && is_array($lj['features'])) {
             $features = [];
-            foreach ($lj['features'] as $f) {
-                // If it's a URL or path, use it directly as the icon, otherwise default
-                $img = $featureImages[$f[0]] ?? $featureImages['360° Virtual Tours'];
+            $imgValues = array_values($featureImages);
+            foreach ($lj['features'] as $i => $f) {
+                // Use the custom uploaded/selected image (index 3) if set, otherwise fall back to positional default
+                $storedImg = $f[3] ?? '';
+                $img = ($storedImg !== '') ? $storedImg : ($imgValues[$i] ?? $imgValues[0]);
                 $icon = $f[2] ?? 'star';
                 $features[] = [$f[0] ?? '', $f[1] ?? '', $icon, $img];
             }

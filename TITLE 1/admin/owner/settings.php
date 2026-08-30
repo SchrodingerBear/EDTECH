@@ -4,11 +4,11 @@ require_owner();
 /**
  * Innovatech PH — owner: platform settings (SMTP, directories).
  */
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'System Settings';
 $pageSub = 'System setup and configuration';
 $active = 'System Settings';
+$bodyClass = 'page-owner-settings';
+require_once __DIR__ . '/../layout/header.php';
 
 $settings = crud()->get('platform_settings', 1) ?? [];
 
@@ -57,11 +57,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="col-lg-5">
     <div class="ia-card">
       <div class="card-head"><h3>Directories</h3></div>
-      <div class="card-body d-grid gap-2" style="font-size:13.5px">
-        <div class="d-flex justify-content-between py-2" style="border-bottom:1px solid var(--ia-border)">
+      <div class="card-body d-grid gap-2 ia-meta-lg">
+        <div class="d-flex justify-content-between py-2 divider-bottom">
           <span class="text-muted">Organization root</span><code>organizations/</code>
         </div>
-        <div class="d-flex justify-content-between py-2" style="border-bottom:1px solid var(--ia-border)">
+        <div class="d-flex justify-content-between py-2 divider-bottom">
           <span class="text-muted">Template pack</span><code>templates/org_pack/</code>
         </div>
         <div class="d-flex justify-content-between py-2">

@@ -5,11 +5,11 @@ require_page('admin.tours');
 /**
  * Innovatech PH — admin: 360 tour scenes + room-to-room navigation + starting point.
  */
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = '360 Tours';
 $pageSub = 'Scenes, featured images and the landing starting point';
 $active = '360 Tours';
+$bodyClass = 'page-tours';
+require_once __DIR__ . '/../layout/header.php';
 
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
@@ -82,7 +82,7 @@ $rooms = crud()->select('rooms', 'id,name', ['institution_id' => $iid, 'deleted_
 $organizationsUrl = org_url($inst['slug'], 'assets/scenes');
 ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <p class="mb-1" style="color:var(--ia-muted);font-size:13.5px"><?= count($scenes) ?> scene(s) · equirect & featured images go to <code><?= h($inst['slug']) ?>/assets/scenes/</code></p>
+  <p class="mb-1 ia-meta-lg"><?= count($scenes) ?> scene(s) · equirect & featured images go to <code><?= h($inst['slug']) ?>/assets/scenes/</code></p>
   <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#scene-modal" data-mode="create"><?= ia_icon('camera', 16) ?> Add scene</button>
 </div>
 
@@ -96,10 +96,10 @@ $organizationsUrl = org_url($inst['slug'], 'assets/scenes');
             ?>
           <tr>
             <td>
-              <div style="font-weight:700"><?= h($sc['title']) ?></div>
-              <div style="font-size:12px;color:var(--ia-muted)"><?= h($sc['slug']) ?></div>
+              <div class="fw-bold"><?= h($sc['title']) ?></div>
+              <div class="fs-12 text-ia-muted"><?= h($sc['slug']) ?></div>
             </td>
-            <td style="color:var(--ia-muted)"><?= $loc ? h(implode(' · ', $loc)) : '—' ?></td>
+            <td class="text-ia-muted"><?= $loc ? h(implode(' · ', $loc)) : '—' ?></td>
             <td><?= $sc['equirect_path'] ? '<span class="badge badge-live">set</span>' : '<span class="badge badge-draft">missing</span>' ?></td>
             <td><?= $sc['featured_image_path'] ? '<span class="badge badge-live">set</span>' : '<span class="badge badge-draft">missing</span>' ?></td>
             <td>

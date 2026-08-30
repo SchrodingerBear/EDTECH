@@ -6,11 +6,11 @@ require_page('admin.tours');
  * Innovatech PH — admin: 360 Tour Hotspot Studio.
  * Visual placement of info/navigation hotspots on a 360 scene using A-Frame.
  */
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'Tour Studio';
 $pageSub   = 'Place interactive hotspots on your 360 scene';
 $active    = '360 Tours';
+$bodyClass = 'page-tour-studio';
+require_once __DIR__ . '/../layout/header.php';
 
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
@@ -61,20 +61,19 @@ $hotspots = crud()->raw(
     ['sid' => $sceneId, 'iid' => $iid]
 )->fetchAll();
 
-// Other scenes for navigation hotspots
 $otherScenes = crud()->raw(
     'SELECT id, title FROM tour_scenes WHERE institution_id=:iid AND id!=:sid AND deleted_at IS NULL ORDER BY title',
     ['iid' => $iid, 'sid' => $sceneId]
 )->fetchAll();
 
-$equirectUrl = $scene['equirect_path'] ? org_url($inst['slug'], $scene['equirect_path']) : '';
+$equirectUrl = $scene['equirect_path'] ? media_url($scene['equirect_path']) : '';
 $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
 ?>
 <div class="d-flex align-items-center gap-3 mb-3">
   <a class="back-link" href="tours">← All scenes</a>
   <div>
-    <h3 style="font-weight:800;margin-bottom:0"><?= h($scene['title']) ?> — Hotspot Studio</h3>
-    <p class="mb-0" style="font-size:13px;color:var(--ia-muted)">Click anywhere in the 360 view to place a hotspot.</p>
+    <h3 class="fw-800 mb-0"><?= h($scene['title']) ?> — Hotspot Studio</h3>
+    <p class="mb-0 ia-meta-md">Click anywhere in the 360 view to place a hotspot.</p>
   </div>
   <button class="btn btn-grad btn-sm ms-auto" data-bs-toggle="modal" data-bs-target="#hs-modal" data-mode="add">+ Add hotspot</button>
 </div>
@@ -94,9 +93,9 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
   <!-- ═══ 360 VIEWER ═══ -->
   <div class="col-xl-8">
     <div class="ia-card">
-      <div class="card-head"><h3>360° Viewer</h3><span style="font-size:12px;color:var(--ia-muted)">Click a hotspot to select · Double-click viewer to place new</span></div>
-      <div style="position:relative;border-radius:0 0 16px 16px;overflow:hidden">
-        <div id="studio-viewer" style="height:480px;width:100%;background:#0b0d16">
+      <div class="card-head"><h3>360° Viewer</h3><span class="ia-meta-sm">Click a hotspot to select · Double-click viewer to place new</span></div>
+      <div class="studio-frame">
+        <div id="studio-viewer">
           <a-scene id="a-studio" embedded vr-mode-ui="enabled:false" renderer="antialias:true">
             <a-assets>
               <img id="studio-pano" src="<?= h($equirectUrl) ?>" crossorigin="anonymous">
@@ -108,10 +107,10 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
             </a-entity>
           </a-scene>
         </div>
-        <div id="studio-crosshair" style="position:absolute;top:50%;left:50%;width:20px;height:20px;transform:translate(-50%,-50%);pointer-events:none;opacity:.6">
+        <div id="studio-crosshair">
           <svg viewBox="0 0 20 20" fill="none" stroke="white" stroke-width="2"><line x1="10" y1="0" x2="10" y2="8"/><line x1="10" y1="12" x2="10" y2="20"/><line x1="0" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="20" y2="10"/></svg>
         </div>
-        <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:rgba(11,13,22,.75);color:#eef0f8;font-size:12px;padding:6px 14px;border-radius:999px;backdrop-filter:blur(8px)">
+        <div class="studio-hint">
           Drag to look · Double-click to place hotspot at crosshair
         </div>
       </div>
@@ -120,18 +119,18 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
 
   <!-- ═══ HOTSPOT LIST ═══ -->
   <div class="col-xl-4">
-    <div class="ia-card" style="height:100%">
-      <div class="card-head"><h3>Hotspots <span class="badge" style="background:var(--ia-surface-2)"><?= count($hotspots) ?></span></h3></div>
+    <div class="ia-card h-100">
+      <div class="card-head"><h3>Hotspots <span class="badge badge-surface"><?= count($hotspots) ?></span></h3></div>
       <?php if ($hotspots): ?>
-        <div style="overflow-y:auto;max-height:440px">
+        <div class="hots-list">
           <?php foreach ($hotspots as $hs): ?>
-            <div class="hotspot-row d-flex align-items-start gap-3 px-3 py-2" style="border-bottom:1px solid var(--ia-border)" id="hsrow-<?= (int)$hs['id'] ?>">
+            <div class="hotspot-row d-flex align-items-start gap-3 px-3 py-2 divider-bottom" id="hsrow-<?= (int)$hs['id'] ?>">
               <div class="hotspot-icon-badge type-<?= h($hs['hotspot_type']) ?>">
                 <?= ia_icon($hs['hotspot_type'] === 'navigation' ? 'arrow' : ($hs['hotspot_type'] === 'info' ? 'info' : 'camera'), 14) ?>
               </div>
-              <div class="flex-grow-1" style="min-width:0">
-                <div style="font-weight:700;font-size:13.5px"><?= h($hs['label']) ?></div>
-                <div style="font-size:11.5px;color:var(--ia-muted)">
+              <div class="flex-grow-1 min-w-0">
+                <div class="fw-bold fs-135"><?= h($hs['label']) ?></div>
+                <div class="ia-micro">
                   Yaw <?= round((float)$hs['yaw'], 1) ?>° · Pitch <?= round((float)$hs['pitch'], 1) ?>°
                   <?php if ($hs['to_scene_title']): ?> · → <?= h($hs['to_scene_title']) ?><?php endif ?>
                 </div>
@@ -156,7 +155,7 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
           <?php endforeach ?>
         </div>
       <?php else: ?>
-        <div class="empty-state" style="padding:32px 16px">
+        <div class="empty-state empty-state-lg">
           <div class="empty-icon"><?= ia_icon('info', 24) ?></div>
           <h4>No hotspots yet</h4>
           <p>Double-click the viewer or click "Add hotspot" to place your first one.</p>
@@ -225,16 +224,6 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
     </div>
   </div>
 </div>
-
-<style>
-.hotspot-icon-badge {
-  width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;margin-top:4px;
-  background:var(--ia-surface-2);border:1px solid var(--ia-border);
-}
-.hotspot-icon-badge.type-navigation { background:rgba(91,91,214,.22);border-color:rgba(91,91,214,.45); }
-.hotspot-icon-badge.type-info       { background:rgba(56,178,172,.22);border-color:rgba(56,178,172,.45); }
-.hotspot-icon-badge.type-facility   { background:rgba(237,137,54,.22);border-color:rgba(237,137,54,.45); }
-</style>
 
 <script src="<?= url('/organizations/' . $inst['slug'] . '/assets/aframe.min.js') ?>"></script>
 <script>

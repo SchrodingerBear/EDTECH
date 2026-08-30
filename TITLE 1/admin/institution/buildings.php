@@ -5,11 +5,11 @@ require_page('admin.buildings');
 /**
  * Innovatech PH — admin: buildings CRUD (AI description generator included).
  */
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'Buildings';
 $pageSub = 'Structures → Floor Plans → Rooms → Facilities';
 $active = 'Buildings';
+$bodyClass = 'page-buildings';
+require_once __DIR__ . '/../layout/header.php';
 
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
@@ -67,7 +67,7 @@ $buildings = crud()->raw(
 )->fetchAll();
 ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <p class="mb-1" style="color:var(--ia-muted);font-size:13.5px"><?= count($buildings) ?> building(s)</p>
+  <p class="mb-1 ia-meta-lg"><?= count($buildings) ?> building(s)</p>
   <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#bdg-modal" data-mode="create"><?= ia_icon('building', 16) ?> Add building</button>
 </div>
 
@@ -78,9 +78,9 @@ $buildings = crud()->raw(
       <tbody>
         <?php foreach ($buildings as $b): ?>
           <tr>
-            <td style="font-weight:700"><?= h($b['name']) ?></td>
-            <td><span class="badge" style="background:var(--ia-surface-2)"><?= h($b['code'] ?: '—') ?></span></td>
-            <td style="color:var(--ia-muted)"><?= (int) $b['room_count'] ?></td>
+            <td class="fw-bold"><?= h($b['name']) ?></td>
+            <td><span class="badge badge-surface"><?= h($b['code'] ?: '—') ?></span></td>
+            <td class="text-ia-muted"><?= (int) $b['room_count'] ?></td>
             <td><?= $b['ai_description'] ? '<span class="badge badge-live">yes</span>' : '<span class="badge badge-off">none</span>' ?></td>
             <td><a class="btn btn-sm btn-outline-ia" href="floor-plans?building=<?= (int)$b['id'] ?>" title="View floor plans for this building"><?= ia_icon('compass', 13) ?> Floor Plans</a></td>
             <td class="text-end">

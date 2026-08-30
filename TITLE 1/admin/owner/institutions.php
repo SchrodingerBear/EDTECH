@@ -160,6 +160,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect('admin/owner/institutions');
     }
 
+    if ($action === 'edit') {
+        if (!$canManage) { flash('error', 'System staff can only view institutions.'); redirect('admin/owner/institutions'); }
+        $id = (int) ($_POST['id'] ?? 0);
+        $name = trim($_POST['name'] ?? '');
+        $short = trim($_POST['short_name'] ?? '');
+        $type = (string) ($_POST['institution_type'] ?? 'college');
+        if ($type === 'other') {
+            $custom = trim($_POST['institution_type_other'] ?? '');
+            if ($custom !== '') {
+                $type = $custom;
+            }
+        }
+        $assignAdminId = (int) ($_POST['assign_admin_id'] ?? 0);
+        
+        crud()->update('institutions', [
+            'name' => $name,
+            'short_name' => $short ?: null,
+            'institution_type' => $type
+        ], ['id' => $id]);
+
+        if ($assignAdminId > 0) {
+            // Assign the new admin to this institution
+            crud()->update('users', ['institution_id' => $id], ['id' => $assignAdminId]);
+        } elseif (isset($_POST['unassign_admin_id']) && (int)$_POST['unassign_admin_id'] > 0) {
+            // Unassign specific admin if requested
+            crud()->update('users', ['institution_id' => null], ['id' => (int)$_POST['unassign_admin_id']]);
+        }
+        
+        flash('success', 'Institution updated.');
+        redirect('admin/owner/institutions');
+    }
+
     if ($action === 'delete') {
         if (!$canManage) { flash('error', 'System staff can only view institutions.'); redirect('admin/owner/institutions'); }
         $id = (int) ($_POST['id'] ?? 0);
@@ -182,6 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $pageTitle = 'Institutions';
 $pageSub = 'Create clients — each institution auto-generates its own project folder';
 $active = 'Institutions';
+$bodyClass = 'page-institutions';
 
 require_once __DIR__ . '/../layout/header.php';
 
@@ -206,7 +239,7 @@ $assignable = crud()->raw(
 
 <div class="d-flex align-items-center justify-content-between mb-3">
   <div>
-    <p class="mb-1" style="color:var(--ia-muted);font-size:13.5px"><?= count($institutions) ?> institution(s)</p>
+    <p class="mb-1 ia-meta-lg"><?= count($institutions) ?> institution(s)</p>
   </div>
   <?php if ($canManage): ?>
   <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#inst-create"><?= ia_icon('school', 16) ?> New institution</button>
@@ -221,16 +254,16 @@ $assignable = crud()->raw(
         <?php foreach ($institutions as $inst): ?>
           <tr>
             <td>
-              <div style="font-weight:700"><?= h($inst['name']) ?></div>
-              <div style="font-size:12.5px;color:var(--ia-muted)"><?= h(ucfirst($inst['institution_type'])) ?> · <?= h($inst['city'] ?: '—') ?></div>
+              <div class="fw-bold"><?= h($inst['name']) ?></div>
+              <div class="fs-125 text-ia-muted"><?= h(ucfirst($inst['institution_type'])) ?> · <?= h($inst['city'] ?: '—') ?></div>
             </td>
             <td>
-              <div style="font-size:13px"><?= h(str_replace('organizations/', '', $inst['folder_path'])) ?></div>
-              <div style="font-size:12px;color:var(--ia-muted)"><?= is_dir(ROOT_PATH . '/' . ltrim($inst['folder_path'], '/')) ? 'on disk' : '<span class="text-danger">missing</span>' ?></div>
+              <div class="fs-13"><?= h(str_replace('organizations/', '', $inst['folder_path'])) ?></div>
+              <div class="fs-12 text-ia-muted"><?= is_dir(ROOT_PATH . '/' . ltrim($inst['folder_path'], '/')) ? 'on disk' : '<span class="text-danger">missing</span>' ?></div>
             </td>
-            <td><span class="badge" style="background:var(--ia-surface-2)"><?= $inst['landing_mode'] === 'floor_plan' ? 'Floor plan' : '360 rotation' ?></span></td>
-            <td style="color:var(--ia-muted)"><?= (int) $inst['scene_count'] ?></td>
-            <td style="color:var(--ia-muted)"><?= (int) $inst['user_count'] ?></td>
+            <td><span class="badge badge-surface"><?= $inst['landing_mode'] === 'floor_plan' ? 'Floor plan' : '360 rotation' ?></span></td>
+            <td class="text-ia-muted"><?= (int) $inst['scene_count'] ?></td>
+            <td class="text-ia-muted"><?= (int) $inst['user_count'] ?></td>
             <td>
               <span class="badge <?= ((int) $inst['is_published'] === 1 && (int) $inst['is_active'] === 1) ? 'badge-live' : ((int) $inst['is_active'] === 1 ? 'badge-draft' : 'badge-off') ?>">
                 <?= (int) $inst['is_published'] === 1 ? 'published' : 'draft' ?>
@@ -239,7 +272,7 @@ $assignable = crud()->raw(
             <td class="text-end">
               <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
                 <a class="btn btn-sm btn-outline-ia" href="<?= h(org_url($inst['slug'])) ?>" target="_blank" title="Open landing"><?= ia_icon('globe', 13) ?></a>
-                <a class="btn btn-sm btn-outline-ia" href="<?= url('admin/institution/settings?inst=' . $inst['id']) ?>" title="Quick configure"><?= ia_icon('settings', 13) ?></a>
+                <button class="btn btn-sm btn-outline-ia" data-bs-toggle="modal" data-bs-target="#inst-edit-<?= (int) $inst['id'] ?>" title="Edit Info & Admin"><?= ia_icon('settings', 13) ?></button>
                 <?php if ($canManage): ?>
                 <form method="post" class="d-inline"><input type="hidden" name="inst_action" value="toggle"><input type="hidden" name="id" value="<?= (int) $inst['id'] ?>"><input type="hidden" name="field" value="publish">
                   <button class="btn btn-sm btn-outline-ia" title="<?= (int) $inst['is_published'] ? 'Unpublish' : 'Publish' ?>">
@@ -262,6 +295,83 @@ $assignable = crud()->raw(
     </table>
   </div>
 </div>
+
+<?php foreach ($institutions as $inst): ?>
+          <div class="modal fade" id="inst-edit-<?= (int) $inst['id'] ?>" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Edit Institution — <?= h($inst['name']) ?></h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <form method="post">
+                <input type="hidden" name="inst_action" value="edit">
+                <input type="hidden" name="id" value="<?= (int) $inst['id'] ?>">
+                <div class="modal-body">
+                  <div class="row g-3 mb-3">
+                    <div class="col-md-8"><label class="form-label">Institution name</label><input class="form-control" name="name" value="<?= h($inst['name']) ?>" required></div>
+                    <div class="col-md-4"><label class="form-label">Short name</label><input class="form-control" name="short_name" value="<?= h($inst['short_name']) ?>"></div>
+                  </div>
+                  <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                      <label class="form-label">Type</label>
+                      <?php
+                        $typeOpts = ['school' => 'School', 'college' => 'College', 'university' => 'University'];
+                        $curType = (string) ($inst['institution_type'] ?? 'college');
+                        $curKey = strtolower($curType);
+                        $isKnown = array_key_exists($curKey, $typeOpts);
+                      ?>
+                      <select class="form-select" name="institution_type" id="inst-type-edit-<?= (int) $inst['id'] ?>">
+                        <?php foreach ($typeOpts as $val => $lab): ?>
+                          <option value="<?= h($val) ?>" <?= $isKnown && $curKey === $val ? 'selected' : '' ?>><?= h($lab) ?></option>
+                        <?php endforeach; ?>
+                        <option value="other" <?= !$isKnown ? 'selected' : '' ?>>Other…</option>
+                      </select>
+                    </div>
+                    <div class="col-md-8 inst-type-edit-other <?= $isKnown ? 'd-none' : '' ?>" id="inst-type-edit-other-<?= (int) $inst['id'] ?>">
+                      <label class="form-label">Specify type</label>
+                      <input class="form-control" name="institution_type_other" value="<?= $isKnown ? '' : h($curType) ?>" placeholder="e.g. Technical-Vocational Institute">
+                    </div>
+                  </div>
+
+                  <div class="mt-4 mb-2 section-caption">Assigned admins</div>
+                  <?php
+                  $currAdmins = array_filter($assignable, fn($a) => $a['institution_id'] == $inst['id']);
+                  if ($currAdmins): ?>
+                    <ul class="list-group mb-3">
+                    <?php foreach ($currAdmins as $ca): ?>
+                      <li class="list-group-item d-flex justify-content-between align-items-center fs-13">
+                        <?= h($ca['first_name'] . ' ' . $ca['last_name']) ?> (<?= h($ca['email']) ?>)
+                        <label class="d-flex align-items-center gap-2 m-0 fs-12 cursor-pointer">
+                           <input type="checkbox" name="unassign_admin_id" value="<?= (int) $ca['id'] ?>"> Unassign
+                        </label>
+                      </li>
+                    <?php endforeach; ?>
+                    </ul>
+                  <?php else: ?>
+                    <p class="text-muted fs-13">No admins assigned yet.</p>
+                  <?php endif; ?>
+
+                  <label class="form-label">Assign new admin</label>
+                  <input type="text" class="form-control mb-2" id="assign-admin-search-edit-<?= (int) $inst['id'] ?>" placeholder="Search typed name or email…">
+                  <select class="form-select" name="assign_admin_id" id="assign-admin-select-edit-<?= (int) $inst['id'] ?>">
+                    <option value="">— assign an admin —</option>
+                    <?php foreach ($assignable as $aa): ?>
+                      <?php if(empty($aa['institution_id'])): ?>
+                      <option value="<?= (int) $aa['id'] ?>" data-search="<?= h(strtolower($aa['first_name'] . ' ' . $aa['last_name'] . ' ' . $aa['email'])) ?>">
+                        <?= h($aa['first_name'] . ' ' . $aa['last_name']) ?> — <?= h($aa['email']) ?>
+                      </option>
+                      <?php endif; ?>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="modal-footer">
+                  <button class="btn btn-outline-ia" type="button" data-bs-dismiss="modal">Cancel</button>
+                  <button class="btn btn-grad px-4" type="submit">Save changes</button>
+                </div>
+              </form>
+            </div></div>
+          </div>
+<?php endforeach; ?>
 
 <!-- create modal -->
 <div class="modal fade" id="inst-create" tabindex="-1">
@@ -286,14 +396,14 @@ $assignable = crud()->raw(
               <option value="other">Other…</option>
             </select>
           </div>
-          <div class="col-md-8" id="inst-type-other-wrap" style="display:none">
+          <div class="col-md-8 d-none" id="inst-type-other-wrap">
             <label class="form-label">Specify type</label>
             <input class="form-control" name="institution_type_other" placeholder="e.g. Technical-Vocational Institute, Seminary…">
           </div>
         </div>
 
-        <div class="mt-4 mb-2" style="font-weight:700;font-size:13.5px;color:var(--ia-muted);text-transform:uppercase;letter-spacing:.06em">Location</div>
-        <p class="text-muted" style="font-size:12.5px;margin-top:-6px">Pick the campus on the map or search an address — the full address, city, province and coordinates are filled automatically.</p>
+        <div class="mt-4 mb-2 section-caption">Location</div>
+        <p class="text-muted fs-125 mt-n6">Pick the campus on the map or search an address — the full address, city, province and coordinates are filled automatically.</p>
         <div class="row g-3">
           <div class="col-12"><label class="form-label">Address</label>
             <div class="pw-group">
@@ -308,8 +418,8 @@ $assignable = crud()->raw(
           <input type="hidden" name="longitude" id="inst-lng">
         </div>
 
-        <div class="mt-4 mb-2" style="font-weight:700;font-size:13.5px;color:var(--ia-muted);text-transform:uppercase;letter-spacing:.06em">Assigned admin</div>
-        <p class="text-muted" style="font-size:12.5px;margin-top:-6px">Pick an existing account from the list; it gets attached to this institution.</p>
+        <div class="mt-4 mb-2 section-caption">Assigned admin</div>
+        <p class="text-muted fs-125 mt-n6">Pick an existing account from the list; it gets attached to this institution.</p>
         <div class="row g-3">
           <div class="col-12">
             <label class="form-label">Admin account</label>
@@ -344,17 +454,17 @@ $assignable = crud()->raw(
       <button class="btn-close" data-bs-dismiss="modal"></button>
     </div>
     <div class="modal-body p-0">
-      <div class="p-3" style="border-bottom:1px solid var(--ia-border)">
+      <div class="p-3 divider-bottom">
         <div class="input-icon">
           <span class="icon"><?= ia_icon('search', 16) ?></span>
           <input type="text" class="form-control" id="ia-addr-search" placeholder="Search a specific address, street, campus…">
         </div>
-        <div id="ia-addr-results" style="display:none" class="mt-2"></div>
+        <div id="ia-addr-results" class="d-none mt-2"></div>
       </div>
-      <div id="ia-addr-map" style="height:340px"></div>
+      <div id="ia-addr-map"></div>
     </div>
     <div class="modal-footer">
-      <span class="text-muted me-auto" style="font-size:12.5px" id="ia-addr-status">Search or click the map to place a pin, then apply.</span>
+      <span class="text-muted me-auto fs-125" id="ia-addr-status">Search or click the map to place a pin, then apply.</span>
       <button class="btn btn-outline-ia" type="button" data-bs-dismiss="modal">Cancel</button>
       <button class="btn btn-grad px-4" type="button" id="ia-addr-apply">Apply address</button>
     </div>
@@ -377,17 +487,24 @@ $assignable = crud()->raw(
     }
     if (typeSel) typeSel.addEventListener('change', syncType);
 
-    var search = document.getElementById('assign-admin-search');
-    var sel = document.getElementById('assign-admin-select');
-    function filter() {
-      if (!search || !sel) return;
-      var q = search.value.trim().toLowerCase();
-      Array.prototype.forEach.call(sel.options, function (o) {
-        if (o.value === '') { o.hidden = false; return; }
-        o.hidden = o.getAttribute('data-search') ? o.getAttribute('data-search').indexOf(q) === -1 : q.length > 0;
+    document.querySelectorAll('select[id^="inst-type-edit-"]').forEach(function (sel) {
+      sel.addEventListener('change', function () {
+        var wrap = document.getElementById(this.id.replace('inst-type-edit-', 'inst-type-edit-other-'));
+        if (wrap) wrap.style.display = this.value === 'other' ? '' : 'none';
       });
-    }
-    if (search) search.addEventListener('input', filter);
+    });
+
+    document.querySelectorAll('input[id^="assign-admin-search"]').forEach(function(search) {
+      var sel = document.getElementById(search.id.replace('search', 'select'));
+      if (!sel) return;
+      search.addEventListener('input', function() {
+        var q = search.value.trim().toLowerCase();
+        Array.prototype.forEach.call(sel.options, function (o) {
+          if (o.value === '') { o.hidden = false; return; }
+          o.hidden = o.getAttribute('data-search') ? o.getAttribute('data-search').indexOf(q) === -1 : q.length > 0;
+        });
+      });
+    });
   })();
 
   /* -------------------- Leaflet + Nominatim address picker ------------------- */
@@ -456,18 +573,18 @@ $assignable = crud()->raw(
     function renderResults(items) {
       resultsEl.innerHTML = '';
       if (!items || !items.length) {
-        resultsEl.style.display = 'block';
-        resultsEl.innerHTML = '<div class="text-muted" style="font-size:13px;padding:6px 4px">No exact match — try a different keyword, or pin the campus on the map below.</div>';
-        return;
+resultsEl.classList.remove('d-none');
+      resultsEl.innerHTML = '<div class="text-muted fs-13 ia-addr-nomatch">No exact match — try a different keyword, or pin the campus on the map below.</div>';
+      return;
       }
-      resultsEl.style.display = 'block';
+      resultsEl.classList.remove('d-none');
       items.forEach(function (it) {
         var name = document.createElement('div');
         name.className = 'ia-addr-result';
         name.textContent = it.display_name;
         name.addEventListener('click', function () {
           selected(it);
-          resultsEl.style.display = 'none';
+          resultsEl.classList.add('d-none');
           resultsEl.innerHTML = '';
           searchEl.value = '';
         });
@@ -510,10 +627,5 @@ $assignable = crud()->raw(
     });
   })();
 </script>
-
-<style>
-  .ia-addr-result { padding: 8px 10px; border-radius: 10px; background: var(--ia-surface-2); margin-bottom: 6px; font-size: 13px; cursor: pointer; }
-  .ia-addr-result:hover { outline: 1px solid var(--ia-primary); }
-</style>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>

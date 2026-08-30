@@ -5,11 +5,11 @@ require_page('admin.locations');
 /**
  * Innovatech PH — admin: rooms & campus areas.
  */
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'Rooms & Areas';
 $pageSub = 'Classrooms, offices, quads and landmarks';
 $active = 'Rooms & Areas';
+$bodyClass = 'page-locations';
+require_once __DIR__ . '/../layout/header.php';
 
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
@@ -83,13 +83,13 @@ $areas = crud()->raw('SELECT a.*, b.name AS building_name FROM campus_areas a LE
             <?php foreach ($rooms as $r): ?>
               <tr>
                 <td>
-                  <div style="font-weight:600"><?= h($r['name']) ?></div>
-                  <?php if ($r['code']): ?><div style="font-size:12px;color:var(--ia-muted)"><?= h($r['code']) ?></div><?php endif; ?>
+                  <div class="fw-semibold"><?= h($r['name']) ?></div>
+                  <?php if ($r['code']): ?><div class="fs-12 text-ia-muted"><?= h($r['code']) ?></div><?php endif; ?>
                 </td>
-                <td style="color:var(--ia-muted)"><?= h($r['building_name'] ?? '—') ?></td>
-                <td><span class="badge" style="background:var(--ia-surface-2)"><?= h($r['room_type'] ?: '—') ?></span></td>
-                <td style="color:var(--ia-muted)"><?= h($r['floor_label'] ?: '—') ?></td>
-                <td style="color:var(--ia-muted)"><?= (int) $r['capacity'] ?: '—' ?></td>
+                <td class="text-ia-muted"><?= h($r['building_name'] ?? '—') ?></td>
+                <td><span class="badge badge-surface"><?= h($r['room_type'] ?: '—') ?></span></td>
+                <td class="text-ia-muted"><?= h($r['floor_label'] ?: '—') ?></td>
+                <td class="text-ia-muted"><?= (int) $r['capacity'] ?: '—' ?></td>
                 <td class="text-end">
                   <div class="d-inline-flex gap-1">
                     <button class="btn btn-sm btn-outline-ia" data-bs-toggle="modal" data-bs-target="#room-modal"
@@ -115,12 +115,12 @@ $areas = crud()->raw('SELECT a.*, b.name AS building_name FROM campus_areas a LE
       <div class="card-head"><h3>Campus areas</h3>
         <button class="btn btn-grad btn-sm" data-bs-toggle="modal" data-bs-target="#area-modal">+ Add</button>
       </div>
-      <div class="card-body d-grid gap-2" style="padding:16px">
+      <div class="card-body d-grid gap-2 card-body-px">
         <?php foreach ($areas as $a): ?>
-          <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-3" style="background:var(--ia-surface-2)">
+          <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-3 chip-card">
             <div class="flex-grow-1">
-              <div style="font-weight:600;font-size:13.5px"><?= h($a['name']) ?></div>
-              <div style="font-size:12px;color:var(--ia-muted)"><?= h($a['area_type'] ?: 'area') ?><?= $a['building_name'] ? ' · ' . h($a['building_name']) : '' ?></div>
+              <div class="fw-semibold fs-135"><?= h($a['name']) ?></div>
+              <div class="fs-12 text-ia-muted"><?= h($a['area_type'] ?: 'area') ?><?= $a['building_name'] ? ' · ' . h($a['building_name']) : '' ?></div>
             </div>
             <form method="post" data-delete-form data-confirm="Remove area <?= h($a['name']) ?>?">
               <input type="hidden" name="loc_action" value="area-delete"><input type="hidden" name="id" value="<?= (int) $a['id'] ?>">
@@ -128,7 +128,7 @@ $areas = crud()->raw('SELECT a.*, b.name AS building_name FROM campus_areas a LE
             </form>
           </div>
         <?php endforeach; ?>
-        <?php if (!$areas): ?><p class="text-muted" style="font-size:13.5px">Quad, parking, sports fields, gates — add campus landmarks here.</p><?php endif; ?>
+        <?php if (!$areas): ?><p class="text-muted fs-135">Quad, parking, sports fields, gates — add campus landmarks here.</p><?php endif; ?>
       </div>
     </div>
   </div>

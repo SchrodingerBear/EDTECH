@@ -6,11 +6,11 @@ require_page('admin.ar');
  * Innovatech PH — admin: Augmented Reality waypoint + visual target management.
  * X-ray style: markers visible through walls by heading_deg (compass direction).
  */
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'Augmented Reality';
 $pageSub   = 'Manage AR waypoints, compass directions, and visual tracking targets';
 $active    = 'Augmented Reality';
+$bodyClass = 'page-ar';
+require_once __DIR__ . '/../layout/header.php';
 
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
@@ -77,21 +77,21 @@ $rooms = crud()->raw("SELECT r.id, r.name, r.building_id, b.name AS building_nam
 $scenes = crud()->select('tour_scenes', 'id, title', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY title');
 $waypoints = crud()->raw("SELECT w.*,b.name AS building_name,r.name AS room_name,s.title AS scene_title FROM ar_waypoints w LEFT JOIN buildings b ON b.id=w.building_id LEFT JOIN rooms r ON r.id=w.room_id LEFT JOIN tour_scenes s ON s.id=w.scene_id WHERE w.institution_id=:iid ORDER BY b.name,w.name", ['iid' => $iid])->fetchAll();
 ?>
-<div class="ia-card mb-4" style="border-left:4px solid var(--ia-accent)">
-  <div class="card-body" style="padding:20px">
+<div class="ia-card mb-4 ia-card-accent">
+  <div class="card-body card-body-lg">
     <div class="d-flex gap-3 align-items-start">
-      <span class="ia-avatar" style="width:46px;height:46px;border-radius:14px;flex-shrink:0"><?= ia_icon('scan-eye',22) ?></span>
+      <span class="ia-avatar ia-avatar-lg"><?= ia_icon('scan-eye',22) ?></span>
       <div>
-        <h4 style="font-weight:800;margin:0 0 6px">How AR navigation works</h4>
-        <p style="margin:0;color:var(--ia-muted);font-size:13.5px;max-width:700px">
+        <h4 class="fw-800 mb-6px">How AR navigation works</h4>
+        <p class="mb-0 ia-meta-lg mw-700">
           Students open the AR camera. The system reads their compass heading and renders
           <strong>X-ray overlays</strong> for every waypoint along that heading — even through walls.
           Attach a <code>.mind</code> visual target to enable image-tracking so students can point the camera
           at a physical poster and snap to that location automatically. Compass access is prompted on first use.
         </p>
-        <div class="d-flex flex-wrap gap-2 mt-3" style="font-size:12.5px">
+        <div class="d-flex flex-wrap gap-2 mt-3 fs-125">
           <?php foreach(['N 0°','NE 45°','E 90°','SE 135°','S 180°','SW 225°','W 270°','NW 315°'] as $c): ?>
-            <span class="badge" style="background:var(--ia-surface-2);color:var(--ia-text);font-weight:600"><?= $c ?></span>
+            <span class="badge badge-soft"><?= $c ?></span>
           <?php endforeach ?>
         </div>
       </div>
@@ -100,7 +100,7 @@ $waypoints = crud()->raw("SELECT w.*,b.name AS building_name,r.name AS room_name
 </div>
 
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <p class="mb-0" style="color:var(--ia-muted);font-size:13.5px"><?= count($waypoints) ?> waypoint(s)</p>
+  <p class="mb-0 ia-meta-lg"><?= count($waypoints) ?> waypoint(s)</p>
   <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#wp-modal" data-mode="create">
     <?= ia_icon('scan-eye',15) ?> Add waypoint
   </button>
@@ -113,12 +113,12 @@ $waypoints = crud()->raw("SELECT w.*,b.name AS building_name,r.name AS room_name
       <tbody>
         <?php foreach($waypoints as $wp): ?>
           <tr>
-            <td style="font-weight:700"><?= h($wp['name']) ?></td>
-            <td style="color:var(--ia-muted)"><?= h($wp['building_name']??'—') ?></td>
-            <td style="color:var(--ia-muted);font-size:12.5px"><?= h($wp['room_name']??'—') ?></td>
-            <td><?= $wp['heading_deg']!==null ? '<span class="badge" style="background:var(--ia-surface-2);color:var(--ia-text)">'.h($wp['heading_deg']).'°</span>' : '<span style="color:var(--ia-muted)">—</span>' ?></td>
-            <td><?= $wp['direction_label'] ? '<span class="badge badge-live">'.h($wp['direction_label']).'</span>' : '<span style="color:var(--ia-muted)">—</span>' ?></td>
-            <td style="font-size:12.5px;color:var(--ia-muted)"><?= h($wp['scene_title']??'—') ?></td>
+            <td class="fw-bold"><?= h($wp['name']) ?></td>
+            <td class="text-ia-muted"><?= h($wp['building_name']??'—') ?></td>
+            <td class="text-ia-muted fs-125"><?= h($wp['room_name']??'—') ?></td>
+            <td><?= $wp['heading_deg']!==null ? '<span class="badge badge-soft">'.h($wp['heading_deg']).'°</span>' : '<span class="text-ia-muted">—</span>' ?></td>
+            <td><?= $wp['direction_label'] ? '<span class="badge badge-live">'.h($wp['direction_label']).'</span>' : '<span class="text-ia-muted">—</span>' ?></td>
+            <td class="fs-125 text-ia-muted"><?= h($wp['scene_title']??'—') ?></td>
             <td><?= $wp['visual_target_path'] ? '<span class="badge badge-live">uploaded</span>' : '<span class="badge badge-off">none</span>' ?></td>
             <td><?= (int)$wp['is_active']===1 ? '<span class="badge badge-live">on</span>' : '<span class="badge badge-draft">off</span>' ?></td>
             <td class="text-end">
@@ -147,16 +147,16 @@ $waypoints = crud()->raw("SELECT w.*,b.name AS building_name,r.name AS room_name
 <!-- compass dial -->
 <div class="ia-card">
   <div class="card-head"><h3>Compass overview</h3></div>
-  <div class="card-body" style="padding:20px">
+  <div class="card-body card-body-lg">
     <div class="d-flex flex-wrap gap-3">
       <?php $grouped=[];foreach($waypoints as $wp){$d=$wp['direction_label']?:'?';$grouped[$d][]=$wp['name'];} ?>
       <?php foreach($cardinals as $label=>$deg): ?>
         <?php $wps=$grouped[$label]??[]; ?>
-        <div style="background:var(--ia-surface-2);border-radius:14px;padding:14px 18px;min-width:120px">
-          <div style="font-weight:800;font-size:18px;color:var(--ia-accent);margin-bottom:4px"><?= $label ?></div>
-          <div style="font-size:11.5px;color:var(--ia-muted);margin-bottom:6px"><?= $deg ?>°</div>
-          <?php if($wps): ?><?php foreach($wps as $wn): ?><div style="font-size:12px;font-weight:600;color:var(--ia-text)"><?= h($wn) ?></div><?php endforeach ?>
-          <?php else: ?><div style="font-size:12px;color:var(--ia-muted)">none</div><?php endif ?>
+        <div class="ar-compass-cell">
+          <div class="ar-compass-label"><?= $label ?></div>
+          <div class="ar-compass-deg"><?= $deg ?>°</div>
+          <?php if($wps): ?><?php foreach($wps as $wn): ?><div class="ar-compass-wp"><?= h($wn) ?></div><?php endforeach ?>
+          <?php else: ?><div class="ar-compass-none">none</div><?php endif ?>
         </div>
       <?php endforeach ?>
     </div>

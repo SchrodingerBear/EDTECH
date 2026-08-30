@@ -754,12 +754,21 @@ function sync_institution_config(int $iid): void
     $cfg = json_decode((string)file_get_contents($configPath), true);
     if (!is_array($cfg)) $cfg = [];
 
-    // Basic settings
-    $cfg['institution_id'] = $iid;
-    $cfg['name']           = $inst['name'];
-    $cfg['short_name']     = $inst['short_name'] ?? '';
-    $cfg['landing_mode']   = $inst['landing_mode'];
-    $cfg['require_landscape_mobile'] = (bool) $inst['require_landscape_mobile'];
+    $stripOrg = function(string $path) use ($inst) {
+        $prefix = 'organizations/' . $inst['slug'] . '/';
+        if (str_starts_with($path, $prefix)) {
+            return substr($path, strlen($prefix));
+        }
+        return $path;
+    };
+
+    $cfg = [
+        'institution_id' => (int) $inst['id'],
+        'name'           => $inst['name'],
+        'short_name'     => $inst['short_name'],
+        'landing_mode'   => $inst['landing_mode'] ?: '360_rotation',
+        'require_landscape_mobile' => (bool) $inst['require_landscape_mobile'],
+    ];
 
     // Theme
     $theme = crud()->get('institution_themes', ['institution_id' => $iid]);
@@ -790,7 +799,7 @@ function sync_institution_config(int $iid): void
         $hsStmt->execute([(int)$sc['id'], $iid]);
         $hotspots = $hsStmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $hsData = array_map(function($h) {
+        $hsData = array_map(function($h) use ($stripOrg) {
             $out = [
                 'id'            => (int) $h['id'],
                 'label'         => $h['label'],
@@ -802,7 +811,7 @@ function sync_institution_config(int $iid): void
             if (!empty($h['to_scene_id'])) {
                 $out['to_scene_id']      = (int) $h['to_scene_id'];
                 $out['to_scene_title']   = $h['to_scene_title'] ?? '';
-                $out['to_scene_equirect'] = $h['to_scene_equirect'] ?? '';
+                $out['to_scene_equirect'] = $stripOrg($h['to_scene_equirect'] ?? '');
                 $out['to_scene_yaw']     = (float) ($h['to_scene_yaw'] ?? 0);
                 $out['to_scene_pitch']   = (float) ($h['to_scene_pitch'] ?? 0);
             }
@@ -812,7 +821,7 @@ function sync_institution_config(int $iid): void
         $cfg['scenes'][(int)$sc['id']] = [
             'id'            => (int) $sc['id'],
             'title'         => $sc['title'],
-            'equirect_path' => $sc['equirect_path'] ?? '',
+            'equirect_path' => $stripOrg($sc['equirect_path'] ?? ''),
             'initial_yaw'   => (float) ($sc['initial_yaw'] ?? 0),
             'initial_pitch' => (float) ($sc['initial_pitch'] ?? 0),
             'hotspots'      => $hsData
@@ -826,7 +835,7 @@ function sync_institution_config(int $iid): void
             $cfg['starting_scene'] = [
                 'id'            => (int) $scene['id'],
                 'title'         => $scene['title'],
-                'equirect_path' => $scene['equirect_path'] ?? '',
+                'equirect_path' => $stripOrg($scene['equirect_path'] ?? ''),
                 'initial_yaw'   => (float) ($scene['initial_yaw'] ?? 0),
                 'initial_pitch' => (float) ($scene['initial_pitch'] ?? 0),
             ];
@@ -840,7 +849,7 @@ function sync_institution_config(int $iid): void
             $cfg['starting_floor_plan'] = [
                 'id'         => (int) $plan['id'],
                 'title'      => $plan['title'],
-                'image_path' => $plan['image_path'],
+                'image_path' => $stripOrg($plan['image_path']),
                 'object_fit' => $plan['object_fit'] ?? 'contain',
             ];
 
@@ -858,7 +867,7 @@ function sync_institution_config(int $iid): void
             $stmt->execute([(int) $plan['id'], $iid]);
             $markers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            $cfg['floor_plan_markers'] = array_map(function($m) {
+            $cfg['floor_plan_markers'] = array_map(function($m) use ($stripOrg) {
                 $out = [
                     'id'          => (int) $m['id'],
                     'label'       => $m['label'],
@@ -873,14 +882,14 @@ function sync_institution_config(int $iid): void
                     $out['target_type']     = 'scene';
                     $out['target_scene_id'] = (int) $m['target_scene_id'];
                     $out['scene_title']     = $m['scene_title'] ?? '';
-                    $out['scene_equirect']  = $m['scene_equirect'] ?? '';
+                    $out['scene_equirect']  = $stripOrg($m['scene_equirect'] ?? '');
                     $out['scene_yaw']       = (float) ($m['scene_yaw'] ?? 0);
                     $out['scene_pitch']     = (float) ($m['scene_pitch'] ?? 0);
                 } elseif (!empty($m['target_floor_plan_id'])) {
                     $out['target_type']          = 'floor_plan';
                     $out['target_floor_plan_id'] = (int) $m['target_floor_plan_id'];
                     $out['sub_fp_title']         = $m['sub_fp_title'] ?? '';
-                    $out['sub_fp_image']         = $m['sub_fp_image'] ?? '';
+                    $out['sub_fp_image']         = $stripOrg($m['sub_fp_image'] ?? '');
                 } else {
                     $out['target_type'] = 'popup';
                 }
@@ -905,38 +914,330 @@ function sync_institution_config(int $iid): void
         copy($tplCssPath, $orgDir . '/assets/style.css');
     }
 }
+/** Turn a stored media path or absolute URL into a browser URL (never double-prefix). */
+function media_url(string $path, string $fallback = ''): string
+{
+    $path = normalize_media_path($path);
+    if ($path === '') {
+        return $fallback !== '' ? media_url($fallback) : '';
+    }
+    if (preg_match('#^(https?:)?//#i', $path) === 1) {
+        return str_starts_with($path, '//') ? 'https:' . $path : $path;
+    }
+    return url($path);
+}
+
+/** Strip this app's origin so we store project-relative paths, not localhost URLs. */
+function normalize_media_path(string $path): string
+{
+    $path = trim($path);
+    if ($path === '') {
+        return '';
+    }
+    $path = str_replace('\\', '/', $path);
+    $decoded = rawurldecode($path);
+    $base = rtrim((string) BASE_URL, '/');
+    $bases = array_unique(array_filter([
+        $base,
+        rawurldecode($base),
+        str_replace(' ', '%20', $base),
+        str_replace('%20', ' ', $base),
+    ]));
+    foreach ([$path, $decoded] as $candidate) {
+        foreach ($bases as $b) {
+            if ($b !== '' && str_starts_with($candidate, $b . '/')) {
+                return ltrim(substr($candidate, strlen($b)), '/');
+            }
+        }
+    }
+    return $decoded;
+}
+
+/** Image files under project-relative folders (for the owner media library). */
+function list_image_library(array $relativeDirs, int $limit = 240): array
+{
+    static $cache = [];
+    $cacheKey = implode('|', $relativeDirs) . ':' . $limit;
+    if (isset($cache[$cacheKey])) {
+        return $cache[$cacheKey];
+    }
+
+    $out = [];
+    $exts = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
+    $skipDir = ['node_modules', '.git', 'vendor', 'manager', 'old'];
+    foreach ($relativeDirs as $dir) {
+        $abs = ROOT_PATH . '/' . trim(str_replace('\\', '/', $dir), '/');
+        if (!is_dir($abs)) {
+            continue;
+        }
+        try {
+            $rdi = new RecursiveDirectoryIterator($abs, FilesystemIterator::SKIP_DOTS);
+            $filter = new RecursiveCallbackFilterIterator($rdi, static function ($current) use ($skipDir) {
+                if ($current->isDir()) {
+                    return !in_array(strtolower($current->getFilename()), $skipDir, true);
+                }
+                return true;
+            });
+            $rii = new RecursiveIteratorIterator($filter, RecursiveIteratorIterator::SELF_FIRST);
+            foreach ($rii as $file) {
+                if (!$file->isFile()) {
+                    continue;
+                }
+                $ext = strtolower($file->getExtension());
+                if (!in_array($ext, $exts, true)) {
+                    continue;
+                }
+                $full = str_replace('\\', '/', $file->getPathname());
+                $rel = ltrim(substr($full, strlen(str_replace('\\', '/', ROOT_PATH))), '/');
+                if (str_contains($rel, '/aframe.min') || str_contains($rel, '/node_modules/')) {
+                    continue;
+                }
+                $out[] = [
+                    'name' => $file->getFilename(),
+                    'path' => $rel,
+                    'url'  => media_url($rel),
+                ];
+                if (count($out) >= $limit) {
+                    $cache[$cacheKey] = $out;
+                    return $out;
+                }
+            }
+        } catch (Throwable $e) {
+            continue;
+        }
+    }
+    $cache[$cacheKey] = $out;
+    return $out;
+}
+
+function directory_bytes(string $abs): int
+{
+    if (!is_dir($abs)) {
+        return 0;
+    }
+    $bytes = 0;
+    try {
+        $it = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($abs, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::LEAVES_ONLY
+        );
+        foreach ($it as $file) {
+            if ($file->isFile()) {
+                $bytes += (int) $file->getSize();
+            }
+        }
+    } catch (Throwable $e) {
+        return $bytes;
+    }
+    return $bytes;
+}
+
+function format_bytes(int $bytes): string
+{
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    $n = (float) max(0, $bytes);
+    $i = 0;
+    while ($n >= 1024 && $i < count($units) - 1) {
+        $n /= 1024;
+        $i++;
+    }
+    $decimals = ($i === 0 || $n >= 10) ? 0 : 1;
+    return number_format($n, $decimals) . ' ' . $units[$i];
+}
+
+/**
+ * Folders the web server may write media into (first writable wins).
+ * @return list<string>
+ */
+function upload_dir_candidates(string $preferred = 'public/uploads'): array
+{
+    $preferred = trim(str_replace('\\', '/', $preferred), '/');
+    $list = [$preferred, 'public/uploads', 'assets/uploads', 'storage/uploads'];
+    return array_values(array_unique(array_filter($list)));
+}
+
+/**
+ * Create or reuse a writable media folder. Returns the project-relative path used.
+ */
+function ensure_writable_dir(string $preferredRelative = 'public/uploads'): string
+{
+    $errors = [];
+    foreach (upload_dir_candidates($preferredRelative) as $rel) {
+        $abs = ROOT_PATH . '/' . $rel;
+        if (!is_dir($abs)) {
+            error_clear_last();
+            $ok = @mkdir($abs, 0777, true);
+            if (!$ok && !is_dir($abs)) {
+                $err = error_get_last();
+                $phpErr = $err ? $err['message'] : 'unknown error';
+                $parent = dirname($abs);
+                $parentExists = is_dir($parent) ? 'yes' : 'no';
+                $parentWritable = is_writable($parent) ? 'yes' : 'no';
+                $errors[] = "$rel (mkdir failed. parent_exists=$parentExists, parent_writable=$parentWritable, error=$phpErr)";
+                continue;
+            }
+        }
+        @chmod($abs, 0777);
+        if (is_dir($abs) && is_writable($abs)) {
+            $probe = $abs . '/.write-test';
+            if (@file_put_contents($probe, 'ok') !== false) {
+                @unlink($probe);
+                return $rel;
+            }
+            $errors[] = $rel . ' (folder exists but is not writable by PHP)';
+            continue;
+        }
+        $errors[] = $rel . ' (not writable)';
+    }
+    $user = function_exists('posix_getpwuid') && function_exists('posix_geteuid')
+        ? ((posix_getpwuid(posix_geteuid())['name'] ?? '') ?: ('uid ' . posix_geteuid()))
+        : (get_current_user() ?: 'the PHP user');
+    throw new RuntimeException(
+        'Could not create a writable upload folder for ' . $user . ". Tried:\n- "
+        . implode("\n- ", $errors)
+        . "\n\nFix folder permissions (see Help Center → Server environment) or pick a project file / paste a path instead."
+    );
+}
+
+/**
+ * Project file sizes used by the owner/system storage chart.
+ * @return array{storage: array<string,int>, storageUsed: int, diskFree: int, diskTotal: int}
+ */
+function project_storage_stats(): array
+{
+    $storage = [
+        'organizations' => directory_bytes(ORG_ROOT),
+        'public'        => directory_bytes(ROOT_PATH . '/public'),
+        'assets'        => directory_bytes(ROOT_PATH . '/assets'),
+    ];
+    $diskFree = @disk_free_space(ROOT_PATH);
+    $diskTotal = @disk_total_space(ROOT_PATH);
+    return [
+        'storage'     => $storage,
+        'storageUsed' => array_sum($storage),
+        'diskFree'    => is_numeric($diskFree) ? (int) $diskFree : 0,
+        'diskTotal'   => is_numeric($diskTotal) ? (int) $diskTotal : 0,
+    ];
+}
+
+/**
+ * PHP / write-permission checks for the owner Help Center.
+ * @return list<array{label:string, ok:bool, detail:string}>
+ */
+function platform_environment_checks(): array
+{
+    $phpMin = '8.1.0';
+    $rows = [];
+    $rows[] = [
+        'label'  => 'PHP version',
+        'ok'     => version_compare(PHP_VERSION, $phpMin, '>='),
+        'detail' => PHP_VERSION . ' (need ' . $phpMin . '+)',
+    ];
+    foreach (['pdo_mysql' => 'MySQL PDO', 'fileinfo' => 'Fileinfo (uploads)', 'mbstring' => 'mbstring', 'json' => 'JSON', 'openssl' => 'OpenSSL'] as $ext => $label) {
+        $on = extension_loaded($ext);
+        $rows[] = ['label' => $label, 'ok' => $on, 'detail' => $on ? 'loaded' : 'missing — enable in php.ini'];
+    }
+    $gd = extension_loaded('gd') || extension_loaded('imagick');
+    $rows[] = [
+        'label'  => 'Image processing (GD or Imagick)',
+        'ok'     => $gd,
+        'detail' => $gd ? (extension_loaded('gd') ? 'GD' : 'Imagick') : 'optional, but recommended for thumbnails',
+    ];
+    $fileUploads = filter_var(ini_get('file_uploads'), FILTER_VALIDATE_BOOLEAN);
+    $rows[] = ['label' => 'file_uploads', 'ok' => (bool) $fileUploads, 'detail' => $fileUploads ? 'On' : 'Off in php.ini'];
+    $rows[] = ['label' => 'upload_max_filesize', 'ok' => true, 'detail' => (string) ini_get('upload_max_filesize')];
+    $rows[] = ['label' => 'post_max_size', 'ok' => true, 'detail' => (string) ini_get('post_max_size')];
+    $tmp = (string) (ini_get('upload_tmp_dir') ?: sys_get_temp_dir());
+    $rows[] = [
+        'label'  => 'Temp upload dir',
+        'ok'     => $tmp !== '' && is_dir($tmp) && is_writable($tmp),
+        'detail' => $tmp . (is_writable($tmp) ? ' (writable)' : ' (not writable)'),
+    ];
+    $paths = [
+        'Project root'     => ROOT_PATH,
+        'public/'          => ROOT_PATH . '/public',
+        'public/uploads/'  => ROOT_PATH . '/public/uploads',
+        'assets/'          => ROOT_PATH . '/assets',
+        'assets/uploads/'  => ROOT_PATH . '/assets/uploads',
+        'storage/uploads/' => ROOT_PATH . '/storage/uploads',
+        'organizations/'   => ORG_ROOT,
+    ];
+    foreach ($paths as $label => $abs) {
+        $exists = is_dir($abs);
+        $writable = $exists && is_writable($abs);
+        $detail = $exists ? ($writable ? 'writable' : 'exists, not writable') : 'missing';
+        if ($exists) {
+            $owner = '';
+            if (function_exists('posix_getpwuid') && ($st = @stat($abs))) {
+                $pw = posix_getpwuid((int) $st['uid']);
+                $owner = $pw['name'] ?? ('uid ' . $st['uid']);
+                $detail .= ' · owner ' . $owner . ' · mode ' . substr(sprintf('%o', (int) $st['mode']), -4);
+            }
+        }
+        $rows[] = ['label' => $label, 'ok' => $writable, 'detail' => $detail];
+    }
+    $sapi = PHP_SAPI;
+    $user = function_exists('posix_getpwuid') && function_exists('posix_geteuid')
+        ? ((posix_getpwuid(posix_geteuid())['name'] ?? '') ?: ('uid ' . posix_geteuid()))
+        : get_current_user();
+    $rows[] = ['label' => 'PHP SAPI / user', 'ok' => true, 'detail' => $sapi . ' as ' . $user];
+    return $rows;
+}
+
 /**
  * Handle universal media picker uploads.
- * If a file is uploaded, moves it to $targetDir and returns the relative path.
- * If a URL/path is provided, returns it as is.
- * Returns null if neither is provided.
+ * Returns a project-relative path, an external URL, or '' when the field was cleared.
+ * Returns null when this form did not include the picker.
  */
 function handle_media_picker(string $fieldName, string $targetDir): ?string
 {
     $uploadField = $fieldName . '_upload';
     $urlField = $fieldName . '_url';
-    
-    // Check if a file was uploaded
-    if (!empty($_FILES[$uploadField]['name'])) {
-        $ext = strtolower(pathinfo($_FILES[$uploadField]['name'], PATHINFO_EXTENSION)) ?: 'jpg';
-        $name = random_token(6) . '.' . $ext;
-        
-        // Ensure directory exists
-        $absTargetDir = str_starts_with($targetDir, '/') ? ROOT_PATH . $targetDir : ROOT_PATH . '/' . $targetDir;
-        if (!is_dir($absTargetDir)) {
-            mkdir($absTargetDir, 0775, true);
-        }
-        
-        $targetFile = rtrim($absTargetDir, '/') . '/' . $name;
-        if (move_uploaded_file($_FILES[$uploadField]['tmp_name'], $targetFile)) {
-            return ltrim($targetDir, '/') . '/' . $name;
+    $allowed = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'];
+    $postedUrl = array_key_exists($urlField, $_POST)
+        ? normalize_media_path(trim((string) $_POST[$urlField]))
+        : null;
+
+    $file = $_FILES[$uploadField] ?? null;
+    $hasUpload = is_array($file) && (int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+
+    if ($hasUpload) {
+        try {
+            $err = (int) $file['error'];
+            if ($err !== UPLOAD_ERR_OK) {
+                $map = [
+                    UPLOAD_ERR_INI_SIZE   => 'The image is larger than the server upload limit (upload_max_filesize).',
+                    UPLOAD_ERR_FORM_SIZE  => 'The image is too large.',
+                    UPLOAD_ERR_PARTIAL    => 'The image upload was interrupted.',
+                    UPLOAD_ERR_NO_TMP_DIR => 'Server temp folder is missing.',
+                    UPLOAD_ERR_CANT_WRITE => 'Could not write the uploaded image.',
+                ];
+                throw new RuntimeException($map[$err] ?? 'Image upload failed.');
+            }
+            $ext = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowed, true)) {
+                throw new RuntimeException('Unsupported image type. Use PNG, JPG, WebP, GIF, SVG, or AVIF.');
+            }
+            $usedDir = ensure_writable_dir($targetDir);
+            $name = random_token(8) . '.' . $ext;
+            $absTargetDir = ROOT_PATH . '/' . $usedDir;
+            $targetFile = rtrim($absTargetDir, '/') . '/' . $name;
+            $tmp = (string) $file['tmp_name'];
+            $moved = is_uploaded_file($tmp) && move_uploaded_file($tmp, $targetFile);
+            if (!$moved) {
+                throw new RuntimeException('Could not save the uploaded image into ' . $usedDir . '.');
+            }
+            @chmod($targetFile, 0666);
+            return $usedDir . '/' . $name;
+        } catch (Throwable $e) {
+            // Throw so the caller knows the explicit upload attempt failed
+            throw $e instanceof RuntimeException ? $e : new RuntimeException($e->getMessage());
         }
     }
-    
-    // Check if a URL/path was provided
-    if (!empty($_POST[$urlField])) {
-        return trim($_POST[$urlField]);
+
+    if ($postedUrl === null) {
+        return null;
     }
-    
-    return null;
+
+    return $postedUrl;
 }

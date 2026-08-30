@@ -5,11 +5,11 @@
 require_once __DIR__ . '/../../includes/auth.php';
 require_admin_staff();
 require_page('staff.uploads');
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'Media Uploads';
 $pageSub = 'Featured and gallery images for buildings, rooms and tours';
 $active = 'Media Uploads';
+$bodyClass = 'page-staff-uploads';
+require_once __DIR__ . '/../layout/header.php';
 
 $inst = current_institution();
 $iid = (int) $inst['id'];
@@ -69,7 +69,7 @@ $kinds = ['gallery' => 'Gallery', 'featured' => 'Featured', 'pano' => 'Panorama'
 $badge = ['gallery' => 'badge-draft', 'featured' => 'badge-live', 'pano' => 'badge-live', 'floor_plan' => 'badge-live', 'ar_target' => 'badge-live', 'logo' => 'badge-live', 'other' => 'badge-off'];
 ?>
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-  <p class="mb-1" style="color:var(--ia-muted);font-size:13.5px"><?= count($media) ?> asset(s) in <code>assets/uploads/</code></p>
+  <p class="mb-1 ia-meta-lg"><?= count($media) ?> asset(s) in <code>assets/uploads/</code></p>
   <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#up-modal"><?= ia_icon('upload', 16) ?> Upload media</button>
 </div>
 
@@ -123,14 +123,5 @@ $badge = ['gallery' => 'badge-draft', 'featured' => 'badge-live', 'pano' => 'bad
     </form>
   </div></div>
 </div>
-
-<style>
-  .media-tile { position:relative; width:150px; border:1px solid var(--ia-border); border-radius:14px; overflow:hidden; background:var(--ia-surface); }
-  .media-tile > img { width:100%; height:110px; object-fit:cover; display:block; }
-  .media-file { height:110px; display:grid; place-items:center; color:var(--ia-muted); flex-direction:column; background:var(--ia-surface-2); }
-  .media-file span { font-size:10.5px; font-weight:700; margin-top:4px; }
-  .media-meta { display:flex; justify-content:space-between; align-items:center; padding:8px; }
-  .media-path { font-size:10px; color:var(--ia-muted); padding:0 8px 8px; word-break:break-all; }
-</style>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>

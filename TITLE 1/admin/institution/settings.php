@@ -1,15 +1,15 @@
 <?php
 require_once __DIR__ . '/../../includes/auth.php';
-require_admin();
+require_role('admin', 'staff');
 require_page('admin.settings');
 /**
  * Innovatech PH — admin: visual environment (landing mode, starting point, theme, popups).
  */
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'Settings';
 $pageSub = 'Landing mode, starting point and the visual theme';
 $active = 'Settings';
+$bodyClass = 'page-settings';
+require_once __DIR__ . '/../layout/header.php';
 
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
@@ -206,7 +206,7 @@ $tabs = [
             <input class="form-check-input" type="checkbox" name="is_published" id="pub" <?= (int) ($inst['is_published'] ?? 0) === 1 ? 'checked' : '' ?>>
             <label class="form-check-label" for="pub">Campus landing is live for visitors</label>
           </div>
-          <p class="text-muted mb-0" style="font-size:12.5px">Public link: <code><?= h(org_url($inst['slug'], '')) ?></code></p>
+          <p class="text-muted mb-0 fs-125">Public link: <code><?= h(org_url($inst['slug'], '')) ?></code></p>
         </div>
         <button class="btn btn-grad px-4"><?= ia_icon('rocket', 15) ?> Save publish state</button>
       </div>
@@ -236,19 +236,25 @@ $tabs = [
               <option value="other" <?= !$isStd ? 'selected' : '' ?>>Other…</option>
             </select>
           </div>
-          <div class="col-md-3" id="set-type-other-wrap" style="<?= !$isStd ? '' : 'display:none' ?>">
+          <div class="col-md-3 <?= $isStd ? 'd-none' : '' ?>" id="set-type-other-wrap">
             <label class="form-label">Specify type</label>
             <input class="form-control" name="institution_type_other" value="<?= !$isStd ? h($curType) : '' ?>" placeholder="e.g. Technical-Vocational Institute">
           </div>
         </div>
         <div><label class="form-label">Description</label><textarea class="form-control" name="description" rows="3"><?= h($inst['description'] ?? '') ?></textarea></div>
         <div class="row g-3">
-          <div class="col-md-6"><label class="form-label">Address</label><input class="form-control" name="address" value="<?= h($inst['address'] ?? '') ?>"></div>
-          <div class="col-md-3"><label class="form-label">City</label><input class="form-control" name="city" value="<?= h($inst['city'] ?? '') ?>"></div>
-          <div class="col-md-3"><label class="form-label">Province</label><input class="form-control" name="province" value="<?= h($inst['province'] ?? '') ?>"></div>
-          <div class="col-md-3"><label class="form-label">Country</label><input class="form-control" name="country" value="<?= h($inst['country'] ?? 'Philippines') ?>"></div>
-          <div class="col-md-3"><label class="form-label">Latitude</label><input class="form-control" name="latitude" value="<?= h($inst['latitude'] ?? '') ?>" placeholder="e.g. 14.5534344"></div>
-          <div class="col-md-3"><label class="form-label">Longitude</label><input class="form-control" name="longitude" value="<?= h($inst['longitude'] ?? '') ?>" placeholder="e.g. 121.0496843"></div>
+          <div class="col-md-12">
+            <label class="form-label">Address</label>
+            <div class="pw-group">
+              <input class="form-control" name="address" id="inst-addr" value="<?= h($inst['address'] ?? '') ?>" readonly onclick="IAAddr.open()" title="Click to search or pin on the map">
+              <button type="button" class="btn btn-outline-ia btn-shrink" onclick="IAAddr.open()"><?= ia_icon('map', 14) ?> Pick on map</button>
+            </div>
+          </div>
+          <div class="col-md-3"><label class="form-label">City</label><input class="form-control" name="city" id="inst-city" value="<?= h($inst['city'] ?? '') ?>"></div>
+          <div class="col-md-3"><label class="form-label">Province</label><input class="form-control" name="province" id="inst-province" value="<?= h($inst['province'] ?? '') ?>"></div>
+          <div class="col-md-2"><label class="form-label">Country</label><input class="form-control" name="country" id="inst-country" value="<?= h($inst['country'] ?? 'Philippines') ?>"></div>
+          <div class="col-md-2"><label class="form-label">Latitude</label><input class="form-control" name="latitude" id="inst-lat" value="<?= h($inst['latitude'] ?? '') ?>" placeholder="e.g. 14.5534344"></div>
+          <div class="col-md-2"><label class="form-label">Longitude</label><input class="form-control" name="longitude" id="inst-lng" value="<?= h($inst['longitude'] ?? '') ?>" placeholder="e.g. 121.0496843"></div>
         </div>
         <div class="row g-3">
           <div class="col-md-5"><label class="form-label">Website</label><input class="form-control" name="website_url" value="<?= h($inst['website_url'] ?? '') ?>" placeholder="https://"></div>
@@ -268,7 +274,7 @@ $tabs = [
             <?php if (!empty($inst['cover_image_path'])): ?>
               <div class="mt-2">
                 <span class="text-muted small d-block mb-1">Current cover:</span>
-                <img src="<?= h($inst['cover_image_path']) ?>" alt="Cover" style="height:60px;border-radius:6px;object-fit:cover">
+                <img src="<?= h($inst['cover_image_path']) ?>" alt="Cover" class="cover-thumb">
               </div>
             <?php endif; ?>
           </div>
@@ -317,7 +323,7 @@ $tabs = [
           <div class="form-text">Runs only on your own institution landing.</div>
         </div>
         <div class="d-flex justify-content-between align-items-center">
-          <span class="theme-preview"><span class="sw" style="background:<?= h($theme['primary_color']) ?>"></span><span class="sw" style="background:<?= h($theme['secondary_color']) ?>"></span><span class="sw" style="background:<?= h($theme['accent_color']) ?>"></span></span>
+          <span class="theme-preview"><span class="sw" style="--sw:<?= h($theme['primary_color']) ?>"></span><span class="sw" style="--sw:<?= h($theme['secondary_color']) ?>"></span><span class="sw" style="--sw:<?= h($theme['accent_color']) ?>"></span></span>
           <button class="btn btn-grad px-4"><?= ia_icon('save', 15) ?> Save theme</button>
         </div>
       </div>
@@ -325,25 +331,40 @@ $tabs = [
   </div>
 </div>
 
-<style>
-  .mode-card { cursor:pointer; }
-  .mode-card > input { position:absolute; opacity:0; }
-  .mode-box { display:flex; flex-direction:column; gap:2px; padding:18px; border-radius:16px; border:2px solid var(--ia-border); background:var(--ia-surface); transition:all .15s; }
-  .mode-card > input:checked + .mode-box { border-color: var(--ia-primary); box-shadow:0 0 0 4px var(--ia-primary-soft); }
-  .mode-icon { font-size:20px; color:var(--ia-primary); margin-bottom:6px; }
-  .mode-title { font-weight:800; font-size:15px; }
-  .mode-sub { font-size:12.5px; color:var(--ia-muted); }
-  .nav-ia .nav-link { color:var(--ia-muted); font-weight:600; border:none; padding:10px 16px; border-radius:12px; margin-right:6px; }
-  .nav-ia .nav-link.active { background:var(--ia-surface-2); color:var(--ia-text); }
-  .code-area { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; }
-  .theme-preview .sw { display:inline-block; width:26px; height:26px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.25); margin-right:6px; }
-</style>
+<!-- address picker modal -->
+<div class="modal fade" id="ia-addr-modal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-xl modal-dialog-centered"><div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title">Find the institution address</h5>
+      <button class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body p-0">
+      <div class="p-3 divider-bottom">
+        <div class="input-icon">
+          <span class="icon"><?= ia_icon('search', 16) ?></span>
+          <input type="text" class="form-control" id="ia-addr-search" placeholder="Search a specific address, street, campus…">
+        </div>
+        <div id="ia-addr-results" class="d-none mt-2"></div>
+      </div>
+      <div id="ia-addr-map"></div>
+    </div>
+    <div class="modal-footer">
+      <span class="text-muted me-auto fs-125" id="ia-addr-status">Search or click the map to place a pin, then apply.</span>
+      <button class="btn btn-outline-ia" type="button" data-bs-dismiss="modal">Cancel</button>
+      <button class="btn btn-grad px-4" type="button" id="ia-addr-apply">Apply address</button>
+    </div>
+  </div></div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const typeSel = document.getElementById('set-type')
   const otherWrap = document.getElementById('set-type-other-wrap')
   if (typeSel && otherWrap) {
-    const sync = () => { otherWrap.style.display = typeSel.value === 'other' ? '' : 'none' }
+    const sync = () => { otherWrap.classList.toggle('d-none', typeSel.value !== 'other') }
     typeSel.addEventListener('change', sync)
     sync()
   }
@@ -354,7 +375,134 @@ document.addEventListener('DOMContentLoaded', () => {
       document.querySelector('select[name="starting_scene_id"]').closest('div').style.opacity = fp ? .45 : 1
     })
   })
-})
+});
+
+/* -------------------- Leaflet + Nominatim address picker ------------------- */
+(function () {
+  var MAP_MODAL = document.getElementById('ia-addr-modal');
+  var mapEl = document.getElementById('ia-addr-map');
+  var searchEl = document.getElementById('ia-addr-search');
+  var resultsEl = document.getElementById('ia-addr-results');
+  var statusEl = document.getElementById('ia-addr-status');
+  var applyBtn = document.getElementById('ia-addr-apply');
+  if (!MAP_MODAL || !mapEl) return;
+
+  var map = null, marker = null, picked = null, debounce = null;
+
+  function latLng() {
+    return picked ? L.latLng(picked.lat, picked.lon) : L.latLng(13.6, 121.0);
+  }
+
+  function ensureMap() {
+    if (map) return;
+    map = L.map(mapEl).setView(latLng(), 6);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    marker = L.marker(latLng(), { draggable: true }).addTo(map);
+    marker.on('dragend', function () {
+      var p = marker.getLatLng();
+      reverse(p.lat, p.lng);
+    });
+    map.on('click', function (e) {
+      marker.setLatLng(e.latlng);
+      reverse(e.latlng.lat, e.latlng.lng);
+    });
+    setTimeout(function () { map.invalidateSize(); }, 250);
+  }
+
+  function reverse(lat, lon) {
+    statusEl.textContent = 'Looking up that point…';
+    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lon + '&zoom=18&addressdetails=1')
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        picked = { lat: lat, lon: lon, display_name: d.display_name || '', address: d.address || {} };
+        fillStatus();
+      })
+      .catch(function () { statusEl.textContent = 'Reverse lookup failed — try typing the address instead.'; });
+  }
+
+  function fillStatus() {
+    if (!picked) return;
+    statusEl.textContent = picked.display_name ? picked.display_name : (picked.lat.toFixed(6) + ', ' + picked.lon.toFixed(6));
+  }
+
+  searchEl.addEventListener('input', function () {
+    clearTimeout(debounce);
+    var q = searchEl.value.trim();
+    if (q.length < 4) { resultsEl.classList.add('d-none'); resultsEl.innerHTML = ''; return; }
+    debounce = setTimeout(function () {
+      fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&q=' + encodeURIComponent(q) + '&limit=6&addressdetails=1&countrycodes=ph')
+        .then(function (r) { return r.json(); })
+        .catch(function () { return []; })
+        .then(function (items) { renderResults(items); });
+    }, 350);
+  });
+
+  function renderResults(items) {
+    resultsEl.innerHTML = '';
+    if (!items || !items.length) {
+resultsEl.classList.remove('d-none');
+    resultsEl.innerHTML = '<div class="text-muted fs-13 ia-addr-empty">No exact match — try a different keyword, or pin the campus on the map below.</div>';
+    return;
+  }
+  resultsEl.classList.remove('d-none');
+    items.forEach(function (it) {
+      var name = document.createElement('div');
+      name.className = 'ia-addr-result';
+      name.textContent = it.display_name;
+      name.addEventListener('click', function () {
+        selected(it);
+        resultsEl.classList.add('d-none');
+        resultsEl.innerHTML = '';
+        searchEl.value = '';
+      });
+      resultsEl.appendChild(name);
+    });
+  }
+
+  function selected(it) {
+    picked = { lat: parseFloat(it.lat), lon: parseFloat(it.lon), display_name: it.display_name, address: it.address || {} };
+    ensureMap();
+    marker.setLatLng([picked.lat, picked.lon]);
+    map.setView([picked.lat, picked.lon], 16);
+    fillStatus();
+  }
+
+  window.IAAddr = {
+    open: function () {
+      if (!picked) {
+        var existingLat = document.getElementById('inst-lat').value;
+        var existingLng = document.getElementById('inst-lng').value;
+        if (existingLat && existingLng) {
+          picked = { lat: parseFloat(existingLat), lon: parseFloat(existingLng) };
+        }
+      }
+      ensureMap();
+      if (picked) { marker.setLatLng([picked.lat, picked.lon]); map.setView([picked.lat, picked.lon], 16); }
+      var bs = new bootstrap.Modal(MAP_MODAL);
+      bs.show();
+    }
+  };
+
+  applyBtn.addEventListener('click', function () {
+    if (!picked) { statusEl.textContent = 'Please pick a location first.'; return; }
+    var a = picked.address || {};
+    var city = a.city || a.town || a.municipality || a.county || '';
+    var prov = a.state || a.province || a.region || '';
+    var addr = picked.display_name || '';
+    document.getElementById('inst-addr').value = addr;
+    document.getElementById('inst-city').value = city;
+    document.getElementById('inst-province').value = prov;
+    if (a.country) document.getElementById('inst-country').value = a.country;
+    document.getElementById('inst-lat').value = picked.lat.toFixed(7);
+    document.getElementById('inst-lng').value = picked.lon.toFixed(7);
+    var bs = bootstrap.Modal.getInstance(MAP_MODAL);
+    if (bs) bs.hide();
+    document.getElementById('inst-addr').dispatchEvent(new Event('input', { bubbles: true }));
+  });
+})();
 </script>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>

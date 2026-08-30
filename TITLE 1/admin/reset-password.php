@@ -48,16 +48,16 @@ if (!$reset) {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="<?= url('admin/assets/css/dashboard.css') ?>" rel="stylesheet">
 </head>
-<body class="d-flex align-items-center justify-content-center" style="min-height:100vh">
-  <div style="width:100%;max-width:400px;padding:20px">
+<body class="page-auth d-flex align-items-center justify-content-center min-vh-100">
+  <div class="rp-box">
     <div class="ia-card">
       <div class="card-head"><h3><?= $ok ? 'All set' : ($reset ? 'Choose a new password' : 'Reset link invalid') ?></h3></div>
       <div class="card-body">
         <?php if ($ok): ?>
-          <p class="text-muted" style="font-size:14px">Your password has been updated. You can now sign in.</p>
+          <p class="text-muted small">Your password has been updated. You can now sign in.</p>
           <a class="btn btn-grad w-100 py-2" href="<?= url('admin/index') ?>">Go to sign in</a>
         <?php elseif ($error): ?>
-          <div class="alert alert-danger border-0 rounded-4 py-2 small" style="background:rgba(239,68,68,.12);color:var(--ia-danger)"><?= h($error) ?></div>
+          <div class="alert alert-ia-danger border-0 rounded-4 py-2 small"><?= h($error) ?></div>
           <a class="btn btn-outline-ia w-100 py-2" href="<?= url('admin/index?action=forgot') ?>">Request a new link</a>
         <?php else: ?>
           <form method="post" class="d-grid gap-3">

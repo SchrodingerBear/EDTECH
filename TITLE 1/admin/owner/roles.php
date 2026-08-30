@@ -6,11 +6,11 @@ require_page('owner.roles');
  * Innovatech PH — owner: role & page-access management.
  * Set the exact pages each account may open. Empty = full access (default).
  */
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'Role Management';
 $pageSub = 'Control which pages each account can open';
 $active = 'Role Management';
+$bodyClass = 'page-owner-roles';
+require_once __DIR__ . '/../layout/header.php';
 
 // page catalog per role (matches nav page keys)
 $pageCatalog = [
@@ -104,7 +104,7 @@ $rolesName = ['system_admin' => 'System Admin', 'system_staff' => 'System Staff'
 <div class="ia-card">
   <div class="card-head">
     <h3>Page access</h3>
-    <span class="text-muted" style="font-size:12.5px">Accounts with no explicit list can open everything.</span>
+    <span class="text-muted fs-125">Accounts with no explicit list can open everything.</span>
   </div>
   <div class="table-responsive">
     <table class="table table-ia">
@@ -113,11 +113,11 @@ $rolesName = ['system_admin' => 'System Admin', 'system_staff' => 'System Staff'
         <?php foreach ($accounts as $acc): $slug = $acc['role_slug']; $has = isset($accessMap[$acc['id']]) ? array_keys($accessMap[$acc['id']]) : []; ?>
           <tr>
             <td>
-              <div style="font-weight:700"><?= h($acc['first_name'] . ' ' . $acc['last_name']) ?></div>
-              <div style="font-size:12.5px;color:var(--ia-muted)"><?= h($acc['email']) ?></div>
+              <div class="fw-bold"><?= h($acc['first_name'] . ' ' . $acc['last_name']) ?></div>
+              <div class="fs-125 text-ia-muted"><?= h($acc['email']) ?></div>
             </td>
-            <td><span class="badge" style="background:var(--ia-surface-2)"><?= h($rolesName[$slug] ?? ucfirst($slug)) ?></span></td>
-            <td style="color:var(--ia-muted)"><?= h($acc['inst_name'] ?? '—') ?></td>
+            <td><span class="badge badge-surface"><?= h($rolesName[$slug] ?? ucfirst($slug)) ?></span></td>
+            <td class="text-ia-muted"><?= h($acc['inst_name'] ?? '—') ?></td>
             <td>
               <?php if (!$has): ?>
                 <span class="badge badge-live">All pages</span>
@@ -142,16 +142,16 @@ $rolesName = ['system_admin' => 'System Admin', 'system_staff' => 'System Staff'
                 <input type="hidden" name="access_action" value="save">
                 <input type="hidden" name="user_id" value="<?= (int) $acc['id'] ?>">
                 <div class="modal-body">
-                  <p style="font-size:13px;color:var(--ia-muted)"><?= h($acc['email']) ?> · <?= h($rolesName[$slug] ?? ucfirst($slug)) ?></p>
-                  <p style="font-size:12.5px;color:var(--ia-muted)">
+                  <p class="fs-13 text-ia-muted"><?= h($acc['email']) ?> · <?= h($rolesName[$slug] ?? ucfirst($slug)) ?></p>
+                  <p class="fs-125 text-ia-muted">
                     Tick the pages this account may open. Leave all unticked for <strong>full access</strong> (recommended default).
                   </p>
                   <div class="d-grid gap-2">
                     <?php foreach ($pageCatalog[$slug] as [$key, $label]): ?>
-                      <label class="d-flex align-items-center gap-3 p-3 rounded-4" style="background:var(--ia-surface);border:1px solid var(--ia-border);cursor:pointer">
-                        <input class="form-check-input mt-0" type="checkbox" name="page_keys[]" value="<?= h($key) ?>" <?= isset($accessMap[$acc['id']][$key]) ? 'checked' : '' ?>>
-                        <span style="font-weight:600;font-size:14px"><?= h($label) ?></span>
-                        <code class="ms-auto text-muted" style="font-size:11.5px"><?= h($key) ?></code>
+                      <label class="d-flex align-items-center gap-3 p-3 rounded-4 perm-option">
+                        <input class="form-check-input mt-0" type="checkbox" name="page_keys[]" value="<?= h($key) ?>" <?= (isset($accessMap[$acc['id']][$key]) || empty($has)) ? 'checked' : '' ?>>
+                        <span class="fw-semibold fs-14"><?= h($label) ?></span>
+                        <code class="ms-auto text-muted ia-micro"><?= h($key) ?></code>
                       </label>
                     <?php endforeach; ?>
                   </div>

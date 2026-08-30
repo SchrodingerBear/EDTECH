@@ -1,15 +1,15 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../includes/auth.php';
 require_owner();
 require_page('owner.archive');
 /**
  * Innovatech PH — owner: Archive & Restore for Institutions and Accounts.
  */
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'Archive & Restore';
 $pageSub = 'Recover deleted institutions and user accounts';
 $active = 'Archive & Restore';
+$bodyClass = 'page-owner-archive';
+require_once __DIR__ . '/../layout/header.php';
 
 
 
@@ -40,7 +40,7 @@ if ($tab === 'users') {
          ORDER BY u.deleted_at DESC"
     )->fetchAll();
 } else {
-    $archived = crud()->select('institutions i', 'i.id, i.name, i.slug, i.deleted_at', ['i.deleted_at' => ['IS NOT', null]], 'ORDER BY i.deleted_at DESC');
+    $archived = crud()->select('institutions', 'id, name, slug, deleted_at', ['deleted_at' => ['IS NOT', null]], 'ORDER BY deleted_at DESC');
 }
 ?>
 
@@ -68,16 +68,16 @@ if ($tab === 'users') {
                         <?php if ($tab === 'users'): ?>
                             <td class="fw-bold"><?= h($item['first_name'] . ' ' . $item['last_name']) ?></td>
                             <td><?= h($item['email']) ?></td>
-                            <td><span class="badge" style="background:var(--ia-surface-2)"><?= h($item['role_name']) ?></span></td>
+                            <td><span class="badge badge-surface"><?= h($item['role_name']) ?></span></td>
                             <td><?= h($item['institution_name'] ?? '—') ?></td>
                         <?php else: ?>
                             <td class="fw-bold"><?= h($item['name']) ?></td>
-                            <td><span class="badge" style="background:var(--ia-surface-2)"><?= h($item['slug']) ?></span></td>
+                            <td><span class="badge badge-surface"><?= h($item['slug']) ?></span></td>
                         <?php endif; ?>
                         
                         <td class="text-muted"><?= h(date('M j, Y g:i A', strtotime($item['deleted_at']))) ?></td>
                         <td>
-                            <form method="post" style="display:inline">
+                            <form method="post" class="d-inline">
                                 <input type="hidden" name="restore_id" value="<?= (int) $item['id'] ?>">
                                 <input type="hidden" name="restore_type" value="<?= $tab === 'users' ? 'user' : 'institution' ?>">
                                 <button type="submit" class="btn btn-sm btn-outline-ia"><?= ia_icon('refresh', 14) ?> Restore</button>

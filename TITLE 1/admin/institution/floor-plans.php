@@ -6,11 +6,11 @@ require_page('admin.floorplans');
  * Innovatech PH — admin: floor plans + responsive markers (percentage coords).
  * Markers are placed/dragged on an aspect-locked stage so alignment survives any screen.
  */
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'Floor Plans';
 $pageSub = 'Upload the campus map and drop circular markers (drag & drop studio)';
 $active = 'Floor Plans';
+$bodyClass = 'page-floor-plans';
+require_once __DIR__ . '/../layout/header.php';
 
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
@@ -36,6 +36,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             crud()->insert('floor_plans', ['institution_id' => $iid, 'title' => $title, 'image_path' => $rel, 'original_width' => $w, 'original_height' => $h, 'aspect_ratio' => $w / max(1, $h), 'object_fit' => 'contain', 'created_by' => (int) current_user()['id']]);
             flash('success', 'Floor plan uploaded (aspect ratio locked).');
+        }
+
+        if ($action === 'update-image') {
+            $id = (int) ($_POST['id'] ?? 0);
+            $rel = handle_media_picker('image', trim($inst['folder_path'], '/') . '/assets/floorplans');
+            if (!$rel) throw new RuntimeException('Choose a new image.');
+            $abs = ROOT_PATH . '/' . ltrim($rel, '/');
+            $size = @getimagesize($abs);
+            $w = (int) ($size[0] ?? 1200);
+            $h = (int) ($size[1] ?? 900);
+            crud()->update('floor_plans', [
+                'image_path'      => $rel,
+                'original_width'  => $w,
+                'original_height' => $h,
+                'aspect_ratio'    => $w / max(1, $h),
+            ], ['id' => $id, 'institution_id' => $iid]);
+            sync_institution_config($iid);
+            flash('success', 'Floor plan image updated.');
         }
 
         if ($action === 'landing') {
@@ -141,11 +159,35 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
     <div>
       <a class="back-link" href="floor-plans">← All floor plans</a>
       <div class="d-flex align-items-center gap-2 mt-1">
-        <h3 class="mb-0" style="font-weight:800"><?= h($studio['title']) ?> — marker studio</h3>
+        <h3 class="mb-0 fw-800"><?= h($studio['title']) ?> — marker studio</h3>
         <?php if ($studio['is_campus_landing']): ?><span class="badge badge-live">landing</span><?php endif; ?>
       </div>
     </div>
-    <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#marker-modal"><?= ia_icon('map', 16) ?> Add marker</button>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-ia btn-sm" data-bs-toggle="modal" data-bs-target="#fp-update-image-modal"><?= ia_icon('image', 14) ?> Change image</button>
+      <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#marker-modal"><?= ia_icon('map', 16) ?> Add marker</button>
+    </div>
+  </div>
+
+  <!-- update image modal -->
+  <div class="modal fade" id="fp-update-image-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Change floor plan image</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+      <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="fp_action" value="update-image">
+        <input type="hidden" name="id" value="<?= (int) $studio['id'] ?>">
+        <div class="modal-body d-grid gap-3">
+          <?php
+          $pickerName  = 'image';
+          $pickerValue = $studio['image_path'] ?? '';
+          $pickerLabel = 'New Image (PNG/JPG)';
+          $pickerHelp  = 'Aspect ratio and marker positions are preserved. Only the image file is replaced.';
+          require __DIR__ . '/../layout/media-picker.php';
+          ?>
+        </div>
+        <div class="modal-footer"><button class="btn btn-grad px-4" type="submit">Update image</button></div>
+      </form>
+    </div></div>
   </div>
 
   <form method="post">
@@ -154,15 +196,15 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
     <div class="ia-card p-3">
       <!-- aspect-locked stage: markers stay aligned on every screen -->
       <div id="map-stage" class="map-stage"
-           style="aspect-ratio: <?= $studio['aspect_ratio'] ?>; position:relative; margin:0 auto; max-width:100%; max-height:66vh; user-select:none;">
-        <img src="<?= h(org_url($inst['slug'], $studio['image_path'])) ?>" alt="floor plan"
-             style="width:100%;height:100%;object-fit:contain;border-radius:12px;display:block;pointer-events:none;">
+           style="--fp-ar: <?= $studio['aspect_ratio'] ?>">
+        <img src="<?= h(media_url($studio['image_path'])) ?>" alt="floor plan"
+             class="map-stage-img">
         <input type="hidden" name="markers-hash" id="markers-hash">
 
         <?php foreach ($markers as $mkIdx => $mk): ?>
           <div class="fp-marker-dot" data-id="<?= (int) $mk['id'] ?>"
                data-name="<?= h($mk['label'], ENT_QUOTES) ?>"
-               style="position:absolute;left:<?= (float) $mk['x_percent'] ?>%;top:<?= (float) $mk['y_percent'] ?>%;transform:translate(-50%,-50%);width:36px;height:36px">
+               style="left:<?= (float) $mk['x_percent'] ?>%;top:<?= (float) $mk['y_percent'] ?>%">
             <input type="hidden" name="markers[<?= $mkIdx ?>][id]" value="<?= (int) $mk['id'] ?>">
             <input type="hidden" name="markers[<?= $mkIdx ?>][x]" value="<?= (float) $mk['x_percent'] ?>" class="mk-x">
             <input type="hidden" name="markers[<?= $mkIdx ?>][y]" value="<?= (float) $mk['y_percent'] ?>" class="mk-y">
@@ -176,14 +218,14 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
           </div>
         <?php endforeach; ?>
 
-        <div class="map-hint">Drag the dots to position markers. Click a dot to edit its label/popup. Save when done.</div>
+        <div class="fp-hint">Drag the dots to position markers. Click a dot to edit its label/popup. Save when done.</div>
       </div>
 
       <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
         <div class="d-flex gap-2 flex-wrap" id="marker-list">
           <?php foreach ($markers as $mk): ?>
             <button type="button" class="btn btn-sm btn-outline-ia" data-select-dot="<?= (int) $mk['id'] ?>">
-              <span class="dot" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ia-primary);margin-right:6px"></span><?= h($mk['label']) ?>
+              <span class="chip-dot"></span><?= h($mk['label']) ?>
             </button>
           <?php endforeach; ?>
         </div>
@@ -196,7 +238,7 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
   <div class="ia-card mt-3">
     <div class="card-head"><h3>Selected marker</h3></div>
     <div class="card-body" id="marker-fields">
-      <p class="text-muted mb-0" style="font-size:13px">Select a marker dot or a chip above to edit its label and popup.</p>
+      <p class="ia-meta-md mb-0">Select a marker dot or a chip above to edit its label and popup.</p>
     </div>
   </div>
 
@@ -242,6 +284,10 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
   </div>
 
   <script>
+  window._fpScenes = <?= json_encode(array_map(fn($s) => ['id' => $s['id'], 'name' => $s['name']], iterator_to_array($scenes)), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+  window._fpPlans  = <?= json_encode(array_map(fn($p) => ['id' => $p['id'], 'name' => $p['name']], iterator_to_array($floorPlansList)), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+  </script>
+  <script>
   (() => {
     const stage = document.getElementById('map-stage')
     const markers = stage.querySelectorAll('.fp-marker-dot')
@@ -252,24 +298,75 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
     const escapeAttr = (s) => Array.from(String(s ?? '')).map((c) => escapeHtml(c)).join('').replace(/'/g,'&#39;')
 
     const renderFields = (dot) => {
-      const hidden = (k) => dot.querySelector(`.${k}`)?.value || ''
-      const popT = dot.querySelector('input[name$="popup_title"]')?.value || ''
-      const popH = dot.querySelector('input[name$="popup_html"]')?.value || ''
+      const hv = (sel) => dot.querySelector(sel)?.value || ''
+      const popT    = hv('input[name$="[popup_title]"]')
+      const popH    = hv('input[name$="[popup_html]"]')
+      const sceneId = hv('input[name$="[target_scene_id]"]')
+      const fpId    = hv('input[name$="[target_floor_plan_id]"]')
+      const bldId   = hv('input[name$="[target_building_id]"]')
+      const roomId  = hv('input[name$="[target_room_id]"]')
+
+      // Determine current click-action mode
+      let mode = 'popup'
+      if (sceneId && sceneId !== '0') mode = 'scene'
+      else if (fpId && fpId !== '0') mode = 'floorplan'
+
       fields.innerHTML = `
-        <div class="row g-3 align-items-end">
-          <div class="col-md-3"><label class="form-label">Label</label>
-            <input class="form-control mk-in-label" value="${escapeAttr(dot.dataset.name)}" oninput="syncField(this,'label')"></div>
-          <div class="col-md-3"><label class="form-label">Popup title</label>
+        <div class="row g-3 mb-3">
+          <div class="col-md-4"><label class="form-label fw-semibold">Label</label>
+            <input class="form-control" value="${escapeAttr(dot.dataset.name)}" oninput="syncField(this,'label')"></div>
+          <div class="col-md-4"><label class="form-label fw-semibold">Popup title</label>
             <input class="form-control" value="${escapeAttr(popT)}" oninput="syncField(this,'popup_title')"></div>
-          <div class="col-md-6"><label class="form-label">Popup content</label>
-            <input class="form-control" value="${escapeAttr(popH)}" oninput="syncField(this,'popup_html')"></div>
+          <div class="col-md-4"><label class="form-label fw-semibold">Position</label>
+            <div class="d-flex gap-2">
+              <input class="form-control mk-in-x" placeholder="X%" value="${hv('.mk-x')}" oninput="syncPos(this,'x')">
+              <input class="form-control mk-in-y" placeholder="Y%" value="${hv('.mk-y')}" oninput="syncPos(this,'y')">
+            </div>
+          </div>
         </div>
-        <div class="row g-3 mt-0">
-          <div class="col-md-4"><label class="form-label">Position X%</label><input class="form-control mk-in-x" value="${hidden('mk-x')}" oninput="syncPos(this,'x')"></div>
-          <div class="col-md-4"><label class="form-label">Position Y%</label><input class="form-control mk-in-y" value="${hidden('mk-y')}" oninput="syncPos(this,'y')"></div>
-          <div class="col-md-4 d-flex align-items-end"><button type="button" class="btn btn-outline-ia text-danger w-100" onclick="deleteMarker()">Delete this marker</button></div>
+        <p class="form-label form-label-sm fw-semibold mb-2">Click action — what happens when visitor taps this marker?</p>
+        <div class="d-flex gap-2 flex-wrap mb-3" id="mk-mode-tabs">
+          <button type="button" class="btn btn-sm ${mode==='popup'?'btn-grad':'btn-outline-ia'}" data-mk-mode="popup">💬 Popup text</button>
+          <button type="button" class="btn btn-sm ${mode==='scene'?'btn-grad':'btn-outline-ia'}" data-mk-mode="scene">🎥 360 Tour</button>
+          <button type="button" class="btn btn-sm ${mode==='floorplan'?'btn-grad':'btn-outline-ia'}" data-mk-mode="floorplan">🗺 Sub-Floor Plan</button>
         </div>
-        <p class="mt-2 mb-0" style="font-size:12.5px;color:var(--ia-muted)">Percentages keep pins aligned on every device — this is the responsive source of truth.</p>`
+        <div id="mk-panel-popup" class="mk-panel ${mode==='popup'?'':'d-none'}">
+          <label class="form-label form-label-sm">Popup content (HTML or plain text)</label>
+          <textarea class="form-control" rows="3" oninput="syncField(this,'popup_html')">${escapeHtml(popH)}</textarea>
+        </div>
+        <div id="mk-panel-scene" class="mk-panel ${mode==='scene'?'':'d-none'}">
+          <label class="form-label form-label-sm">Link to 360 Tour scene</label>
+          <select class="form-select" onchange="syncField(this,'target_scene_id')">
+            <option value="">— none —</option>
+            ${window._fpScenes.map(s=>`<option value="${s.id}" ${sceneId==s.id?'selected':''}>${escapeHtml(s.name)}</option>`).join('')}
+          </select>
+        </div>
+        <div id="mk-panel-floorplan" class="mk-panel ${mode==='floorplan'?'':'d-none'}">
+          <label class="form-label form-label-sm">Link to Sub-Floor Plan</label>
+          <select class="form-select" onchange="syncField(this,'target_floor_plan_id')">
+            <option value="">— none —</option>
+            ${window._fpPlans.map(p=>`<option value="${p.id}" ${fpId==p.id?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="mt-3 d-flex justify-content-end">
+          <button type="button" class="btn btn-outline-ia btn-sm text-danger" onclick="deleteMarker()">Delete this marker</button>
+        </div>
+        <p class="mt-2 mb-0 ia-micro">Percentages keep pins aligned on every device — this is the responsive source of truth.</p>`
+
+      // mode tab switcher
+      fields.querySelectorAll('[data-mk-mode]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const m = btn.dataset.mkMode
+          fields.querySelectorAll('[data-mk-mode]').forEach(b => b.className = b.className.replace('btn-grad','btn-outline-ia'))
+          btn.className = btn.className.replace('btn-outline-ia','btn-grad')
+          fields.querySelectorAll('[id^="mk-panel-"]').forEach(p => p.classList.add('d-none'))
+          fields.querySelector(`#mk-panel-${m}`).classList.remove('d-none')
+          // clear other targets when switching mode
+          if (m !== 'scene') syncField({value:''}, 'target_scene_id')
+          if (m !== 'floorplan') syncField({value:''}, 'target_floor_plan_id')
+        })
+      })
+
       current = dot
     }
     window.syncField = (el, key) => {
@@ -282,8 +379,7 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
         const chip = document.querySelector(`[data-select-dot="${box.dataset.id}"]`)
         if (chip) chip.lastChild.textContent = el.value
       } else {
-        const name = key === 'popup_title' ? 'markers[' + box.dataset.id + ']' : null
-        const hiddenEl = box.querySelector(`input[name$="${key}"]`)
+        const hiddenEl = box.querySelector(`input[name$="[${key}]"]`) || box.querySelector(`input[name$="${key}"]`)
         if (hiddenEl) hiddenEl.value = el.value
       }
     }
@@ -298,9 +394,10 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
     }
 
     // delete selected marker (removed from stage + flagged for delete on save)
-    window.deleteMarker = () => {
+    window.deleteMarker = async () => {
       if (!current) return
-      if (!confirm(`Delete marker "${current.dataset.name}"?`)) return
+      const ok = await window.iaConfirm(`Delete marker "${current.dataset.name}"?`, 'Delete marker')
+      if (!ok) return
       const id = current.dataset.id
       const del = document.querySelector('input[name="marker_delete"]') || (() => {
         const el = document.createElement('input')
@@ -313,7 +410,7 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
       const chip = document.querySelector(`[data-select-dot="${id}"]`)
       if (chip) chip.remove()
       current = null
-      fields.innerHTML = '<p class="text-muted mb-0" style="font-size:13px">Marker deleted. Save to commit.</p>'
+      fields.innerHTML = '<div class="ia-meta-md mb-0">Marker deleted. Save to commit.</div>'
     }
 
     // drag handlers
@@ -370,14 +467,14 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
     <div>
       <?php if ($filterBuildingId): ?>
         <a class="back-link" href="buildings">← Buildings</a>
-        <div style="font-size:13px;color:var(--ia-muted);margin-top:2px">
+        <div class="ia-meta-md mt-1">
           <?= ia_icon('building', 13) ?>
           Showing floor plans — assign markers to
           <strong><?= h($filterBuilding['name'] ?? 'Building #'.$filterBuildingId) ?></strong>
           using the <em>Studio</em> editor
         </div>
       <?php else: ?>
-        <p class="mb-0" style="color:var(--ia-muted);font-size:13.5px"><?= $plans->rowCount() ?> floor plan(s)</p>
+        <p class="mb-0 ia-meta-lg"><?= $plans->rowCount() ?> floor plan(s)</p>
       <?php endif ?>
     </div>
     <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#fp-upload"><?= ia_icon('image', 16) ?> Upload floor plan</button>
@@ -391,11 +488,11 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
         <?php foreach ($plans as $plan): ?>
           <tr>
             <td>
-              <div style="font-weight:700"><?= h($plan['title']) ?></div>
-              <div style="font-size:12px;color:var(--ia-muted)"><?= (int) $plan['original_width'] ?>×<?= (int) $plan['original_height'] ?> · aspect <?= round((float) $plan['aspect_ratio'], 3) ?></div>
+              <div class="fw-bold"><?= h($plan['title']) ?></div>
+              <div class="ia-meta-sm"><?= (int) $plan['original_width'] ?>×<?= (int) $plan['original_height'] ?> · aspect <?= round((float) $plan['aspect_ratio'], 3) ?></div>
             </td>
-            <td><img src="<?= h(org_url($inst['slug'], $plan['image_path'])) ?>" style="width:120px;height:60px;object-fit:contain;border-radius:8px;border:1px solid var(--ia-border)" alt=""></td>
-            <td style="color:var(--ia-muted)"><?= (int) $plan['marker_count'] ?></td>
+            <td><img src="<?= h(media_url($plan['image_path'])) ?>" class="plan-thumb" alt=""></td>
+            <td class="text-ia-muted"><?= (int) $plan['marker_count'] ?></td>
             <td>
               <?php if ($plan['is_start']): ?><span class="badge badge-live">landing</span>
               <?php else: ?><span class="badge badge-draft">—</span><?php endif; ?>
@@ -446,22 +543,5 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
     </form>
   </div></div>
 </div>
-
-<style>
-  .fp-marker-dot { cursor: grab; touch-action: none; }
-  .fp-marker-dot::after {
-    content: attr(data-name); position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%);
-    background: var(--ia-surface); border:1px solid var(--ia-border); color: var(--ia-text);
-    padding: 3px 8px; margin-bottom: 6px; border-radius: 8px; font-size: 11px; white-space: nowrap; font-weight:600;
-    opacity: 0; pointer-events: none; transition: opacity .15s;
-  }
-  .fp-marker-dot:hover::after { opacity: 1; }
-  .fp-marker-dot::before {
-    content: ""; position:absolute; inset:0; border-radius:50%;
-    background: radial-gradient(circle at 32% 28%, var(--ia-accent), var(--ia-primary));
-    box-shadow: 0 4px 14px rgba(0,0,0,.4), 0 0 0 3px rgba(255,255,255,.85);
-  }
-  .map-hint { position:absolute; bottom:12px; left:50%; transform:translateX(-50%); font-size:12px; color:#fff; background:rgba(20,22,40,.72); padding:6px 12px; border-radius:999px; backdrop-filter: blur(8px); pointer-events:none; white-space:nowrap; }
-</style>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>

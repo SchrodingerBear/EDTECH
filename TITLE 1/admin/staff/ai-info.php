@@ -5,11 +5,11 @@
 require_once __DIR__ . '/../../includes/auth.php';
 require_admin_staff();
 require_page('staff.aiinfo');
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'AI Info';
 $pageSub = 'Generate visitor-friendly descriptions in one click';
 $active = 'AI Info';
+$bodyClass = 'page-ai-info';
+require_once __DIR__ . '/../layout/header.php';
 
 $inst = current_institution();
 $iid = (int) $inst['id'];
@@ -82,7 +82,7 @@ foreach ($tables as $t => $sql) {
           <textarea class="form-control" name="prompt" rows="3" placeholder="Quiet study areas, 24/7 access…"></textarea>
         </div>
         <button class="btn btn-grad"><?= ia_icon('wand', 15) ?> Generate & attach</button>
-        <p class="text-muted mb-0" style="font-size:12px">Runs on a built-in generator — swap for an LLM API token later.</p>
+        <p class="text-muted mb-0 fs-12">Runs on a built-in generator — swap for an LLM API token later.</p>
       </form>
     </div>
   </div>
@@ -92,11 +92,11 @@ foreach ($tables as $t => $sql) {
       <?php foreach ($rows as $t => $items): ?>
         <div class="col-md-6">
           <div class="ia-card h-100">
-            <div class="card-head"><h3><?= h(ucwords(str_replace('_', ' ', $t))) ?> <span class="text-muted" style="font-size:12px">(<?= count($items) ?>)</span></h3></div>
-            <div class="card-body d-grid gap-2" style="max-height:280px;overflow:auto">
+            <div class="card-head"><h3><?= h(ucwords(str_replace('_', ' ', $t))) ?> <span class="text-muted fs-12">(<?= count($items) ?>)</span></h3></div>
+            <div class="card-body d-grid gap-2 ia-cat-scroll">
               <?php foreach ($items as $it): ?>
-                <div class="px-3 py-2 rounded-3 d-flex justify-content-between align-items-center gap-2" style="background:var(--ia-surface-2)">
-                  <span class="fw-semibold" style="font-size:13.5px"><?= h($it['name']) ?></span>
+                <div class="px-3 py-2 rounded-3 d-flex justify-content-between align-items-center gap-2 chip-card">
+                  <span class="fw-semibold fs-135"><?= h($it['name']) ?></span>
                   <?php if (trim((string) $it['ai']) !== ''): ?>
                     <span class="badge badge-live"><?= ia_icon('sparkles', 11) ?> ready</span>
                   <?php else: ?>
@@ -104,7 +104,7 @@ foreach ($tables as $t => $sql) {
                   <?php endif; ?>
                 </div>
               <?php endforeach; ?>
-              <?php if (!$items): ?><p class="text-muted" style="font-size:13px">Nothing yet in this category.</p><?php endif; ?>
+              <?php if (!$items): ?><p class="text-muted fs-13">Nothing yet in this category.</p><?php endif; ?>
             </div>
           </div>
         </div>
@@ -121,11 +121,11 @@ foreach ($tables as $t => $sql) {
       <tbody>
         <?php foreach ($jobs as $j): ?>
           <tr>
-            <td style="white-space:nowrap"><span class="badge" style="background:var(--ia-surface-2)"><?= h($j['target_type']) ?></span> #<?= (int) $j['target_id'] ?></td>
+            <td class="text-nowrap"><span class="badge badge-surface"><?= h($j['target_type']) ?></span> #<?= (int) $j['target_id'] ?></td>
             <td><span class="badge badge-live"><?= h($j['status']) ?></span></td>
-            <td style="color:var(--ia-muted)"><?= h($j['email']) ?></td>
-            <td style="color:var(--ia-muted);white-space:nowrap"><?= h(date('M j, g:i A', strtotime($j['created_at']))) ?></td>
-            <td style="color:var(--ia-muted);max-width:320px"><?= h(mb_strimwidth($j['output_text'] ?? '—', 0, 90, '…')) ?></td>
+            <td class="text-ia-muted"><?= h($j['email']) ?></td>
+            <td class="text-ia-muted text-nowrap"><?= h(date('M j, g:i A', strtotime($j['created_at']))) ?></td>
+            <td class="text-ia-muted cell-trunc"><?= h(mb_strimwidth($j['output_text'] ?? '—', 0, 90, '…')) ?></td>
           </tr>
         <?php endforeach; ?>
         <?php if ($jobs->rowCount() === 0): ?>

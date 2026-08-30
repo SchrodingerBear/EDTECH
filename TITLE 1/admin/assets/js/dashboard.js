@@ -4,6 +4,112 @@
    confirm helpers, delete-row fetch, flash rendering.
    =========================================================================== */
 
+/* ── Global modal confirm/prompt (replaces browser alert/confirm/prompt) ── */
+; (function () {
+  function ensureModalRoot() {
+    let el = document.getElementById('ia-confirm-root')
+    if (el) return el
+    el = document.createElement('div')
+    el.id = 'ia-confirm-root'
+    el.innerHTML = `
+      <div id="ia-cm" class="modal fade" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+          <div class="modal-content">
+            <div class="modal-header pb-2">
+              <h5 class="modal-title" id="ia-cm-title" style="font-size:15px;font-weight:700"></h5>
+              <button type="button" class="btn-close" data-ia-cm-cancel></button>
+            </div>
+            <div class="modal-body pt-2">
+              <p id="ia-cm-msg" style="margin:0;font-size:13.5px;color:var(--ia-muted)"></p>
+              <div id="ia-cm-input-wrap" style="margin-top:10px;display:none">
+                <input id="ia-cm-input" class="form-control" type="text" autocomplete="off">
+              </div>
+            </div>
+            <div class="modal-footer pt-2" style="gap:8px">
+              <button type="button" class="btn btn-sm btn-outline-ia" data-ia-cm-cancel>Cancel</button>
+              <button type="button" class="btn btn-sm btn-grad" id="ia-cm-ok">OK</button>
+            </div>
+          </div>
+        </div>
+      </div>`
+    document.body.appendChild(el)
+    return el
+  }
+
+  /**
+   * iaConfirm(message, title?) → Promise<boolean>
+   * Shows a modal confirmation dialog. Resolves true on OK, false on Cancel.
+   */
+  window.iaConfirm = function (message, title) {
+    return new Promise(function (resolve) {
+      ensureModalRoot()
+      const modalEl = document.getElementById('ia-cm')
+      document.getElementById('ia-cm-title').textContent = title || 'Confirm'
+      document.getElementById('ia-cm-msg').textContent = message || 'Are you sure?'
+      const wrap = document.getElementById('ia-cm-input-wrap')
+      wrap.style.display = 'none'
+      const okBtn = document.getElementById('ia-cm-ok')
+      okBtn.textContent = 'Confirm'
+      okBtn.className = 'btn btn-sm btn-danger'
+
+      let bsModal = bootstrap.Modal.getOrCreateInstance(modalEl)
+      bsModal.show()
+
+      function cleanup(result) {
+        bsModal.hide()
+        okBtn.replaceWith(okBtn.cloneNode(true)) // remove old listeners
+        resolve(result)
+      }
+
+      document.getElementById('ia-cm-ok').addEventListener('click', function () { cleanup(true) }, { once: true })
+      modalEl.querySelectorAll('[data-ia-cm-cancel]').forEach(function (btn) {
+        btn.addEventListener('click', function () { cleanup(false) }, { once: true })
+      })
+      modalEl.addEventListener('hidden.bs.modal', function () { resolve(false) }, { once: true })
+    })
+  }
+
+  /**
+   * iaPrompt(message, defaultValue?, title?) → Promise<string|null>
+   * Shows a modal prompt dialog. Resolves with string on OK, null on Cancel.
+   */
+  window.iaPrompt = function (message, defaultValue, title) {
+    return new Promise(function (resolve) {
+      ensureModalRoot()
+      const modalEl = document.getElementById('ia-cm')
+      document.getElementById('ia-cm-title').textContent = title || 'Enter value'
+      document.getElementById('ia-cm-msg').textContent = message || ''
+      const wrap = document.getElementById('ia-cm-input-wrap')
+      const input = document.getElementById('ia-cm-input')
+      wrap.style.display = ''
+      input.value = defaultValue || ''
+      const okBtn = document.getElementById('ia-cm-ok')
+      okBtn.textContent = 'OK'
+      okBtn.className = 'btn btn-sm btn-grad'
+
+      let bsModal = bootstrap.Modal.getOrCreateInstance(modalEl)
+      bsModal.show()
+      setTimeout(function () { input.focus(); input.select() }, 300)
+
+      function cleanup(val) {
+        bsModal.hide()
+        okBtn.replaceWith(okBtn.cloneNode(true))
+        resolve(val)
+      }
+
+      document.getElementById('ia-cm-ok').addEventListener('click', function () { cleanup(input.value) }, { once: true })
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); cleanup(input.value) }
+        if (e.key === 'Escape') { e.preventDefault(); cleanup(null) }
+      })
+      modalEl.querySelectorAll('[data-ia-cm-cancel]').forEach(function (btn) {
+        btn.addEventListener('click', function () { cleanup(null) }, { once: true })
+      })
+      modalEl.addEventListener('hidden.bs.modal', function () { resolve(null) }, { once: true })
+    })
+  }
+})();
+
 (() => {
   'use strict'
 
@@ -13,7 +119,7 @@
   /* ------------------------------ theme toggle ----------------------------- */
   const applyTheme = (dark) => {
     ROOT.setAttribute('data-bs-theme', dark ? 'dark' : 'light')
-    try { localStorage.setItem(STORE_KEY, dark ? 'dark' : 'light') } catch (e) {}
+    try { localStorage.setItem(STORE_KEY, dark ? 'dark' : 'light') } catch (e) { }
     document.querySelectorAll('[data-theme-toggle]').forEach((btn) => {
       btn.classList.toggle('is-dark', dark)
       const label = btn.querySelector('[data-theme-label]')
@@ -25,7 +131,7 @@
     try {
       const saved = localStorage.getItem(STORE_KEY)
       if (saved) return saved === 'dark'
-    } catch (e) {}
+    } catch (e) { }
     return window.matchMedia('(prefers-color-scheme: dark)').matches
   })()
 
@@ -89,7 +195,7 @@
     try {
       const flashes = JSON.parse(flashEl.textContent)
       flashes.forEach((f) => window.iaToast(f.message, f.type))
-    } catch (e) {}
+    } catch (e) { }
   }
 
   /* ------------------------------ auto submit ------------------------------ */
@@ -98,12 +204,16 @@
   })
 
   /* ------------------------------- confirm --------------------------------- */
-  document.body.addEventListener('click', (e) => {
+  document.body.addEventListener('click', async (e) => {
     const target = e.target.closest('[data-confirm]')
     if (!target) return
-    if (!window.confirm(target.dataset.confirm || 'Are you sure?')) {
-      e.preventDefault()
-      e.stopImmediatePropagation()
+    // Skip if this element is also part of a data-delete-form (handled below)
+    if (target.closest('[data-delete-form]')) return
+    e.preventDefault()
+    const ok = await window.iaConfirm(target.dataset.confirm || 'Are you sure?')
+    if (ok) {
+      target.removeAttribute('data-confirm')
+      target.click()
     }
   })
 
@@ -112,9 +222,10 @@
     const form = e.target
     if (!form.matches('[data-delete-form]')) return
     e.preventDefault()
-    if (!window.confirm(form.dataset.confirm || 'Delete this record?')) return
+    const ok = await window.iaConfirm(form.dataset.confirm || 'Delete this record?', 'Confirm delete')
+    if (!ok) return
     try {
-      const res = await fetch(form.action, { method: 'POST', body: new FormData(form) })
+      const res = await fetch(form.action || location.href, { method: 'POST', body: new FormData(form) })
       const data = await res.json().catch(() => ({}))
       if (data.ok) {
         window.iaToast(data.message || 'Deleted', 'success')
@@ -122,6 +233,7 @@
         setTimeout(() => location.reload(), 700)
       } else {
         window.iaToast(data.message || 'Delete failed', 'error')
+        setTimeout(() => location.reload(), 900)
       }
     } catch (err) {
       window.iaToast('Network error', 'error')
@@ -193,3 +305,85 @@
 window.iaGenPassword = () => {
   /* forwarded implementation — live in the IIFE above */
 }
+
+/* ------------------------------ datatables ------------------------------- */
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof simpleDatatables === 'undefined') return
+
+  const perPageSizes = [10, 25, 50, 100]
+
+  const applyPerPageLabel = (table, dt) => {
+    const wrap = table.closest('.datatable-wrapper, .dataTable-wrapper')
+    if (!wrap) return
+    wrap.querySelectorAll('.datatable-dropdown, .dataTable-dropdown').forEach(drop => {
+      let sel = drop.querySelector('select')
+      if (!sel) {
+        sel = document.createElement('select')
+        sel.className = 'datatable-selector'
+        perPageSizes.forEach(n => {
+          const opt = document.createElement('option')
+          opt.value = String(n)
+          opt.textContent = String(n)
+          sel.appendChild(opt)
+        })
+      }
+      sel.classList.add('datatable-selector')
+      if (!sel.options.length) {
+        perPageSizes.forEach(n => {
+          const opt = document.createElement('option')
+          opt.value = String(n)
+          opt.textContent = String(n)
+          sel.appendChild(opt)
+        })
+      }
+      const current = (dt.options && dt.options.perPage) ? String(dt.options.perPage) : '10'
+      sel.value = current
+      if (!sel.dataset.iaBound) {
+        sel.dataset.iaBound = '1'
+        sel.addEventListener('change', () => {
+          const n = parseInt(sel.value, 10) || 10
+          if (typeof dt.setPerPage === 'function') dt.setPerPage(n)
+          else if (dt.options) {
+            dt.options.perPage = n
+            if (typeof dt.update === 'function') dt.update()
+          }
+        })
+      }
+      drop.replaceChildren()
+      const lab = document.createElement('label')
+      lab.append('Show ', sel, ' entries')
+      drop.appendChild(lab)
+    })
+  }
+
+  document.querySelectorAll('table.table-ia').forEach(table => {
+    if (table.classList.contains('no-datatable')) return
+    if (table.closest('.modal')) return
+    const tbody = table.tBodies[0]
+    if (!tbody) return
+    const rows = Array.from(tbody.rows)
+    if (!table.hasAttribute('data-force-datatable')) {
+      if (!rows.length) return
+      if (rows.some(r => Array.from(r.cells).some(c => c.colSpan > 1))) return
+    }
+
+    const lastCol = table.tHead && table.tHead.rows[0] ? table.tHead.rows[0].cells.length - 1 : -1
+    const opts = {
+      searchable: true,
+      fixedHeight: false,
+      perPage: 10,
+      perPageSelect: perPageSizes,
+      labels: {
+        placeholder: 'Search…',
+        noRows: 'No entries found',
+        noResults: 'No matching results',
+        info: 'Showing {start}–{end} of {rows} entries'
+      }
+    }
+    if (lastCol >= 0) {
+      opts.columns = [{ select: lastCol, sortable: false }]
+    }
+    const dt = new simpleDatatables.DataTable(table, opts)
+    applyPerPageLabel(table, dt)
+  })
+})

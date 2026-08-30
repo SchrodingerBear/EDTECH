@@ -4,11 +4,11 @@ require_owner();
 /**
  * Innovatech PH — owner: product landing editor (platform_settings).
  */
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'Landing Editor';
 $pageSub = 'The Innovatech PH product site shown at the root';
 $active = 'Landing Editor';
+$bodyClass = 'page-landing-editor';
+require_once __DIR__ . '/../layout/header.php';
 
 $settings = crud()->get('platform_settings', 1) ?? [];
 
@@ -54,7 +54,7 @@ $heroFallback = url('public/campus-hero.png');
           </div>
           <div>
             <label class="form-label">Custom landing HTML (optional, appended before footer)</label>
-            <textarea class="form-control" name="landing_html" rows="8" style="font-family:ui-monospace,monospace;font-size:13px"><?= h($settings['landing_html'] ?? '') ?></textarea>
+            <textarea class="form-control code-area" name="landing_html" rows="8"><?= h($settings['landing_html'] ?? '') ?></textarea>
           </div>
           <div class="text-end"><button class="btn btn-grad px-4" type="submit">Save landing settings</button></div>
         </form>
@@ -66,8 +66,8 @@ $heroFallback = url('public/campus-hero.png');
     <div class="ia-card mb-4">
       <div class="card-head"><h3>Preview</h3><a class="back-link" href="<?= url('/') ?>" target="_blank">Open site</a></div>
       <div class="card-body">
-        <img src="<?= h($settings['hero_image_path'] ? url($settings['hero_image_path']) : $heroFallback) ?>" alt="Hero preview" style="width:100%;border-radius:12px;border:1px solid var(--ia-border)">
-        <ul class="mt-3 d-grid gap-2" style="font-size:13.5px;list-style:none;padding:0">
+        <img src="<?= h($settings['hero_image_path'] ? url($settings['hero_image_path']) : $heroFallback) ?>" alt="Hero preview" class="hero-preview">
+        <ul class="mt-3 d-grid gap-2 landing-facts">
           <li><strong>Company:</strong> <?= h($settings['company_name'] ?? '') ?></li>
           <li><strong>Product:</strong> <?= h($settings['product_name'] ?? '') ?></li>
           <li><strong>Email:</strong> <?= h($settings['contact_email'] ?? '') ?></li>
@@ -77,7 +77,7 @@ $heroFallback = url('public/campus-hero.png');
 
     <div class="ia-card">
       <div class="card-head"><h3>Partner campuses</h3><a class="back-link" href="institutions">Manage</a></div>
-      <div class="card-body" style="font-size:13.5px">
+      <div class="card-body ia-meta-lg">
         Published, active institutions automatically appear in the landing's "Partner Campuses" section.
       </div>
     </div>

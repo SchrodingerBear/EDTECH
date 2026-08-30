@@ -1,9 +1,10 @@
 <?php
 require_once __DIR__ . '/includes/bootstrap.php';
 
-$hero = $landing['hero_image_path'];
-$email = $landing['contact_email'];
-$login = $landing['login_url'];
+// Ensure image paths are absolute URLs (stored as relative paths in DB)
+$hero    = media_url($landing['hero_image_path'] ?? '', 'public/campus-hero.png');
+$email   = $landing['contact_email'];
+$login   = $landing['login_url'];
 $company = $landing['company_name'];
 $featureLoop = array_merge($features, $features);
 ?>
@@ -119,8 +120,7 @@ $featureLoop = array_merge($features, $features);
         <?php foreach ($featureLoop as $item): [$title, $text, $iconName, $featureImg] = array_pad($item, 4, $hero); ?>
           <article class="feature-card">
             <div class="feature-media">
-              <img src="<?= h($featureImg ?: $hero) ?>" alt="<?= h($title) ?>">
-              <div class="feature-icon"><?= icon($iconName) ?></div>
+              <img src="<?= h(url($featureImg ?: $hero)) ?>" alt="<?= h($title) ?>">
             </div>
             <div class="feature-body">
               <h3><?= h($title) ?></h3>
@@ -178,28 +178,23 @@ $featureLoop = array_merge($features, $features);
     </div>
   </section>
 
-  <?php 
-  $whyBg = $landing['why_bg'] ?? ''; 
-  $whyStyle = $whyBg ? "background: linear-gradient(rgba(11,13,22,0.82), rgba(11,13,22,0.92)), url('" . h(url($whyBg)) . "') center/cover no-repeat; color: #fff;" : '';
-  
-  $quoteBg = $landing['quote_bg'] ?? '';
-  $quoteStyle = $quoteBg ? "background: linear-gradient(rgba(11,13,22,0.78), rgba(11,13,22,0.88)), url('" . h(url($quoteBg)) . "') center/cover no-repeat; color: #fff; border: 1px solid rgba(255,255,255,0.18);" : '';
-  ?>
-  <section id="about" class="about section" style="<?= $whyStyle ?>">
-    <div class="wrap about-grid">
-      <div style="<?= $whyBg ? 'color: #fff;' : '' ?>">
-        <p class="eyebrow" style="<?= $whyBg ? 'color: var(--cyan-300);' : '' ?>">Why schools choose Innovatech</p>
-        <h2 class="section-title" style="<?= $whyBg ? 'color: #fff;' : '' ?>">Make a great first impression, at any scale.</h2>
+
+  <section class="section">
+    <!-- Why + Quote -->
+    <div id="about" class="wrap about-grid">
+      <div>
+        <p class="eyebrow"><?= h($landing['eyebrow_why'] ?? 'Why schools choose Innovatech') ?></p>
+        <h2 class="section-title">Make a great first impression, at any scale.</h2>
         <div class="why-grid">
           <?php foreach ($why as [$title, $desc]): ?>
             <div>
-              <h3 style="<?= $whyBg ? 'color: #fff;' : '' ?>"><?= h($title) ?></h3>
-              <p style="<?= $whyBg ? 'color: rgba(255,255,255,0.8);' : '' ?>"><?= h($desc) ?></p>
+              <h3><?= h($title) ?></h3>
+              <p><?= h($desc) ?></p>
             </div>
           <?php endforeach; ?>
         </div>
       </div>
-      <div class="quote-card" style="<?= $quoteStyle ?>">
+      <div class="quote-card">
         <?= icon('message', 30) ?>
         <blockquote><?= h($landing['quote'] ?? '"Innovatech helps us give prospective students a real sense of belonging before they even set foot on campus."') ?></blockquote>
         <div class="quote-person">
@@ -215,29 +210,31 @@ $featureLoop = array_merge($features, $features);
         </div>
       </div>
     </div>
-  </section>
 
-  <section id="contact" class="wrap section">
-    <?php 
-    $ctaBg = $landing['cta_bg'] ?? ''; 
-    $ctaStyle = $ctaBg ? "background: linear-gradient(rgba(11,13,22,0.8), rgba(11,13,22,0.92)), url('" . h(url($ctaBg)) . "') center/cover no-repeat; color: #fff; border: 1px solid rgba(255,255,255,0.18);" : '';
-    ?>
-    <div class="cta-box" style="<?= $ctaStyle ?>">
-      <div class="cta-inner">
-        <div>
-          <p class="eyebrow" style="<?= $ctaBg ? 'color: var(--cyan-300);' : '' ?>"><?= h($landing['cta']['headline'] ?? 'Your next chapter starts here') ?></p>
-          <h2 style="<?= $ctaBg ? 'color: #fff;' : '' ?>">Bring your campus online.</h2>
-          <p class="lede" style="<?= $ctaBg ? 'color: rgba(255,255,255,0.85);' : '' ?>"><?= h($landing['cta']['sub'] ?? 'Talk to our team about creating an experience your students will remember.') ?></p>
+    <!-- CTA -->
+    <div id="contact" class="wrap section">
+      <div class="cta-box">
+        <div class="cta-inner">
+          <div>
+            <p class="eyebrow"><?= h($landing['cta']['headline'] ?? 'Your next chapter starts here') ?></p>
+            <h2>Bring your campus online.</h2>
+            <p class="lede"><?= h($landing['cta']['sub'] ?? 'Talk to our team about creating an experience your students will remember.') ?></p>
+          </div>
+          <a class="btn btn-cyan" href="mailto:<?= h($email) ?>"><?= h($landing['cta']['btn_text'] ?? 'Contact support') ?> <?= icon('arrow-up-right', 16) ?></a>
         </div>
-        <a class="btn btn-cyan" href="mailto:<?= h($email) ?>"><?= h($landing['cta']['btn_text'] ?? 'Contact support') ?> <?= icon('arrow-up-right', 16) ?></a>
       </div>
     </div>
   </section>
 
+
   <footer class="site-footer">
     <div class="wrap footer-inner">
       <a class="logo" href="#top">
-        <span class="logo-mark"><?= icon('move3d') ?></span>
+        <?php if (!empty($landing['logo_path'])): ?>
+          <img class="logo-mark" src="<?= h(url($landing['logo_path'])) ?>" alt="">
+        <?php else: ?>
+          <span class="logo-mark"><?= icon('move3d') ?></span>
+        <?php endif; ?>
         <span>Innovatech <span class="accent">PH</span></span>
       </a>
       <div class="footer-links">
@@ -258,7 +255,7 @@ $featureLoop = array_merge($features, $features);
         <div>
           <div class="play lg"><?= icon('play', 24) ?></div>
           <p><strong>Interactive tour preview</strong></p>
-          <p id="modal-campus-hint" class="muted" style="color:#fff9">Drag to look around</p>
+          <p id="modal-campus-hint" class="muted">Drag to look around</p>
         </div>
       </div>
       <button type="button" class="modal-close" data-close-modal aria-label="Close tour preview"><?= icon('x', 18) ?></button>

@@ -1,15 +1,15 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../includes/auth.php';
 require_admin_staff();
 require_page('staff.archive');
 /**
- * Innovatech PH — staff: Archive & Restore for Buildings, Rooms, Tours, Floor Plans.
+ * Innovatech PH � staff: Archive & Restore for Buildings, Rooms, Tours, Floor Plans.
  */
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'Archive & Restore';
 $pageSub = 'Recover deleted content for your institution';
 $active = 'Archive & Restore';
+$bodyClass = 'page-staff-archive';
+require_once __DIR__ . '/../layout/header.php';
 
 $iid = (int) current_institution()['id'];
 
@@ -71,12 +71,12 @@ if ($tab === 'building') {
                     <tr>
                         <td class="fw-bold"><?= h($item['name']) ?></td>
                         <?php if ($tab === 'room'): ?>
-                            <td><span class="badge" style="background:var(--ia-surface-2)"><?= h($item['building_name'] ?? '—') ?></span></td>
+                            <td><span class="badge badge-surface"><?= h($item['building_name'] ?? '�') ?></span></td>
                         <?php endif; ?>
                         
                         <td class="text-muted"><?= h(date('M j, Y g:i A', strtotime($item['deleted_at']))) ?></td>
                         <td>
-                            <form method="post" style="display:inline">
+                            <form method="post" class="d-inline">
                                 <input type="hidden" name="restore_id" value="<?= (int) $item['id'] ?>">
                                 <input type="hidden" name="restore_type" value="<?= $tab ?>">
                                 <button type="submit" class="btn btn-sm btn-outline-ia"><?= ia_icon('refresh', 14) ?> Restore</button>

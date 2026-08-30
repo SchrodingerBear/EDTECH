@@ -5,11 +5,11 @@
 require_once __DIR__ . '/../../includes/auth.php';
 require_admin_staff();
 require_page('staff.aistitch');
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'AI Stitch';
 $pageSub = 'Six faces in, one seamless 360 panorama out';
 $active = 'AI Stitch';
+$bodyClass = 'page-staff-aistitch';
+require_once __DIR__ . '/../layout/header.php';
 
 $inst = current_institution();
 $iid = (int) $inst['id'];
@@ -95,7 +95,7 @@ $order = ['front', 'back', 'left', 'right', 'up', 'down'];
 $b = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued' => 'badge-draft', 'processing' => 'badge-live', 'completed' => 'badge-live', 'failed' => 'badge-dead'];
 ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
-  <p class="mb-1" style="color:var(--ia-muted);font-size:13.5px"><?= $jobs->rowCount() ?> job(s) · capture or upload the 6 cube faces in order</p>
+  <p class="mb-1 ia-meta-lg"><?= $jobs->rowCount() ?> job(s) · capture or upload the 6 cube faces in order</p>
   <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#job-modal"><?= ia_icon('camera', 16) ?> New job</button>
 </div>
 
@@ -107,7 +107,7 @@ $b = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued' => 'badge
           <div>
             <h3>#<?= (int) $job['id'] ?> <?= h($job['source_type']) ?></h3>
             <?php if ($job['source_type'] === 'in_app_capture' && in_array($job['guide_step'], $order, true)): ?>
-              <span class="badge" style="background:var(--ia-surface-2)">next: <?= h($job['guide_step']) ?></span>
+              <span class="badge badge-surface">next: <?= h($job['guide_step']) ?></span>
             <?php endif; ?>
           </div>
           <div class="d-flex align-items-center gap-2">
@@ -121,8 +121,8 @@ $b = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued' => 'badge
 
         <?php if ($job['status'] === 'completed' && $job['output_equirect_path']): ?>
           <div class="p-3 text-center">
-            <img src="<?= h(org_url($inst['slug'], $job['output_equirect_path'])) ?>" class="rounded-3" style="width:100%;aspect-ratio:2/1;object-fit:cover;border:1px solid var(--ia-border)" alt="result">
-            <p class="text-muted mt-2 mb-0" style="font-size:12.5px"><?= h($job['output_equirect_path']) ?> — inform your admin to set it as a tour scene.</p>
+            <img src="<?= h(org_url($inst['slug'], $job['output_equirect_path'])) ?>" class="equirect-thumb rounded-3" alt="result">
+            <p class="text-muted mt-2 mb-0 fs-125"><?= h($job['output_equirect_path']) ?> — inform your admin to set it as a tour scene.</p>
           </div>
         <?php else: ?>
           <div class="cube-grid-staff">
@@ -149,7 +149,7 @@ $b = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued' => 'badge
                 <button class="btn btn-grad px-4" <?= $job['status'] === 'completed' ? 'disabled' : '' ?>><?= ia_icon('wand', 15) ?> Stitch now</button>
               </form>
             <?php else: ?>
-              <span class="text-muted" style="font-size:12.5px"><?= (int) $job['fc'] ?>/6 faces</span>
+              <span class="text-muted fs-125"><?= (int) $job['fc'] ?>/6 faces</span>
             <?php endif; ?>
           </div>
         <?php endif; ?>
@@ -181,22 +181,6 @@ $b = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued' => 'badge
     </form>
   </div></div>
 </div>
-
-<style>
-  .cube-grid-staff { display:grid; grid-template-columns: repeat(3,1fr); gap:10px; padding:16px; }
-  @media (min-width:768px){ .cube-grid-staff { grid-template-columns: repeat(6,1fr); } }
-  .scube { position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; border:1px dashed var(--ia-border); background:var(--ia-surface-2); }
-  .scube.done { border-style:solid; }
-  .scube img { width:100%; height:100%; object-fit:cover; }
-  .scube-empty { cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--ia-muted); height:100%; }
-  .scube:hover .scube-empty { color:var(--ia-primary); }
-  .scube-label { position:absolute; bottom:4px; left:6px; font-size:10px; font-weight:700; text-transform:uppercase; background:rgba(255,255,255,.85); color:var(--ia-text); padding:2px 6px; border-radius:6px; }
-  .sj-opt { cursor:pointer; }
-  .sj-opt > input { position:absolute; opacity:0; }
-  .sj-box { display:block; padding:16px; border-radius:14px; border:2px dashed var(--ia-border); }
-  .sj-box small { display:block; color:var(--ia-muted); margin-top:4px; }
-  .sj-opt > input:checked + .sj-box { border-style:solid; border-color:var(--ia-primary); box-shadow:0 0 0 4px var(--ia-primary-soft); }
-</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {

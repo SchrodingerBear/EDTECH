@@ -5,11 +5,11 @@
 require_once __DIR__ . '/../../includes/auth.php';
 require_admin_staff();
 require_page('staff.dashboard');
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'Staff Overview';
 $pageSub = display_name(current_user()) . ' · ' . (current_institution()['name'] ?? '—');
 $active = 'Overview';
+$bodyClass = 'page-staff-dashboard';
+require_once __DIR__ . '/../layout/header.php';
 
 $iid = (int) current_institution()['id'];
 $me = (int) current_user()['id'];
@@ -54,7 +54,7 @@ $stats = [
 <div class="row g-4 mt-1">
   <div class="col-lg-7">
     <div class="ia-card">
-      <div class="card-head"><h3>Stitch jobs <span class="text-muted" style="font-size:12px">(<?= $myStitch ?> by you)</span></h3>
+      <div class="card-head"><h3>Stitch jobs <span class="text-muted fs-12">(<?= $myStitch ?> by you)</span></h3>
         <a class="btn btn-grad btn-sm" href="ai-stitch"><?= ia_icon('camera', 14) ?> New job</a>
       </div>
       <div class="table-responsive">
@@ -63,8 +63,8 @@ $stats = [
           <tbody>
             <?php foreach ($recentStitch as $j): ?>
               <tr>
-                <td style="font-weight:600">#<?= (int) $j['id'] ?> <span class="text-muted" style="color:var(--ia-muted)">· <?= h($j['source_type']) ?></span></td>
-                <td style="color:var(--ia-muted)"><?= (int) $j['fc'] ?>/6</td>
+                <td class="fw-semibold">#<?= (int) $j['id'] ?> <span class="text-ia-muted">· <?= h($j['source_type']) ?></span></td>
+                <td class="text-ia-muted"><?= (int) $j['fc'] ?>/6</td>
                 <td>
                   <?php if ($j['status'] === 'completed'): ?>
                     <span class="badge badge-live"><?= h($j['status']) ?></span>
@@ -74,7 +74,7 @@ $stats = [
                     <span class="badge badge-draft"><?= h($j['status']) ?></span>
                   <?php endif; ?>
                 </td>
-                <td style="color:var(--ia-muted);white-space:nowrap"><?= h(date('M j, g:i A', strtotime($j['created_at']))) ?></td>
+                <td class="text-ia-muted text-nowrap"><?= h(date('M j, g:i A', strtotime($j['created_at']))) ?></td>
               </tr>
             <?php endforeach; ?>
             <?php if (!$recentStitch): ?>
@@ -88,16 +88,16 @@ $stats = [
 
   <div class="col-lg-5">
     <div class="ia-card">
-      <div class="card-head"><h3>Recent uploads</h3><a class="text-muted" style="font-size:13px;text-decoration:none" href="uploads">view all</a></div>
+      <div class="card-head"><h3>Recent uploads</h3><a class="text-muted fs-13 text-decoration-none" href="uploads">view all</a></div>
       <div class="card-body">
         <div class="d-flex flex-wrap gap-2">
           <?php foreach ($recentMedia as $m): ?>
             <?php if ($m['file_path'] && preg_match('/\.(jpe?g|png|gif|webp)$/i', $m['file_path'])): ?>
-              <img src="<?= h(org_url(current_institution()['slug'], $m['file_path'])) ?>" class="avatar-sm rounded-3" style="width:64px;height:64px;object-fit:cover" alt="media">
+              <img src="<?= h(org_url(current_institution()['slug'], $m['file_path'])) ?>" class="avatar-sm rounded-3 thumb-64" alt="media">
             <?php endif; ?>
           <?php endforeach; ?>
           <?php if (!$recentMedia): ?>
-            <p class="text-muted mb-0" style="font-size:13px">No media yet — upload photos for buildings, rooms and floor plans.</p>
+            <p class="text-muted mb-0 fs-13">No media yet — upload photos for buildings, rooms and floor plans.</p>
           <?php endif; ?>
         </div>
       </div>
@@ -105,18 +105,18 @@ $stats = [
 
     <div class="ia-card mt-4">
       <div class="card-head"><h3>Quick Guides</h3></div>
-      <div class="card-body" style="padding:18px">
-        <div style="margin-bottom:12px;">
-            <strong style="color:var(--ia-text)">Campus Content</strong>
-            <div style="font-size:13px;color:var(--ia-muted)">Add buildings, areas, and 360 virtual tours.</div>
+      <div class="card-body card-body-px">
+        <div class="guide-item">
+            <strong>Campus Content</strong>
+            <div>Add buildings, areas, and 360 virtual tours.</div>
         </div>
-        <div style="margin-bottom:12px;">
-            <strong style="color:var(--ia-text)">Floor Plans & Media</strong>
-            <div style="font-size:13px;color:var(--ia-muted)">Upload image assets and drop navigation markers on maps.</div>
+        <div class="guide-item">
+            <strong>Floor Plans & Media</strong>
+            <div>Upload image assets and drop navigation markers on maps.</div>
         </div>
-        <div style="margin-bottom:12px;">
-            <strong style="color:var(--ia-text)">AI Tools</strong>
-            <div style="font-size:13px;color:var(--ia-muted)">Use AI to stitch panoramas or generate facility descriptions.</div>
+        <div class="guide-item">
+            <strong>AI Tools</strong>
+            <div>Use AI to stitch panoramas or generate facility descriptions.</div>
         </div>
       </div>
     </div>

@@ -5,11 +5,11 @@ require_page('admin.ai');
 /**
  * Innovatech PH — admin: AI stitch (cubemap → equirect) + AI info generation.
  */
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'AI Tools';
 $pageSub = 'Stitch a 360 panorama from six faces · generate facility info';
 $active = 'AI Tools';
+$bodyClass = 'page-ai';
+require_once __DIR__ . '/../layout/header.php';
 
 $inst = resolve_active_institution();
 if (!$inst) { http_response_code(404); require ROOT_PATH . '/admin/errors/404.php'; exit; }
@@ -193,7 +193,7 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
   <!-- ============================ STITCH ============================ -->
   <div class="col-lg-8">
     <div class="d-flex align-items-center justify-content-between mb-3">
-      <h4 style="font-weight:800">Stitch jobs</h4>
+      <h4 class="fw-800">Stitch jobs</h4>
       <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#job-modal"><?= ia_icon('camera', 16) ?> New stitch job</button>
     </div>
 
@@ -202,10 +202,10 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
       <div class="ia-card mb-3">
         <div class="card-head">
           <div class="d-flex align-items-center gap-2">
-            <h3>#<?= (int) $job['id'] ?> <span class="text-muted" style="font-size:13px"><?= h($job['source_type']) ?></span></h3>
+            <h3>#<?= (int) $job['id'] ?> <span class="text-muted fs-13"><?= h($job['source_type']) ?></span></h3>
             <span class="badge <?= $statusBadge[$job['status']] ?? 'badge-draft' ?>"><?= h($job['status']) ?></span>
             <?php if ($job['source_type'] === 'in_app_capture' && in_array($job['guide_step'], $order, true)): ?>
-              <span class="badge" style="background:var(--ia-surface-2)">next: <?= h($job['guide_step']) ?></span>
+              <span class="badge badge-surface">next: <?= h($job['guide_step']) ?></span>
             <?php endif; ?>
           </div>
           <form method="post" data-delete-form data-confirm="Delete stitch job #<?= (int) $job['id'] ?>?">
@@ -217,12 +217,12 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
         <?php if ($job['status'] === 'completed' && $job['output_equirect_path']): ?>
           <div class="row g-3 align-items-center card-body-night">
             <div class="col-md-3">
-              <img src="<?= h(org_url($inst['slug'], $job['output_equirect_path'])) ?>" class="rounded-3" style="width:100%;aspect-ratio:2/1;object-fit:cover;border:1px solid var(--ia-border)" alt="equirect">
+              <img src="<?= h(org_url($inst['slug'], $job['output_equirect_path'])) ?>" class="equirect-thumb rounded-3" alt="equirect">
             </div>
             <div class="col-md-5">
               <div class="fw-bold mb-1"><span class="badge badge-live">ready</span> 2:1 equirectangular panorama</div>
-              <div class="text-muted" style="font-size:12.5px"><?= h($job['output_equirect_path']) ?></div>
-              <?php if ($job['scene_title']): ?><div class="mt-1" style="font-size:12.5px">Scene: <?= h($job['scene_title']) ?></div><?php endif; ?>
+              <div class="text-muted fs-125"><?= h($job['output_equirect_path']) ?></div>
+              <?php if ($job['scene_title']): ?><div class="mt-1 fs-125">Scene: <?= h($job['scene_title']) ?></div><?php endif; ?>
             </div>
             <div class="col-md-4">
               <form method="post" class="d-flex gap-2">
@@ -263,7 +263,7 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
           </div>
 
           <div class="d-flex justify-content-between align-items-center mt-3">
-            <span class="text-muted" style="font-size:12.5px"><?= $status ?>/6 faces · <?= $job['source_type'] === 'in_app_capture' ? 'guided capture, in order' : 'free upload' ?></span>
+            <span class="text-muted fs-125"><?= $status ?>/6 faces · <?= $job['source_type'] === 'in_app_capture' ? 'guided capture, in order' : 'free upload' ?></span>
             <?php if ($status === 6): ?>
               <form method="post">
                 <input type="hidden" name="ai_action" value="stitch"><input type="hidden" name="job_id" value="<?= (int) $job['id'] ?>">
@@ -299,15 +299,15 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
         <div><label class="form-label">Target</label><select class="form-select" name="target_id" id="ai-target-id"></select></div>
         <div><label class="form-label">Prompt / notes <span class="text-muted">(optional)</span></label><textarea class="form-control" name="prompt" rows="3" placeholder="Emphasize the 24/7 study area…"></textarea></div>
         <button class="btn btn-grad"><?= ia_icon('wand', 15) ?> Generate description</button>
-        <p class="text-muted mb-0" style="font-size:12px">Offline built-in generator — swap the token call for a real LLM API later.</p>
+        <p class="text-muted mb-0 fs-12">Offline built-in generator — swap the token call for a real LLM API later.</p>
       </form>
     </div>
 
     <div class="ia-card mt-3">
       <div class="card-head"><h3>Recent generations</h3></div>
-      <div class="card-body d-grid gap-2" style="max-height:330px;overflow:auto">
+      <div class="card-body d-grid gap-2 ia-scroll">
         <?php foreach ($infoJobs as $ij): ?>
-          <div class="px-3 py-2 rounded-3" style="background:var(--ia-surface-2);font-size:12.5px">
+          <div class="px-3 py-2 rounded-3 ia-tile">
             <div class="d-flex justify-content-between gap-2">
               <span class="fw-semibold"><?= h($ij['target_type']) ?> #<?= (int) $ij['target_id'] ?></span>
               <span class="badge badge-live"><?= h($ij['status']) ?></span>
@@ -315,7 +315,7 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
             <div class="text-muted mt-1"><?= h(mb_strimwidth($ij['output_text'] ?? '—', 0, 90, '…')) ?></div>
           </div>
         <?php endforeach; ?>
-        <?php if ($infoJobs->rowCount() === 0): ?><p class="text-muted" style="font-size:13px">No generations yet.</p><?php endif; ?>
+        <?php if ($infoJobs->rowCount() === 0): ?><p class="text-muted fs-13">No generations yet.</p><?php endif; ?>
       </div>
     </div>
   </div>
@@ -341,26 +341,6 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
     </form>
   </div></div>
 </div>
-
-<style>
-  .cube-grid { display:grid; grid-template-columns: repeat(6, 1fr); gap:10px; }
-  .cube-cell { position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; border:1px dashed var(--ia-border); background:var(--ia-surface-2); display:flex; align-items:center; justify-content:center; }
-  .cube-cell.filled { border-style:solid; }
-  .cube-cell img { width:100%; height:100%; object-fit:cover; }
-  .cube-empty { cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px; color:var(--ia-muted); width:100%; height:100%; justify-content:center; }
-  .cube-cell:hover .cube-empty { color:var(--ia-primary); }
-  .cube-plus { font-size:18px; }
-  .cube-label { position:absolute; bottom:4px; left:6px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--ia-text); background:rgba(255,255,255,.85); padding:2px 6px; border-radius:6px; }
-  .cube-re { position:absolute; top:4px; right:4px; opacity:0; transition:opacity .15s; }
-  .cube-cell.filled:hover .cube-re { opacity:1; }
-  .cube-grid { grid-template-columns: repeat(3, 1fr); }
-  @media (min-width: 768px) { .cube-grid { grid-template-columns: repeat(6, 1fr); } }
-  .mode-card-dashed { cursor:pointer; }
-  .mode-card-dashed > input { position:absolute; opacity:0; }
-  .mode-box-2 { display:block; gap:2px; padding:16px; border-radius:14px; border:2px dashed var(--ia-border); transition:all .15s; }
-  .mode-box-2 small { display:block; color:var(--ia-muted); margin-top:4px; }
-  .mode-card-dashed > input:checked + .mode-box-2 { border-style:solid; border-color:var(--ia-primary); box-shadow:0 0 0 4px var(--ia-primary-soft); }
-</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {

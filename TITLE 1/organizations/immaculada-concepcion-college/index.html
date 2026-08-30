@@ -264,7 +264,7 @@
     function openPopup(m) {
       $('#info-title').textContent = m.popup_title || m.label || 'Location';
       const body = $('#info-body');
-      body.innerHTML = m.popup_html || '<p style="color:#aab;font-size:14px">No additional info.</p>';
+      body.innerHTML = m.popup_html || '<p class="popup-empty">No additional info.</p>';
       $('#info-panel').classList.remove('hidden');
     }
 

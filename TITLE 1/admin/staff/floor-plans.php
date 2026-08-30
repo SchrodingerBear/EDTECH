@@ -5,11 +5,11 @@
 require_once __DIR__ . '/../../includes/auth.php';
 require_admin_staff();
 require_page('staff.floorplans');
-require_once __DIR__ . '/../layout/header.php';
-
 $pageTitle = 'Floor Plans';
 $pageSub = 'Upload campus maps and drop markers (percentages keep them responsive)';
 $active = 'Floor Plans';
+$bodyClass = 'page-staff-floorplans';
+require_once __DIR__ . '/../layout/header.php';
 
 $inst = current_institution();
 $iid = (int) $inst['id'];
@@ -103,19 +103,19 @@ if ($planId) {
   <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
       <a class="back-link" href="floor-plans">← All floor plans</a>
-      <div class="d-flex align-items-center gap-2 mt-1"><h3 class="mb-0" style="font-weight:800"><?= h($plan['title']) ?></h3><span class="badge badge-draft"><?= count($markers) ?> markers</span></div>
+      <div class="d-flex align-items-center gap-2 mt-1"><h3 class="mb-0 fw-800"><?= h($plan['title']) ?></h3><span class="badge badge-draft"><?= count($markers) ?> markers</span></div>
     </div>
     <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#mk-modal" data-x="50" data-y="50"><?= ia_icon('map', 16) ?> Add marker</button>
   </div>
 
   <div class="ia-card p-3">
-    <div id="stage" style="aspect-ratio:<?= (float) $plan['aspect_ratio'] ?>;position:relative;max-width:100%;max-height:70vh;margin:0 auto">
-      <img src="<?= h(org_url($inst['slug'], $plan['image_path'])) ?>" style="width:100%;height:100%;object-fit:contain;border-radius:12px;display:block;pointer-events:none" alt="floor plan">
+    <div id="stage" style="--fp-ar:<?= (float) $plan['aspect_ratio'] ?>">
+      <img src="<?= h(org_url($inst['slug'], $plan['image_path'])) ?>" alt="floor plan">
       <?php foreach ($markers as $m): ?>
         <button type="button" class="mk-dot" data-mid="<?= (int) $m['id'] ?>" data-name="<?= h($m['label'], ENT_QUOTES) ?>"
           style="left:<?= (float) $m['x_percent'] ?>%;top:<?= (float) $m['y_percent'] ?>%"></button>
       <?php endforeach; ?>
-      <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:12px;color:#fff;background:rgba(20,22,40,.72);padding:6px 12px;border-radius:999px">Click a dot to reposition: first click a dot, then click the new spot on the map.</div>
+      <div class="fp-hint">Click a dot to reposition: first click a dot, then click the new spot on the map.</div>
     </div>
   </div>
 
@@ -123,7 +123,7 @@ if ($planId) {
     <h5 class="fw-bold mb-3">Markers</h5>
     <div class="d-flex flex-wrap gap-2">
       <?php foreach ($markers as $m): ?>
-        <span class="px-3 py-2 rounded-3 d-flex align-items-center gap-2" style="background:var(--ia-surface-2)">
+        <span class="px-3 py-2 rounded-3 d-flex align-items-center gap-2 bg-surface-2">
           <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none fw-semibold" data-edit-marker="<?= (int) $m['id'] ?>"
             data-name="<?= h($m['label'], ENT_QUOTES) ?>" data-x="<?= (float) $m['x_percent'] ?>" data-y="<?= (float) $m['y_percent'] ?>"
             data-pt="<?= h($m['popup_title'], ENT_QUOTES) ?>" data-ph="<?= h($m['popup_html'], ENT_QUOTES) ?>" data-bs-toggle="modal" data-bs-target="#mk-modal"><?= h($m['label']) ?></button>
@@ -133,12 +133,12 @@ if ($planId) {
           </form>
         </span>
       <?php endforeach; ?>
-      <?php if (!$markers): ?><p class="text-muted mb-0" style="font-size:13px">No markers — click Add marker to start placing pins.</p><?php endif; ?>
+      <?php if (!$markers): ?><p class="text-muted mb-0 fs-13">No markers — click Add marker to start placing pins.</p><?php endif; ?>
     </div>
   </div></div>
 <?php else: ?>
   <div class="d-flex align-items-center justify-content-between mb-3">
-    <p class="mb-1" style="color:var(--ia-muted);font-size:13.5px"><?= count($plans) ?> floor plan(s)</p>
+    <p class="mb-1 ia-meta-lg"><?= count($plans) ?> floor plan(s)</p>
     <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#up-modal"><?= ia_icon('upload', 16) ?> Upload floor plan</button>
   </div>
   <div class="ia-card">
@@ -147,9 +147,9 @@ if ($planId) {
       <tbody>
         <?php foreach (($plans ?: []) as $p): ?>
           <tr>
-            <td style="font-weight:700"><?= h($p['title']) ?></td>
-            <td><img src="<?= h(org_url($inst['slug'], $p['image_path'])) ?>" style="width:110px;height:52px;object-fit:contain;border-radius:8px;border:1px solid var(--ia-border)" alt=""></td>
-            <td style="color:var(--ia-muted)"><?= (int) $p['mc'] ?></td>
+            <td class="fw-bold"><?= h($p['title']) ?></td>
+            <td><img src="<?= h(org_url($inst['slug'], $p['image_path'])) ?>" class="plan-thumb-sm" alt=""></td>
+            <td class="text-ia-muted"><?= (int) $p['mc'] ?></td>
             <td class="text-end">
               <div class="d-inline-flex gap-1">
                 <a class="btn btn-sm btn-grad" href="floor-plans?plan=<?= (int) $p['id'] ?>"><?= ia_icon('map', 13) ?> Markers</a>
@@ -199,27 +199,13 @@ if ($planId) {
             <div class="col-6"><label class="form-label">Popup title</label><input class="form-control" name="popup_title"></div>
             <div class="col-6"><label class="form-label">Popup content</label><input class="form-control" name="popup_html"></div>
           </div>
-          <p style="font-size:12.5px;color:var(--ia-muted);margin:0">A new pin appears at the center — click it on the map to move it, then edit here.</p>
+          <p class="fs-125 text-ia-muted mb-0">A new pin appears at the center — click it on the map to move it, then edit here.</p>
         </div>
         <div class="modal-footer"><button class="btn btn-grad px-4" type="submit">Add marker</button></div>
       </form>
     </div>
   </div></div>
 </div>
-
-<style>
-  .mk-dot { position:absolute; width:34px; height:34px; border:0; border-radius:50%; cursor:pointer; transform:translate(-50%,-50%);
-    background:radial-gradient(circle at 32% 28%, var(--ia-accent), var(--ia-primary));
-    box-shadow:0 4px 14px rgba(0,0,0,.4), 0 0 0 3px rgba(255,255,255,.85); transition:transform .15s; }
-  .mk-dot:hover { transform:translate(-50%,-50%) scale(1.18); }
-  .mk-dot.moving { outline:3px dashed var(--ia-warning); outline-offset:3px; }
-  @media (min-width: 768px) {
-    .mk-dot::after { content:attr(data-name); position:absolute; left:50%; bottom:100%; transform:translateX(-50%);
-      background:var(--ia-surface); border:1px solid var(--ia-border); color:var(--ia-text); padding:3px 8px; margin-bottom:6px;
-      border-radius:8px; font-size:11px; white-space:nowrap; font-weight:600; opacity:0; pointer-events:none; }
-    .mk-dot:hover::after { opacity:1; }
-  }
-</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {

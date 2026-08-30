@@ -64,6 +64,7 @@ a-scene { width: 100%; height: 100%; }
 }
 .info-panel h2 { font-size: 19px; font-weight: 800; margin-bottom: 8px; padding-right: 34px; }
 .info-panel p { font-size: 14px; line-height: 1.6; color: #ccd; }
+.info-panel .popup-empty { color: #aab; }
 .info-panel .round-btn { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; font-size: 14px; }
 .info-panel.hidden { display: none; }
 

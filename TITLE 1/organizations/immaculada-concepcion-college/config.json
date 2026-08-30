@@ -4,16 +4,18 @@
     "short_name": "ICC",
     "landing_mode": "floor_plan",
     "require_landscape_mobile": true,
-    "starting_scene": {
-        "title": "Starting Point",
-        "equirect_path": "assets/panos/example.jpg",
-        "initial_yaw": 100,
-        "initial_pitch": 10
+    "theme": {
+        "primary": "#1a365d",
+        "secondary": "#ed8936",
+        "accent": "#38b2ac",
+        "popup_animation": "fade",
+        "marker_glow": false
     },
+    "scenes": [],
     "starting_floor_plan": {
         "id": 1,
         "title": "Campus",
-        "image_path": "assets/floorplans/6b43b2c37796.png",
+        "image_path": "assets/floorplans/1ece807fc69a80ab.png",
         "object_fit": "contain"
     },
     "floor_plan_markers": [
@@ -47,13 +49,5 @@
             "popup_html": "This is entrance",
             "target_type": "popup"
         }
-    ],
-    "theme": {
-        "primary": "#1a365d",
-        "secondary": "#ed8936",
-        "accent": "#38b2ac",
-        "popup_animation": "fade",
-        "marker_glow": false
-    },
-    "scenes": []
+    ]
 }

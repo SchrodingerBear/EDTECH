@@ -20,6 +20,9 @@ $roleHome = match ($role) {
     default => 'admin/index',
 };
 $roleLabel = ucwords(str_replace('_', ' ', (string) $role));
+
+$platform_settings = crud()->get('platform_settings', 1) ?? [];
+$brandLogoUrl = !empty($platform_settings['logo_path']) ? url($platform_settings['logo_path']) : url('assets/logo2.webp');
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
@@ -32,9 +35,11 @@ $roleLabel = ucwords(str_replace('_', ' ', (string) $role));
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet">
   <link rel="stylesheet" href="<?= url('admin/assets/css/dashboard.css') ?>">
+  <script>window.IA_BASE_URL = <?= json_encode(BASE_URL, JSON_UNESCAPED_SLASHES) ?>;</script>
 </head>
-<body>
+<body class="<?= h(trim((string) ($bodyClass ?? ''))) ?>">
 
 <div class="ia-shell" id="ia-shell">
 
@@ -43,8 +48,8 @@ $roleLabel = ucwords(str_replace('_', ' ', (string) $role));
   <!-- ============================== SIDEBAR ============================== -->
   <aside class="ia-sidebar">
     <div class="brand">
-      <a class="brand-logo" href="<?= url($roleHome) ?>" style="background:none;display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;overflow:hidden;padding:0">
-        <img src="<?= url('assets/logo2.webp') ?>" alt="Innovatech PH" style="width:42px;height:42px;object-fit:contain;border-radius:12px">
+      <a class="brand-logo" href="<?= url($roleHome) ?>">
+        <img src="<?= h($brandLogoUrl) ?>" alt="Innovatech PH">
       </a>
       <div class="brand-name"><?= h(APP_NAME) ?><small><?= h($roleLabel) ?></small></div>
     </div>
@@ -65,7 +70,7 @@ $roleLabel = ucwords(str_replace('_', ' ', (string) $role));
         </ul>
       <?php elseif (isset($group[0]) && is_string($group[0])): ?>
         <?php [$text, $href, $icon] = $group; ?>
-        <p class="ia-nav-label" style="padding-bottom:2px"><?= h($text) ?></p>
+        <p class="ia-nav-label"><?= h($text) ?></p>
         <ul class="ia-nav">
           <li>
             <a class="nav-link <?= $active === $text ? 'active' : '' ?>" href="<?= url($href) ?>">
@@ -90,10 +95,10 @@ $roleLabel = ucwords(str_replace('_', ' ', (string) $role));
     </nav>
 
     <div class="side-foot">
-      <div class="foot-text" style="font-size:12px;color:var(--ia-muted);padding:2px 8px 8px">
+      <div class="foot-text">
         <?= h($roleLabel) ?> workspace · v1.0
       </div>
-      <a class="nav-link" href="<?= url('admin/logout') ?>" style="justify-content:flex-start">
+      <a class="nav-link" href="<?= url('admin/logout') ?>">
         <span class="ia-icon"><?= ia_icon('logout') ?></span>
         <span>Sign out</span>
       </a>
@@ -118,15 +123,23 @@ $roleLabel = ucwords(str_replace('_', ' ', (string) $role));
       <?= ia_icon('globe') ?>
     </a>
 
+    <?php if (in_array($role, ['owner', 'system_admin'])): ?>
+      <form method="post" action="<?= url('admin/owner/clear-cache.php') ?>" class="d-none d-md-block m-0">
+        <button type="submit" class="ia-btn-ghost" title="Clear Cache" aria-label="Clear Cache">
+          <?= ia_icon('refresh') ?: ia_icon('sun') ?>
+        </button>
+      </form>
+    <?php endif; ?>
+
     <button type="button" class="theme-switch" data-theme-toggle aria-label="Toggle theme" title="Toggle dark / light">
       <span class="knob"><?= ia_icon('moon', 13) ?></span>
     </button>
 
     <?php if ($inst): ?>
-      <a class="d-none d-md-flex align-items-center gap-2 px-3 py-2 rounded-4" style="border:1px solid var(--ia-border);background:var(--ia-surface)"
+      <a class="d-none d-md-flex align-items-center gap-2 px-3 py-2 rounded-4 surface-line"
          href="<?= h(org_url($inst['slug'])) ?>" target="_blank" title="<?= h($inst['name']) ?>">
         <span class="badge badge-live">LIVE</span>
-        <span style="font-size:13px;font-weight:600"><?= h($inst['short_name'] ?: $inst['name']) ?></span>
+        <span class="fs-13 fw-semibold"><?= h($inst['short_name'] ?: $inst['name']) ?></span>
       </a>
     <?php endif; ?>
 
@@ -135,8 +148,8 @@ $roleLabel = ucwords(str_replace('_', ' ', (string) $role));
         <span class="ia-avatar"><?= h(mb_substr(trim(($u['first_name'][0] ?? '') . ($u['last_name'][0] ?? '')), 0, 2)) ?></span>
       </button>
       <ul class="dropdown-menu dropdown-menu-end">
-        <li><span class="dropdown-item-text" style="font-weight:700;color:var(--ia-text)"><?= h(display_name($u)) ?></span></li>
-        <li><span class="dropdown-item-text small" style="color:var(--ia-muted)"><?= h($u['email']) ?> · <?= h($u['role_name']) ?></span></li>
+        <li><span class="dropdown-item-text fw-bold text-ia-text"><?= h(display_name($u)) ?></span></li>
+        <li><span class="dropdown-item-text small text-ia-muted"><?= h($u['email']) ?> · <?= h($u['role_name']) ?></span></li>
         <li><hr class="dropdown-divider"></li>
         <li><a class="dropdown-item" href="<?= url('admin/profile') ?>"><?= ia_icon('user', 15) ?> My profile</a></li>
         <li><a class="dropdown-item text-danger" href="<?= url('admin/logout') ?>"><?= ia_icon('logout', 15) ?> Sign out</a></li>

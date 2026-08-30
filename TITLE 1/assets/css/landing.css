@@ -22,6 +22,17 @@
   --slate-800: #1e293b;
   --slate-900: #0f172a;
   --slate-950: #020617;
+  /* --- Dark section palette (fixed regardless of light/dark mode) --- */
+  --ds-bg: #0d0f1c;
+  /* section background  */
+  --ds-card-bg: rgba(255, 255, 255, 0.055);
+  /* glass card bg */
+  --ds-card-border: rgba(255, 255, 255, 0.12);
+  --ds-text: #ffffff;
+  --ds-text-muted: rgba(255, 255, 255, 0.68);
+  --ds-eyebrow: #67e8f9;
+  /* cyan-300 */
+  --ds-avatar-bg: rgba(255, 255, 255, 0.15);
   --radius: 0.625rem;
   --font: "Geist", ui-sans-serif, system-ui, sans-serif;
 }
@@ -136,9 +147,15 @@ input {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 0.75rem;
-  background: var(--primary);
   color: var(--primary-foreground);
-  box-shadow: 0 10px 24px color-mix(in oklab, var(--primary) 25%, transparent);
+}
+
+a.logo img.logo-mark {
+  width: auto;
+  height: 2rem;
+  object-fit: contain;
+  vertical-align: middle;
+  background: transparent;
 }
 
 .logo .accent {
@@ -258,6 +275,7 @@ input {
 }
 
 @media (min-width: 1024px) {
+
   .nav-desktop,
   .header-actions {
     display: flex;
@@ -451,12 +469,19 @@ html.dark .pill {
 }
 
 @keyframes campus-marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(calc(-50% - 0.625rem)); }
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(-50% - 0.625rem));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .marquee-track { animation: none; }
+  .marquee-track {
+    animation: none;
+  }
 }
 
 .feature-card {
@@ -523,6 +548,10 @@ html.dark .pill {
   color: var(--muted-foreground);
 }
 
+#modal-campus-hint {
+  color: #fff9;
+}
+
 .feature-body p,
 .campus-card p,
 .step p,
@@ -547,8 +576,8 @@ code {
 }
 
 .campuses {
-  background: var(--slate-950);
-  color: #f1f5f9;
+  background: var(--card);
+  color: var(--card-foreground);
 }
 
 .campuses-head {
@@ -557,20 +586,16 @@ code {
   gap: 2rem;
 }
 
-.campuses .eyebrow {
-  color: var(--cyan-300);
-}
-
 .campuses h2 {
   margin: 0.75rem 0 0;
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 900;
   letter-spacing: -0.045em;
-  color: #fff;
+  color: var(--card-foreground);
 }
 
 .campuses .lede {
-  color: var(--slate-400);
+  color: var(--muted-foreground);
 }
 
 .campus-tools {
@@ -595,7 +620,6 @@ code {
   width: 100%;
   border-radius: 999px;
   border: 1px solid var(--slate-700);
-  background: var(--slate-900);
   color: #fff;
   padding: 0.75rem 1.25rem 0.75rem 2.75rem;
   outline: none;
@@ -707,7 +731,7 @@ code {
 }
 
 .step:first-child {
-  padding-top: 0;
+  padding-top: 1.5rem;
 }
 
 .step-num {
@@ -717,12 +741,18 @@ code {
   color: var(--primary);
 }
 
-.about {
-  background: var(--cyan-50);
+
+/* Dark section: indigo gradient in light mode, true dark in dark mode */
+.ds-dark {
+  background: linear-gradient(135deg,
+      oklch(0.18 0.18 255) 0%,
+      oklch(0.12 0.10 270) 100%);
+  color: #fff;
 }
 
-html.dark .about {
-  background: color-mix(in oklab, var(--cyan-950) 30%, transparent);
+html.dark .ds-dark {
+  background: var(--ds-bg);
+  color: var(--ds-text);
 }
 
 .why-grid {
@@ -731,12 +761,28 @@ html.dark .about {
   margin-top: 2rem;
 }
 
+.why-grid div h3 {
+  color: var(--foreground);
+}
+
+.why-grid div p {
+  color: var(--muted-foreground);
+}
+
+.about .eyebrow {
+  color: var(--ds-eyebrow);
+}
+
+.about .section-title {
+  color: var(--ds-text);
+}
+
 .quote-card {
   border-radius: 2rem;
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: oklch(0.26 0.16 255);
+  color: #fff;
   padding: 2rem;
-  box-shadow: 0 25px 50px color-mix(in oklab, var(--primary) 20%, transparent);
+  box-shadow: 0 20px 60px oklch(0.26 0.16 255 / 35%);
 }
 
 .quote-card blockquote {
@@ -760,8 +806,8 @@ html.dark .about {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 999px;
-  background: var(--cyan-200);
-  color: var(--primary);
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
   font-weight: 700;
 }
 
@@ -771,18 +817,19 @@ html.dark .about {
 
 .quote-person .role {
   font-size: 0.75rem;
-  opacity: 0.75;
+  opacity: 0.7;
 }
 
 .cta-box {
   border-radius: 2rem;
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: oklch(0.26 0.16 255);
+  color: #fff;
   padding: 2rem;
+  box-shadow: 0 20px 60px oklch(0.26 0.16 255 / 35%);
 }
 
 .cta-box .eyebrow {
-  color: var(--cyan-200);
+  color: #67e8f9;
 }
 
 .cta-box h2 {
@@ -791,10 +838,11 @@ html.dark .about {
   font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 900;
   letter-spacing: -0.04em;
+  color: #fff;
 }
 
 .cta-box .lede {
-  color: color-mix(in oklab, var(--primary-foreground) 80%, transparent);
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .cta-inner {
