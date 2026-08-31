@@ -274,7 +274,25 @@ CREATE TABLE `email_templates` (
 INSERT INTO `email_templates` (`slug`, `subject`, `body_html`) VALUES
 ('admin_invite', 'Your Innovatech campus admin account', '<p>You have been assigned as admin.</p>'),
 ('staff_invite', 'Your campus staff account', '<p>You have been added as staff.</p>'),
-('password_reset', 'Reset your password', '<p>Reset link: {{link}}</p>');
+('password_reset', 'Reset your password', '<p>Reset link: {{link}}</p>'),
+('support_ticket_status', 'Your support ticket #{{ticket_id}} is {{ticket_status}}', '<p>Hi {{name}},</p><p>Your support ticket &quot;<strong>{{ticket_subject}}</strong>&quot; is now <strong>{{ticket_status}}</strong>.</p><p>{{ticket_message}}</p><p><a href="{{link}}">Open the admin dashboard</a></p>'),
+('new_ticket', 'New support ticket #{{ticket_id}} — {{ticket_subject}}', '<p>A new support ticket has been opened.</p><p><strong>{{ticket_subject}}</strong></p><p>{{ticket_message}}</p><p>Ticket #{{ticket_id}} &middot; Priority: {{priority}} &middot; {{institution}}</p><p>Submitted by {{name}} ({{email}}).</p><p><a href="{{link}}">Open the support desk</a></p>');
+
+CREATE TABLE `support_tickets` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `subject` VARCHAR(190) NOT NULL,
+  `message` TEXT NULL,
+  `contact_email` VARCHAR(190) NULL,
+  `institution_id` INT UNSIGNED NULL,
+  `status` VARCHAR(20) NOT NULL DEFAULT 'open',
+  `priority` VARCHAR(20) NOT NULL DEFAULT 'normal',
+  `created_by` INT UNSIGNED NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `audit_logs` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -603,6 +621,31 @@ CREATE TABLE `cubemap_faces` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_job_face` (`job_id`, `face`),
   CONSTRAINT `fk_faces_job` FOREIGN KEY (`job_id`) REFERENCES `ai_stitch_jobs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 360 Camera App Panoramas (automatic capture from 360_cam app)
+-- -----------------------------------------------------------------------------
+CREATE TABLE `panoramas` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `institution_id` INT UNSIGNED NOT NULL,
+  `created_by` INT UNSIGNED NOT NULL,
+  `title` VARCHAR(255) DEFAULT NULL,
+  `description` TEXT DEFAULT NULL,
+  `equirect_path` VARCHAR(255) NOT NULL,
+  `thumbnail_path` VARCHAR(255) DEFAULT NULL,
+  `capture_data` JSON DEFAULT NULL,
+  `width` INT UNSIGNED DEFAULT NULL,
+  `height` INT UNSIGNED DEFAULT NULL,
+  `file_size` INT UNSIGNED DEFAULT NULL,
+  `status` ENUM('draft', 'processing', 'completed', 'failed') NOT NULL DEFAULT 'draft',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_panoramas_institution` (`institution_id`),
+  KEY `idx_panoramas_status` (`status`),
+  CONSTRAINT `fk_panoramas_institution` FOREIGN KEY (`institution_id`) REFERENCES `institutions` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_panoramas_user` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `ai_info_jobs` (

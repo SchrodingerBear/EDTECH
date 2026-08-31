@@ -5,28 +5,28 @@
   <meta content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
   <meta content="yes" name="apple-mobile-web-app-capable"/>
   <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
-  <meta content="Photosphere" name="apple-mobile-web-app-title"/>
+  <meta content="Innovatech 360" name="apple-mobile-web-app-title"/>
   <!-- PWA Meta Tags -->
-  <meta content="Create stunning 360° photospheres with structured capture and GPU-accelerated stitching" name="description"/>
+  <meta content="Innovatech PH - AI-Assisted AR 360° Virtual Campus Navigation - 360 Panorama Capture" name="description"/>
   <meta content="#8C1515" name="theme-color"/>
   <meta content="yes" name="mobile-web-app-capable"/>
   <!-- Apple Touch Icons -->
-  <link href="img/icon-180.png" rel="apple-touch-icon"/>
-  <link href="img/icon-120.png" rel="apple-touch-icon" sizes="120x120"/>
-  <link href="img/icon-152.png" rel="apple-touch-icon" sizes="152x152"/>
-  <link href="img/icon-167.png" rel="apple-touch-icon" sizes="167x167"/>
-  <link href="img/icon-180.png" rel="apple-touch-icon" sizes="180x180"/>
+  <link href="/360_cam/img/icon-180.png" rel="apple-touch-icon"/>
+  <link href="/360_cam/img/icon-120.png" rel="apple-touch-icon" sizes="120x120"/>
+  <link href="/360_cam/img/icon-152.png" rel="apple-touch-icon" sizes="152x152"/>
+  <link href="/360_cam/img/icon-167.png" rel="apple-touch-icon" sizes="167x167"/>
+  <link href="/360_cam/img/icon-180.png" rel="apple-touch-icon" sizes="180x180"/>
   <!-- Favicon -->
-  <link href="img/favicon-32.png" rel="icon" sizes="32x32" type="image/png"/>
-  <link href="img/favicon-16.png" rel="icon" sizes="16x16" type="image/png"/>
+  <link href="/360_cam/img/favicon-32.png" rel="icon" sizes="32x32" type="image/png"/>
+  <link href="/360_cam/img/favicon-16.png" rel="icon" sizes="16x16" type="image/png"/>
   <!-- PWA Manifest -->
-  <link href="/manifest.json" rel="manifest"/>
+  <link href="/360_cam/manifest.json" rel="manifest"/>
   <title>
-   360° Photosphere Camera
+   Innovatech PH 360 Camera
   </title>
-  <link href="css/capture.css" rel="stylesheet"/>
-  <link href="css/cards.css" rel="stylesheet"/>
-  <link href="css/pannellum.css" rel="stylesheet"/>
+  <link href="/360_cam/css/capture.css" rel="stylesheet"/>
+  <link href="/360_cam/css/cards.css" rel="stylesheet"/>
+  <link href="/360_cam/css/pannellum.css" rel="stylesheet"/>
  </head>
  <body>
   <!-- Grid Background -->
@@ -36,10 +36,10 @@
   <div id="app-loading">
    <div class="loader-card">
     <!-- Logo -->
-    <img alt="Photosphere" src="img/logo_150x150.png"/>
+    <img alt="Photosphere" src="/360_cam/img/logo_150x150.png"/>
     <!-- Title -->
     <h2>
-     Photosphere Camera
+     Innovatech 360 Camera
     </h2>
     <!-- Status message -->
     <div id="app-status">
@@ -90,7 +90,7 @@
   <!-- Stitching progress overlay -->
   <div aria-hidden="true" aria-labelledby="stitch-title" aria-modal="true" class="ui-card" id="stitching-overlay" role="dialog">
    <button aria-label="Close stitching progress" class="card-close-btn" id="close-stitch-overlay-btn">
-    <img alt="Close" src="img/x.svg"/>
+    <img alt="Close" src="/360_cam/img/x.svg"/>
    </button>
    <div class="card-header">
     <h2 class="card-title" id="stitch-title">
@@ -114,28 +114,28 @@
       Initializing...
      </p>
     </div>
-    <canvas data-thumbnail="/img/360_blank_thumbnail.jpg" height="300" id="preview-canvas" width="600">
+    <canvas data-thumbnail="/360_cam/img/360_blank_thumbnail.jpg" height="300" id="preview-canvas" width="600">
     </canvas>
     <div class="action-stack">
      <!-- View and Share buttons side by side -->
      <div class="action-pair">
       <button aria-label="View panorama" id="view-btn" class="action-btn-styled">
-       <img alt="View icon" src="img/view.svg"/>
+       <img alt="View icon" src="/360_cam/img/view.svg"/>
        View
       </button>
       <button aria-label="Share panorama" id="download-btn" class="action-btn-styled">
-       <img alt="Share icon" src="img/share.svg"/>
+       <img alt="Share icon" src="/360_cam/img/share.svg"/>
        Share
       </button>
      </div>
      <!-- Camera Roll button full width -->
      <button aria-label="View Camera Roll" id="view-camera-roll-btn" class="action-btn-styled" onclick="openGallery()">
-      <img alt="Camera roll icon" src="img/camera-roll.svg"/>
+      <img alt="Camera roll icon" src="/360_cam/img/camera-roll.svg"/>
       View Camera Roll
      </button>
      <!-- Start button full width -->
      <button aria-label="Start new capture" class="start-btn-styled" id="start-new-capture-btn" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.resetAndStartNewCapture()">
-      <img alt="Camera icon" class="camera-ico" src="img/camera.svg"/>
+      <img alt="Camera icon" class="camera-ico" src="/360_cam/img/camera.svg"/>
       Start New Capture
      </button>
     </div>
@@ -144,9 +144,9 @@
   <!-- Start screen -->
   <div aria-labelledby="home-title" class="ui-card home-card visible" id="start-screen" role="main">
    <div class="card-header">
-    <img alt="Photosphere Camera Logo" class="logo logo-glow" src="img/logo_150x150.png" width="60"/>
+    <img alt="Photosphere Camera Logo" class="logo logo-glow" src="/360_cam/img/logo_150x150.png" width="60"/>
     <h1 class="card-title" id="home-title">
-     Photosphere Camera
+     Innovatech 360 Camera
     </h1>
    </div>
    <div class="card-content">
@@ -202,13 +202,13 @@
     </div>
     <div class="start-actions">
      <button aria-label="Start capturing photosphere" id="start-btn" onclick="startApp().catch(console.error)">
-      <img alt="Camera icon" src="img/camera.svg"/>
+      <img alt="Camera icon" src="/360_cam/img/camera.svg"/>
       Start Capturing
      </button>
     </div>
    </div>
    <button aria-label="Open settings menu" class="control-btn settings-btn-start-screen" id="settings-btn" onclick="openSettings()" title="Settings">
-    <img alt="Settings icon" src="img/settings.svg"/>
+    <img alt="Settings icon" src="/360_cam/img/settings.svg"/>
    </button>
    <button aria-label="View camera roll" class="control-btn gallery-btn-start-screen" id="gallery-btn" onclick="openGallery()" title="View Camera Roll">
     <img alt="Camera roll icon" src="img/camera-roll.svg"/>
@@ -217,7 +217,7 @@
   <!-- Settings Menu Card -->
   <div aria-hidden="true" aria-labelledby="settings-title" aria-modal="true" class="ui-card" id="settings-menu-card" role="dialog">
    <button aria-label="Close settings menu" class="card-close-btn" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cardUI &amp;&amp; window.sphereCapture.cardUI.hideSettingsMenu()">
-    <img alt="Close icon" src="img/x.svg"/>
+    <img alt="Close icon" src="/360_cam/img/x.svg"/>
    </button>
    <div class="card-header">
     <h1 class="card-title" id="settings-title">
@@ -229,7 +229,7 @@
     <div class="settings-menu-list">
      <button aria-label="About VFTCam" class="settings-menu-item" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cardUI &amp;&amp; window.sphereCapture.cardUI.openInfoCard('about')">
       <div class="menu-row">
-       <img alt="" src="img/about.svg"/>
+       <img alt="" src="/360_cam/img/about.svg"/>
        <span>
         About This App
        </span>
@@ -240,7 +240,7 @@
      </button>
      <button aria-label="Privacy policy" class="settings-menu-item" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cardUI &amp;&amp; window.sphereCapture.cardUI.openInfoCard('privacy')">
       <div class="menu-row">
-       <img alt="" src="img/privacy.svg"/>
+       <img alt="" src="/360_cam/img/privacy.svg"/>
        <span>
         Privacy
        </span>
@@ -265,7 +265,7 @@
      </button>
      <button aria-label="Field of view fine-tuning" class="settings-menu-item" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cardUI &amp;&amp; window.sphereCapture.cardUI.openInfoCard('fov')">
       <div class="menu-row">
-       <img alt="" src="img/fov-calibration.svg"/>
+       <img alt="" src="/360_cam/img/fov-calibration.svg"/>
        <span>
         FOV Fine-Tuning
        </span>
@@ -290,7 +290,7 @@
      </button>
      <button aria-label="Clear camera roll" class="settings-menu-item" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cardUI &amp;&amp; window.sphereCapture.cardUI.openInfoCard('clear')">
       <div class="menu-row">
-       <img alt="" class="danger-icon" src="img/clear-camera-roll.svg"/>
+       <img alt="" class="danger-icon" src="/360_cam/img/clear-camera-roll.svg"/>
        <span class="danger-text">
         Clear Camera Roll
        </span>
@@ -305,7 +305,7 @@
   <!-- Info Card -->
   <div aria-hidden="true" class="ui-card" id="info-card">
    <button aria-label="Close info card" class="card-close-btn" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cardUI &amp;&amp; window.sphereCapture.cardUI.closeInfoCard()">
-    <img alt="Close icon" src="img/x.svg"/>
+    <img alt="Close icon" src="/360_cam/img/x.svg"/>
    </button>
    <div class="card-header">
     <h1 class="card-title" id="info-card-title">
@@ -331,7 +331,7 @@
   <!-- Orientation Warning Card -->
   <div aria-hidden="true" aria-labelledby="orientation-title" aria-live="assertive" class="ui-card dialog-card" id="orientation-warning-card" role="alert">
    <div>
-    <img alt="Rotate Device" src="img/mobile-rotate.svg"/>
+    <img alt="Rotate Device" src="/360_cam/img/mobile-rotate.svg"/>
     <h3 id="orientation-title">
      Rotate Your Device
     </h3>
@@ -342,7 +342,7 @@
   </div>
   <div aria-hidden="true" aria-labelledby="camera-roll-title" aria-modal="true" class="ui-card camera-roll-card" id="camera-roll-card" role="dialog">
    <button aria-label="Close camera roll" class="card-close-btn" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cameraRoll &amp;&amp; window.sphereCapture.cameraRoll.hide()">
-    <img alt="Close icon" src="img/x.svg"/>
+    <img alt="Close icon" src="/360_cam/img/x.svg"/>
    </button>
    <div class="card-header">
     <h1 class="card-title" id="camera-roll-title">
@@ -361,7 +361,7 @@
    </div>
    <!-- Settings button in bottom left corner -->
    <button aria-label="Open settings menu" class="control-btn settings-btn-start-screen" id="settings-btn" onclick="openSettings()" title="Settings">
-    <img alt="Settings icon" src="img/settings.svg"/>
+    <img alt="Settings icon" src="/360_cam/img/settings.svg"/>
    </button>
   </div>
   <!-- Bottom Capture controls -->
@@ -389,11 +389,11 @@
     <img alt="View Camera Roll" src="img/camera-roll.svg"/>
    </button>
   </div>
-  <script src="js/ext/three.min.js">
+  <script src="/360_cam/js/ext/three.min.js">
   </script>
-  <script src="js/ext/pannellum.js">
+  <script src="/360_cam/js/ext/pannellum.js">
   </script>
-  <script src="js/ext/piexif.min.js">
+  <script src="/360_cam/js/ext/piexif.min.js">
   </script>
   <script>
    // Initialize preview canvas with blank thumbnail
@@ -426,7 +426,7 @@
             
             // Import the module dynamically
             try {
-                const module = await import('./js/capture.js');
+                const module = await import('/360_cam/js/capture.js');
                 if (window.startApp !== arguments.callee) {
                     // Module loaded successfully, use its version
                     return window.startApp();
@@ -456,7 +456,7 @@
         };
   </script>
   <!-- Main app module -->
-  <script src="js/capture.js" type="module">
+  <script src="/360_cam/js/capture.js" type="module">
   </script>
  </body>
 </html>

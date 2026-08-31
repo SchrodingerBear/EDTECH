@@ -297,7 +297,8 @@ function url(string $path = ''): string
 function icon(string $name, int $size = 19): string
 {
     $s = (int) $size;
-    $common = 'xmlns="http://www.w3.org/2000/svg" width="' . $s . '" height="' . $s . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+    $strokeWidth = $name === 'menu' ? 2.5 : 2; // Thicker stroke for menu icon
+    $common = 'xmlns="http://www.w3.org/2000/svg" width="' . $s . '" height="' . $s . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' . $strokeWidth . '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
     $paths = [
         'move3d' => '<path d="M5 3v16h16"/><path d="m5 19 6-6"/><path d="m2 6 3-3 3 3"/><path d="m18 16 3 3-3 3"/>',
         'arrow-right' => '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
@@ -481,9 +482,41 @@ function json_enc($value): string
 
 /* -------------------------------- email ------------------------------------ */
 
+/** Append a line to the email debug log (storage/logs/email.log). Never throws. */
+function email_log(string $message): void
+{
+    try {
+        $dir = ROOT_PATH . '/storage/logs';
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
+        @chmod($dir, 0777);
+        $file = $dir . '/email.log';
+        // The file may pre-exist owned by another user; allow appends by any user (web server runs as www-data).
+        @chmod($file, 0666);
+        $line = '[' . date('Y-m-d H:i:s') . '] ' . trim($message) . PHP_EOL;
+        @file_put_contents($file, $line, FILE_APPEND);
+    } catch (Throwable $e) {
+        // logging must never break sending
+    }
+}
+
+/** Last $n lines of storage/logs/email.log as an array (newest last). */
+function email_log_tail(int $n = 40): array
+{
+    $file = ROOT_PATH . '/storage/logs/email.log';
+    if (!is_file($file)) {
+        return [];
+    }
+    $all = file($file, FILE_IGNORE_NEW_LINES);
+    return is_array($all) ? array_slice($all, -$n) : [];
+}
+
 /**
  * Deliver an email through the configured SMTP server, or spool it to
  * storage/mail/ when no SMTP is configured (dev fallback, mirrors mail()).
+ * Every attempt (decision + SMTP conversation) is written to
+ * storage/logs/email.log so failures are repeatable and debuggable.
  */
 function send_email(string $to, string $subject, string $bodyHtml): bool
 {
@@ -492,6 +525,7 @@ function send_email(string $to, string $subject, string $bodyHtml): bool
         $s = db()->query("SELECT * FROM platform_settings WHERE id=1")->fetch() ?: [];
     } catch (Throwable $e) {
         $s = [];
+        email_log('send_email: platform_settings unreadable: ' . $e->getMessage());
     }
 
     $fromName = trim((string) ($s['smtp_from_name'] ?? ''));
@@ -506,23 +540,28 @@ function send_email(string $to, string $subject, string $bodyHtml): bool
     $subject = str_replace(["\r", "\n"], ' ', $subject);
     $html = "<!DOCTYPE html><html><body style='font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1b2a33'>" . $bodyHtml . "</body></html>";
 
-    if (!empty($s['smtp_host'])) {
-        $sentViaSmtp = smtp_send(
-            (string) $s['smtp_host'],
-            (int) ($s['smtp_port'] ?? 587),
-            (string) ($s['smtp_username'] ?? ''),
-            (string) base64_decode((string) ($s['smtp_password_enc'] ?? '')),
-            $fromName,
-            $fromEmail,
-            $to,
-            $subject,
-            $html
-        );
-        if ($sentViaSmtp) {
-            return true;
+    // Validate the SMTP config before dialing, then attempt delivery.
+    $host = trim((string) ($s['smtp_host'] ?? ''));
+    $port = (int) ($s['smtp_port'] ?? 465);
+    if ($host !== '' && $port > 0) {
+        $smtpUser = (string) ($s['smtp_username'] ?? '');
+        $smtpPass = (string) base64_decode((string) ($s['smtp_password_enc'] ?? ''));
+        if ($smtpUser === '' || $smtpPass === '') {
+            email_log("send_email: SMTP host {$host}:{$port} is set but username/password are missing — spooling instead.");
+        } else {
+            $trace = [];
+            $sentViaSmtp = smtp_send($host, $port, $smtpUser, $smtpPass, $fromName, $fromEmail, $to, $subject, $html, $trace);
+            foreach ($trace as $line) {
+                email_log($line);
+            }
+            if ($sentViaSmtp) {
+                email_log("send_email: OK via SMTP {$host}:{$port} -> {$to} (\"{$subject}\")");
+                return true;
+            }
+            email_log("send_email: SMTP {$host}:{$port} rejected/failed -> {$to} (\"{$subject}\"); spooling instead.");
         }
-        // SMTP unreachable/unconfigured properly — fall through to spooling so
-        // credential emails are still captured instead of silently lost.
+    } else {
+        email_log("send_email: no SMTP configured — spooling -> {$to} (\"{$subject}\")");
     }
 
     // Spool to storage/mail/ when SMTP is not configured (or just failed) so
@@ -542,70 +581,135 @@ function send_email(string $to, string $subject, string $bodyHtml): bool
         $file = sprintf('%s/%s-%s.eml', $dir, date('Y-m-d-His'), bin2hex(random_bytes(3)));
         $msg = "From: $fromName <$fromEmail>\r\nTo: <$to>\r\nSubject: $subject\r\n"
              . "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n$html";
-        return file_put_contents($file, $msg) !== false;
+        $ok = file_put_contents($file, $msg) !== false;
+        email_log($ok ? "send_email: OK spooled -> {$file}" : "send_email: spool FAILED (could not write {$file})");
+        return $ok;
     } catch (Throwable $e) {
+        email_log('send_email: spool exception: ' . $e->getMessage());
         return false;
     }
 }
 
-/** Minimal SMTP client (EHLO / STARTTLS / AUTH LOGIN / DATA). */
-function smtp_send(string $host, int $port, string $user, string $pass, string $fromName, string $fromEmail, string $to, string $subject, string $html): bool
+/**
+ * Minimal SMTP client (EHLO / STARTTLS / AUTH LOGIN / DATA).
+ * Port 465 uses implicit TLS; 587/25 upgrade via STARTTLS.
+ * Every conversation line is appended to &$log (optional) for debugging.
+ */
+function smtp_send(string $host, int $port, string $user, string $pass, string $fromName, string $fromEmail, string $to, string $subject, string $html, ?array &$log = null): bool
 {
-    $secure = $port === 465 ? 'ssl://' : '';
-    $conn = @stream_socket_client($secure . $host . ':' . $port, $errno, $errstr, 20);
-    if (!$conn) {
+    $lines = [];
+    $step  = static function (string $m) use (&$lines) { $lines[] = '[client] ' . $m; };
+    $srv   = static function (string $m) use (&$lines) { $lines[] = '[server] ' . trim($m); };
+    $err   = static function (string $m) use (&$lines) { $lines[] = '[error] ' . $m; };
+
+    if (!in_array($port, [25, 465, 587], true)) {
+        $err("unsupported SMTP port {$port}");
+        $log = $lines;
+        return false;
+    }
+    if (!filter_var($fromEmail, FILTER_VALIDATE_EMAIL) || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        $err("invalid from/to address (from={$fromEmail}, to={$to})");
+        $log = $lines;
         return false;
     }
 
-    $read = function () use ($conn) {
-        $resp = '';
+    $secure = $port === 465 ? 'ssl://' : '';
+    $step("connecting to {$secure}{$host}:{$port}...");
+    $conn = @stream_socket_client($secure . $host . ':' . $port, $errno, $errstr, 20);
+    if (!$conn) {
+        $err("connect failed: {$errstr} ({$errno})");
+        $log = $lines;
+        return false;
+    }
+    stream_set_timeout($conn, 30);
+
+    $read = function () use ($conn, $srv) {
+        $respStr = '';
         while ($line = fgets($conn, 515)) {
-            $resp .= $line;
+            $respStr .= $line;
+            $srv($line);
             if (isset($line[3]) && $line[3] === ' ') {
                 break;
             }
         }
-        return $resp;
+        return $respStr;
     };
-    $good = static fn (string $resp): bool => isset($resp[2]) && $resp[0] === '2';
-    $login = static fn (string $resp): bool => isset($resp[2]) && $resp[0] === '3';
+    $good       = static fn (string $r): bool => isset($r[2]) && $r[0] === '2';
+    $loginReply = static fn (string $r): bool => isset($r[2]) && $r[0] === '3';
 
-    $read(); // banner
+    $banner = $read(); // banner
+    if ($banner === '') {
+        $err('no banner; server did not respond');
+        fclose($conn);
+        $log = $lines;
+        return false;
+    }
 
-    fwrite($conn, "EHLO innovatech.local\r\n");
-    if (!$good($read())) { fclose($conn); return false; }
+    $write = function (string $cmd) use ($conn, $step) {
+        $step($cmd);
+        fwrite($conn, $cmd . "\r\n");
+    };
+
+    $write('EHLO innovatech.local');
+    if (!$good($read())) { fclose($conn); $log = $lines; return false; }
 
     if ($secure === '' && $port !== 25) {
-        fwrite($conn, "STARTTLS\r\n");
-        if (!$good($read())) { fclose($conn); return false; }
-        if (!@stream_socket_enable_crypto($conn, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) { fclose($conn); return false; }
-        fwrite($conn, "EHLO innovatech.local\r\n");
-        if (!$good($read())) { fclose($conn); return false; }
+        $write('STARTTLS');
+        if (!$good($read())) { fclose($conn); $log = $lines; return false; }
+        if (!@stream_socket_enable_crypto($conn, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+            $err('STARTTLS handshake failed');
+            fclose($conn);
+            $log = $lines;
+            return false;
+        }
+        $write('EHLO innovatech.local');
+        if (!$good($read())) { fclose($conn); $log = $lines; return false; }
     }
 
     if ($user !== '') {
-        fwrite($conn, "AUTH LOGIN\r\n");
-        if (!$login($read())) { fclose($conn); return false; }
-        fwrite($conn, base64_encode($user) . "\r\n");
-        if (!$login($read())) { fclose($conn); return false; }
+        $write('AUTH LOGIN');
+        if (!$loginReply($read())) { fclose($conn); $log = $lines; return false; }
+        $write(base64_encode($user));
+        if (!$loginReply($read())) { fclose($conn); $log = $lines; return false; }
+        $step('[auth] password sent');
         fwrite($conn, base64_encode($pass) . "\r\n");
-        if (!$good($read())) { fclose($conn); return false; }
+        if (!$good($read())) {
+            $err('AUTH failed — check the SMTP username / password');
+            fclose($conn);
+            $log = $lines;
+            return false;
+        }
+        $step('authenticated');
     }
 
-    fwrite($conn, "MAIL FROM:<$fromEmail>\r\n");
-    if (!$good($read())) { fclose($conn); return false; }
-    fwrite($conn, "RCPT TO:<$to>\r\n");
-    if (!$good($read())) { fclose($conn); return false; }
+    $write("MAIL FROM:<{$fromEmail}>");
+    if (!$good($read())) { fclose($conn); $log = $lines; return false; }
+    $write("RCPT TO:<{$to}>");
+    if (!$good($read())) { fclose($conn); $log = $lines; return false; }
 
-    fwrite($conn, "DATA\r\n");
-    if (!$good($read())) { fclose($conn); return false; }
+    $write('DATA');
+    // The server answers DATA with a 3xx "ready for message input" prompt,
+    // not a 2xx — accept either so we proceed to transmit the body.
+    $dataReply = trim($read());
+    if (!isset($dataReply[0]) || !in_array($dataReply[0], ['2', '3'], true)) {
+        fclose($conn);
+        $log = $lines;
+        return false;
+    }
 
-    $headers = "From: $fromName <$fromEmail>\r\nTo: <$to>\r\nSubject: $subject\r\n"
+    $headers = "From: {$fromName} <{$fromEmail}>\r\nTo: <{$to}>\r\nSubject: {$subject}\r\n"
              . "MIME-Version: 1.0\r\nContent-Type: text/html; charset=UTF-8\r\n";
+    $step('sending message body (' . strlen($html) . ' bytes)');
     fwrite($conn, $headers . "\r\n" . $html . "\r\n.\r\n");
     $ok = $good($read());
-    fwrite($conn, "QUIT\r\n");
+    if (!$ok) {
+        $err('server rejected the message body');
+    }
+    $write('QUIT');
     fclose($conn);
+    if ($log !== null) {
+        $log = $lines;
+    }
     return $ok;
 }
 
@@ -645,6 +749,180 @@ function send_credentials(array $user, string $roleSlug, string $password, ?stri
     $subject = strtr((string) $row['subject'], $vars);
     $body = strtr((string) $row['body_html'], $vars);
     return send_email((string) $user['email'], $subject, $body);
+}
+
+/**
+ * Notify a support-ticket submitter about a status change.
+ * Template placeholders: {{name}} {{email}} {{ticket_id}} {{ticket_subject}}
+ * {{ticket_message}} {{ticket_status}} {{link}}.
+ * Returns [sent(bool), to(string)] so callers can report clearly.
+ */
+function send_ticket_status_email(array $ticket): array
+{
+    $to = trim((string) ($ticket['contact_email'] ?? ''));
+    if ($to === '') {
+        return [false, ''];
+    }
+    try {
+        $tpl = db()->prepare("SELECT subject, body_html, is_active FROM email_templates WHERE slug='support_ticket_status' LIMIT 1");
+        $tpl->execute();
+        $row = $tpl->fetch();
+        if (!$row || !(int) $row['is_active']) {
+            return [false, $to];
+        }
+        $name = '';
+        if (!empty($ticket['created_by'])) {
+            $u = crud()->get('users', (int) $ticket['created_by']);
+            $name = $u ? display_name($u) : '';
+        }
+        $vars = [
+            '{{name}}'            => $name !== '' ? $name : 'there',
+            '{{email}}'           => $to,
+            '{{ticket_id}}'       => (string) (int) ($ticket['id'] ?? 0),
+            '{{ticket_subject}}'  => $ticket['subject'] ?? '',
+            '{{ticket_message}}'  => $ticket['message'] ?? '',
+            '{{ticket_status}}'   => str_replace('_', ' ', strtolower((string) ($ticket['status'] ?? 'open'))),
+            '{{link}}'            => url('admin/index'),
+        ];
+        $subject = strtr((string) $row['subject'], $vars);
+        $body = strtr((string) $row['body_html'], $vars);
+        return [send_email($to, $subject, $body), $to];
+    } catch (Throwable $e) {
+        return [false, $to];
+    }
+}
+
+/** Notify the platform support desk + all active owners when a support ticket opens. */
+function send_ticket_notification_email(array $ticket, ?string $institutionName = null): array
+{
+    try {
+        $tpl = db()->prepare("SELECT subject, body_html, is_active FROM email_templates WHERE slug='new_ticket' LIMIT 1");
+        $tpl->execute();
+        $row = $tpl->fetch();
+        if (!$row || !(int) $row['is_active']) {
+            return [false, ''];
+        }
+    } catch (Throwable $e) {
+        return [false, ''];
+    }
+
+    $recipients = [];
+    try {
+        $s = db()->query("SELECT contact_email FROM platform_settings WHERE id=1 LIMIT 1")->fetch() ?: [];
+        $contact = trim((string) ($s['contact_email'] ?? ''));
+        if ($contact !== '') {
+            $recipients[$contact] = true;
+        }
+    } catch (Throwable $e) {
+    }
+    try {
+        $stmt = db()->prepare(
+            "SELECT u.* FROM users u JOIN roles r ON r.id = u.role_id WHERE r.slug = 'owner' AND u.is_active = 1"
+        );
+        $stmt->execute();
+        foreach ($stmt->fetchAll() as $o) {
+            $em = trim((string) ($o['email'] ?? ''));
+            if ($em !== '') {
+                $recipients[$em] = true;
+            }
+        }
+    } catch (Throwable $e) {
+    }
+    if (!$recipients) {
+        return [false, ''];
+    }
+
+    $name = '';
+    if (!empty($ticket['created_by'])) {
+        $u = crud()->get('users', (int) $ticket['created_by']);
+        $name = $u ? display_name($u) : '';
+    }
+    $vars = [
+        '{{name}}'           => $name !== '' ? $name : 'A workspace user',
+        '{{email}}'          => (string) ($ticket['contact_email'] ?? ''),
+        '{{ticket_id}}'      => (string) (int) ($ticket['id'] ?? 0),
+        '{{ticket_subject}}' => (string) ($ticket['subject'] ?? ''),
+        '{{ticket_message}}' => (string) ($ticket['message'] ?? ''),
+        '{{priority}}'       => ucfirst((string) ($ticket['priority'] ?? 'normal')),
+        '{{institution}}'    => (string) ($institutionName ?? ''),
+        '{{link}}'           => url('admin/support'),
+    ];
+    $subject = strtr((string) $row['subject'], $vars);
+    $body = strtr((string) $row['body_html'], $vars);
+
+    $ok = [];
+    foreach (array_keys($recipients) as $to) {
+        $ok[] = send_email($to, $subject, $body);
+    }
+    $toList = implode(', ', array_keys($recipients));
+    return [!in_array(false, $ok, true), $toList];
+}
+
+/**
+ * Offline built-in AI description generator (swappable for an LLM call later).
+ * Structured, constrained generation — 2-3 short, natural sentences that never
+ * invent facts: identity (+location if known), what it offers, then a visitor
+ * note. $info may be a plain string (extra context) or an array with keys:
+ * type, location, facilities (string|array), purpose, details, context.
+ */
+function ai_generate_description(string $name, string $institution = '', array|string $info = []): string
+{
+    $info = is_array($info) ? $info : ['context' => trim((string) $info)];
+
+    $label = [
+        'building' => 'building', 'room' => 'room', 'facility' => 'facility',
+        'campus_area' => 'campus area', 'area' => 'campus area',
+        'tour_scene' => '360° tour stop', 'waypoint' => 'campus waypoint',
+        'hotspot' => 'tour hotspot', 'institution' => 'campus',
+    ][strtolower((string) ($info['type'] ?? ''))] ?? 'campus space';
+
+    $location = trim((string) ($info['location'] ?? ''));
+    $facilities = $info['facilities'] ?? '';
+    if (is_array($facilities)) {
+        $facilities = trim(implode(', ', array_values(array_filter(array_map('trim', $facilities), fn($f) => $f !== ''))));
+    } else {
+        $facilities = trim((string) $facilities);
+    }
+    $purpose = trim((string) ($info['purpose'] ?? ''));
+    $details = trim((string) ($info['details'] ?? ''));
+    $context = trim((string) ($info['context'] ?? ''));
+
+    $sentences = [];
+
+    if ($location !== '' && $institution !== '') {
+        $sentences[] = "{$name} is a {$label} located at {$location} on the {$institution} campus.";
+    } elseif ($location !== '') {
+        $sentences[] = "{$name} is a {$label} located at {$location}.";
+    } elseif ($institution !== '') {
+        $sentences[] = "{$name} is a {$label} of {$institution}.";
+    } else {
+        $sentences[] = "{$name} is a {$label} of the campus.";
+    }
+
+    if ($facilities !== '') {
+        $sentences[] = $purpose !== ''
+            ? "It offers {$facilities}, making it ideal for {$purpose}."
+            : "It provides {$facilities}, set up to support the campus community.";
+    } elseif ($details !== '') {
+        $sentences[] = $purpose !== ''
+            ? "Designed {$details}, it is used mainly for {$purpose}."
+            : "Designed {$details}, it keeps the campus community's daily needs covered.";
+    } elseif ($purpose !== '') {
+        $sentences[] = "It serves the campus community, set up for {$purpose}.";
+    }
+
+    $closers = [
+        'Visitors can explore it through the 360° tour and find it instantly on the campus floor plan.',
+        'Find it on the campus map, or step inside through the interactive 360° tour.',
+        'It appears on the campus floor plan and is featured in the 360° tour for easy navigation.',
+    ];
+    $sentences[] = $closers[array_rand($closers)];
+
+    if ($context !== '') {
+        $sentences[] = ucfirst(rtrim(trim(strip_tags($context)), '.')) . '.';
+    }
+
+    return implode("\n\n", $sentences);
 }
 
 /**
@@ -768,6 +1046,7 @@ function sync_institution_config(int $iid): void
         'short_name'     => $inst['short_name'],
         'landing_mode'   => $inst['landing_mode'] ?: '360_rotation',
         'require_landscape_mobile' => (bool) $inst['require_landscape_mobile'],
+        'published'      => (bool) (int) $inst['is_published'],
     ];
 
     // Theme

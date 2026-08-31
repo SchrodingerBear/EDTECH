@@ -31,6 +31,7 @@
   const closeMenu = () => {
     menu?.classList.remove('is-open')
     menuToggle?.setAttribute('aria-expanded', 'false')
+    document.body.style.overflow = ''
   }
 
   const renderCampuses = () => {
@@ -83,10 +84,18 @@
     menu.classList.toggle('is-open', open)
     menuToggle.setAttribute('aria-expanded', String(open))
     menuToggle.setAttribute('aria-label', open ? 'Close menu' : 'Toggle menu')
+    document.body.style.overflow = open ? 'hidden' : ''
   })
 
   document.querySelectorAll('[data-close-menu]').forEach((el) => {
     el.addEventListener('click', closeMenu)
+  })
+  
+  // Close menu when clicking outside the menu content
+  menu?.addEventListener('click', (e) => {
+    if (e.target === menu) {
+      closeMenu()
+    }
   })
 
   themeButtons.forEach((btn) => {

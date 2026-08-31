@@ -6,7 +6,7 @@ require_page('admin.ai');
  * Innovatech PH — admin: AI stitch (cubemap → equirect) + AI info generation.
  */
 $pageTitle = 'AI Tools';
-$pageSub = 'Stitch a 360 panorama from six faces · generate facility info';
+$pageSub = 'Stitch a 360 panorama from six cube faces';
 $active = 'AI Tools';
 $bodyClass = 'page-ai';
 require_once __DIR__ . '/../layout/header.php';
@@ -127,41 +127,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect('admin/institution/ai');
         }
 
-        /* ------------------------- AI info ------------------------- */
-        if ($action === 'info-generate') {
-            $targetType = $_POST['target_type'] ?? '';
-            $targetId = (int) ($_POST['target_id'] ?? 0);
-            $prompt = trim($_POST['prompt'] ?? '');
-            $allowed = ['building', 'room', 'facility', 'campus_area', 'tour_scene'];
-            if (!in_array($targetType, $allowed, true) || !$targetId) throw new RuntimeException('Pick a target.');
+        if ($action === 'attach-panorama') {
+            $pid = (int) ($_POST['panorama_id'] ?? 0);
+            $sid = (int) ($_POST['scene_id'] ?? 0) ?: null;
 
-            $name = '';
-            $nameField = $targetType === 'tour_scene' ? 'title' : 'name';
-            $tables = ['building' => 'buildings', 'room' => 'rooms', 'facility' => 'facilities', 'campus_area' => 'campus_areas', 'tour_scene' => 'tour_scenes'];
-            $name = crud()->raw("SELECT $nameField FROM {$tables[$targetType]} WHERE id=:id AND institution_id=:iid", ['id' => $targetId, 'iid' => $iid])->fetchColumn();
-            if (!$name) throw new RuntimeException('Target not found.');
+            if ($sid) {
+                $pano = crud()->select('panoramas', 'equirect_path', ['id' => $pid, 'institution_id' => $iid])->fetch();
+                if ($pano) {
+                    crud()->update('tour_scenes', ['equirect_path' => $pano['equirect_path']], ['id' => $sid, 'institution_id' => $iid]);
+                    audit('panorama.attach', 'ai', 'panorama', $pid);
+                    flash('success', 'Panorama attached to scene.');
+                } else {
+                    flash('error', 'Panorama not found.');
+                }
+            }
+            redirect('admin/institution/ai');
+        }
 
-            // built-in generator (offline); replace with an LLM call API key later
-            $extra = $prompt !== '' ? ' ' . $prompt : '';
-            $out = sprintf(
-                "%s is part of %s. %s features a welcoming, functional layout designed for the campus community%s. "
-                . "Visitors can explore it through the 360° tour and locate it instantly on the campus floor plan.",
-                $name, $inst['name'], $name, $extra
-            );
-
-            crud()->insert('ai_info_jobs', [
-                'institution_id' => $iid, 'created_by' => $me, 'target_type' => $targetType,
-                'target_id' => $targetId, 'prompt' => $prompt ?: null, 'output_text' => $out, 'status' => 'completed'
-            ]);
-
-            $col = $targetType === 'tour_scene' ? 'title' : 'name';
-            $tableMap = [
-                'building' => 'buildings', 'room' => 'rooms', 'facility' => 'facilities',
-                'campus_area' => 'campus_areas', 'tour_scene' => 'tour_scenes',
-            ];
-            crud()->update($tableMap[$targetType], ['ai_description' => $out], ['id' => $targetId, 'institution_id' => $iid]);
-            audit('ai_info.generate', 'ai', $targetType, $targetId);
-            flash('success', 'AI info generated and attached.');
+        if ($action === 'panorama-delete') {
+            $pid = (int) ($_POST['id'] ?? 0);
+            crud()->delete('panoramas', ['id' => $pid, 'institution_id' => $iid]);
+            flash('success', 'Panorama removed.');
             redirect('admin/institution/ai');
         }
     } catch (Throwable $e) {
@@ -177,21 +163,16 @@ $facesByJob = [];
 $faceRows = crud()->raw("SELECT job_id, face, image_path FROM cubemap_faces ORDER BY id");
 foreach ($faceRows->fetchAll() as $fr) { $facesByJob[(int) $fr['job_id']][$fr['face']] = $fr['image_path']; }
 
-$infoJobs = crud()->raw("SELECT i.*, u.email FROM ai_info_jobs i JOIN users u ON u.id=i.created_by WHERE i.institution_id=:iid ORDER BY i.created_at DESC LIMIT 15", ['iid' => $iid]);
-
 $scenesForAttach = crud()->select('tour_scenes', 'id,title', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY title');
 
-$buildings = crud()->select('buildings', 'id,name', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY name');
-$rooms = crud()->select('rooms', 'id,name', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY name');
-$facilities = crud()->select('facilities', 'id,name', ['institution_id' => $iid], 'ORDER BY name');
-$areas = crud()->select('campus_areas', 'id,name', ['institution_id' => $iid], 'ORDER BY name');
-$scenesForInfo = crud()->select('tour_scenes', 'id,title', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY title');
+// Get saved panoramas from 360 camera app
+$panoramas = crud()->select('panoramas', '*', ['institution_id' => $iid], 'ORDER BY created_at DESC LIMIT 30');
 
 $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued' => 'badge-draft', 'processing' => 'badge-live', 'completed' => 'badge-live', 'failed' => 'badge-dead'];
 ?>
 <div class="row g-4">
   <!-- ============================ STITCH ============================ -->
-  <div class="col-lg-8">
+  <div class="col-12">
     <div class="d-flex align-items-center justify-content-between mb-3">
       <h4 class="fw-800">Stitch jobs</h4>
       <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#job-modal"><?= ia_icon('camera', 16) ?> New stitch job</button>
@@ -205,7 +186,9 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
             <h3>#<?= (int) $job['id'] ?> <span class="text-muted fs-13"><?= h($job['source_type']) ?></span></h3>
             <span class="badge <?= $statusBadge[$job['status']] ?? 'badge-draft' ?>"><?= h($job['status']) ?></span>
             <?php if ($job['source_type'] === 'in_app_capture' && in_array($job['guide_step'], $order, true)): ?>
-              <span class="badge badge-surface">next: <?= h($job['guide_step']) ?></span>
+              <span class="badge badge-surface">
+                <a href="<?= url('360_cam') ?>" target="_blank" class="text-white text-decoration-none">Open 360 Camera App</a>
+              </span>
             <?php endif; ?>
           </div>
           <form method="post" data-delete-form data-confirm="Delete stitch job #<?= (int) $job['id'] ?>?">
@@ -280,44 +263,67 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
     <?php endif; ?>
   </div>
 
-  <!-- ============================ AI INFO ============================ -->
-  <div class="col-lg-4">
-    <div class="ia-card">
-      <div class="card-head"><h3>AI Info generator</h3></div>
-      <form method="post" class="card-body d-grid gap-3">
-        <input type="hidden" name="ai_action" value="info-generate">
-        <div>
-          <label class="form-label">Target type</label>
-          <select class="form-select" name="target_type" id="ai-target-type">
-            <option value="building">Building</option>
-            <option value="room">Room</option>
-            <option value="facility">Facility</option>
-            <option value="campus_area">Campus area</option>
-            <option value="tour_scene">360 scene</option>
-          </select>
-        </div>
-        <div><label class="form-label">Target</label><select class="form-select" name="target_id" id="ai-target-id"></select></div>
-        <div><label class="form-label">Prompt / notes <span class="text-muted">(optional)</span></label><textarea class="form-control" name="prompt" rows="3" placeholder="Emphasize the 24/7 study area…"></textarea></div>
-        <button class="btn btn-grad"><?= ia_icon('wand', 15) ?> Generate description</button>
-        <p class="text-muted mb-0 fs-12">Offline built-in generator — swap the token call for a real LLM API later.</p>
-      </form>
+  <!-- ============================ 360 CAMERA PANORAMAS ============================ -->
+  <div class="col-12 mt-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h4 class="fw-800">360 Camera Panoramas</h4>
+      <a href="<?= url('360_cam') ?>" target="_blank" class="btn btn-grad px-4"><?= ia_icon('camera', 16) ?> Open 360 Camera App</a>
     </div>
 
-    <div class="ia-card mt-3">
-      <div class="card-head"><h3>Recent generations</h3></div>
-      <div class="card-body d-grid gap-2 ia-scroll">
-        <?php foreach ($infoJobs as $ij): ?>
-          <div class="px-3 py-2 rounded-3 ia-tile">
-            <div class="d-flex justify-content-between gap-2">
-              <span class="fw-semibold"><?= h($ij['target_type']) ?> #<?= (int) $ij['target_id'] ?></span>
-              <span class="badge badge-live"><?= h($ij['status']) ?></span>
-            </div>
-            <div class="text-muted mt-1"><?= h(mb_strimwidth($ij['output_text'] ?? '—', 0, 90, '…')) ?></div>
+    <?php foreach ($panoramas as $pano): ?>
+      <div class="ia-card mb-3">
+        <div class="card-head">
+          <div class="d-flex align-items-center gap-2">
+            <h3><?= h($pano['title'] ?? 'Untitled') ?></h3>
+            <span class="badge badge-live"><?= h($pano['status']) ?></span>
           </div>
-        <?php endforeach; ?>
-        <?php if ($infoJobs->rowCount() === 0): ?><p class="text-muted fs-13">No generations yet.</p><?php endif; ?>
+          <div class="text-muted fs-13"><?= date('M j, Y g:i A', strtotime($pano['created_at'])) ?></div>
+        </div>
+
+        <div class="row g-3 align-items-center card-body-night">
+          <div class="col-md-3">
+            <?php if ($pano['thumbnail_path']): ?>
+              <img src="<?= h(org_url($inst['slug'], $pano['thumbnail_path'])) ?>" class="equirect-thumb rounded-3" alt="thumbnail">
+            <?php elseif ($pano['equirect_path']): ?>
+              <img src="<?= h(org_url($inst['slug'], $pano['equirect_path'])) ?>" class="equirect-thumb rounded-3" alt="panorama">
+            <?php else: ?>
+              <div class="equirect-thumb rounded-3 bg-light d-flex align-items-center justify-content-center">
+                <span class="text-muted">No preview</span>
+              </div>
+            <?php endif; ?>
+          </div>
+          <div class="col-md-5">
+            <div class="fw-bold mb-1"><span class="badge badge-live">ready</span> 360° Equirectangular Panorama</div>
+            <div class="text-muted fs-125"><?= h($pano['equirect_path']) ?></div>
+            <?php if ($pano['description']): ?><div class="mt-1 fs-125 text-muted"><?= h($pano['description']) ?></div><?php endif; ?>
+            <?php if ($pano['width'] && $pano['height']): ?><div class="mt-1 fs-125 text-muted">Resolution: <?= (int)$pano['width'] ?>×<?= (int)$pano['height'] ?></div><?php endif; ?>
+          </div>
+          <div class="col-md-4">
+            <form method="post" class="d-flex gap-2">
+              <input type="hidden" name="ai_action" value="attach-panorama"><input type="hidden" name="panorama_id" value="<?= (int) $pano['id'] ?>">
+              <select class="form-select form-select-sm" name="scene_id">
+                <option value="">attach to scene…</option>
+                <?php foreach ($scenesForAttach as $sc): ?>
+                  <option value="<?= (int) $sc['id'] ?>"><?= h($sc['title']) ?></option>
+                <?php endforeach; ?>
+              </select>
+              <button class="btn btn-sm btn-grad" type="submit"><?= ia_icon('save', 13) ?></button>
+            </form>
+            <div class="mt-2 d-flex gap-2">
+              <a href="<?= h(org_url($inst['slug'], $pano['equirect_path'])) ?>" download class="btn btn-sm btn-outline-ia">Download</a>
+              <form method="post" data-delete-form data-confirm="Delete panorama?">
+                <input type="hidden" name="ai_action" value="panorama-delete"><input type="hidden" name="id" value="<?= (int) $pano['id'] ?>">
+                <button class="btn btn-sm btn-outline-ia text-danger"><?= ia_icon('x', 13) ?></button>
+              </form>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    <?php endforeach; ?>
+
+    <?php if ($panoramas->rowCount() === 0): ?>
+      <div class="ia-card"><div class="empty-state"><div class="empty-icon"><?= ia_icon('camera', 26) ?></div><h4>No 360 panoramas</h4><p>Use the 360 Camera App to capture and save panoramas. They will appear here automatically.</p></div></div>
+    <?php endif; ?>
   </div>
 </div>
 
@@ -334,7 +340,7 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
         </label>
         <label class="mode-card-dashed">
           <input type="radio" name="source_type" value="in_app_capture">
-          <span class="mode-box-2"><strong><?= ia_icon('camera', 16) ?> In-app guided capture</strong><small>Guided wizard: front → back → left → right → up → down.</small></span>
+          <span class="mode-box-2"><strong><?= ia_icon('camera', 16) ?> 360 Camera App</strong><small>Automatic 36-point capture with guided alignment. Opens in new tab.</small></span>
         </label>
       </div>
       <div class="modal-footer"><button class="btn btn-grad px-4" type="submit">Create job</button></div>
@@ -345,23 +351,6 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   // face uploads
-  window.__aiTargets = {
-    building: <?= json_enc(array_values(array_map(fn($b) => ['id'=>$b['id'],'label'=>$b['name']], $buildings))) ?>,
-    room: <?= json_enc(array_values(array_map(fn($r) => ['id'=>$r['id'],'label'=>$r['name']], $rooms))) ?>,
-    facility: <?= json_enc(array_values(array_map(fn($f) => ['id'=>$f['id'],'label'=>$f['name']], $facilities))) ?>,
-    campus_area: <?= json_enc(array_values(array_map(fn($a) => ['id'=>$a['id'],'label'=>$a['name']], $areas))) ?>,
-    tour_scene: <?= json_enc(array_values(array_map(fn($s) => ['id'=>$s['id'],'label'=>$s['title']], $scenesForInfo))) ?>
-  }
-  const typeSel = document.getElementById('ai-target-type')
-  const idSel = document.getElementById('ai-target-id')
-  const fill = () => {
-    const list = window.__aiTargets[typeSel.value] || []
-    idSel.innerHTML = list.map(o => `<option value="${o.id}">${o.label}</option>`).join('')
-  }
-  typeSel.addEventListener('change', fill)
-  fill()
-
-  // submit face file through a hidden form
   document.querySelectorAll('[data-face-upload]').forEach((inp) => {
     inp.addEventListener('change', () => {
       if (!inp.files[0]) return

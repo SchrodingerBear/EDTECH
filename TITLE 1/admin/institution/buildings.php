@@ -43,18 +43,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             crud()->raw('UPDATE buildings SET deleted_at=NOW() WHERE id=:id AND institution_id=:iid', ['id' => (int) ($_POST['id'] ?? 0), 'iid' => $iid])->execute();
             flash('success', 'Building archived.');
         }
-        if ($action === 'ai') {
-            $id = (int) ($_POST['id'] ?? 0);
-            $name = (string) ($_POST['name'] ?? '');
-            $desc = (string) ($_POST['desc'] ?? '');
-            // mock-aware AI generation; real API hooks in later
-            $ai = "The $name building at " . ($inst['name'] ?? 'campus') . " is a key part of campus life. " .
-                  ($desc !== '' ? rtrim($desc, '.') . '. ' : '') .
-                  "Visitors commonly look for it when exploring facilities, offices and learning spaces. " .
-                  "Use the 360° tour to walk inside and see what this building offers.";
-            crud()->update('buildings', ['ai_description' => $ai], ['id' => $id, 'institution_id' => $iid]);
-            flash('success', 'AI description generated.');
-        }
     } catch (Throwable $e) {
         flash('error', $e->getMessage());
     }
@@ -87,11 +75,6 @@ $buildings = crud()->raw(
               <div class="d-inline-flex gap-1">
                 <button class="btn btn-sm btn-outline-ia" data-bs-toggle="modal" data-bs-target="#bdg-modal"
                   data-mode="edit" data-id="<?= (int) $b['id'] ?>" data-name="<?= h($b['name'], ENT_QUOTES) ?>" data-code="<?= h($b['code'], ENT_QUOTES) ?>" data-desc="<?= h($b['description'], ENT_QUOTES) ?>"><?= ia_icon('file', 13) ?></button>
-                <form method="post" class="d-inline">
-                  <input type="hidden" name="bdg_action" value="ai"><input type="hidden" name="id" value="<?= (int) $b['id'] ?>">
-                  <input type="hidden" name="name" value="<?= h($b['name']) ?>"><input type="hidden" name="desc" value="<?= h($b['description']) ?>">
-                  <button class="btn btn-sm btn-outline-ia" title="Generate AI description"><?= ia_icon('sparkles', 13) ?></button>
-                </form>
                 <form method="post" class="d-inline" data-delete-form data-confirm="Archive '<?= h($b['name']) ?>'?">
                   <input type="hidden" name="bdg_action" value="delete"><input type="hidden" name="id" value="<?= (int) $b['id'] ?>">
                   <button class="btn btn-sm btn-outline-ia text-danger"><?= ia_icon('x', 13) ?></button>
@@ -116,7 +99,13 @@ $buildings = crud()->raw(
       <div class="modal-body d-grid gap-3">
         <div><label class="form-label">Name</label><input class="form-control" name="name" id="bdg-name" required></div>
         <div><label class="form-label">Code</label><input class="form-control" name="code" id="bdg-code" placeholder="B-LIB"></div>
-        <div><label class="form-label">Description</label><textarea class="form-control" name="description" id="bdg-desc" rows="4"></textarea></div>
+        <div>
+          <div class="d-flex justify-content-between align-items-center">
+            <label class="form-label mb-1">Description</label>
+            <button type="button" class="btn btn-sm btn-outline-ia" data-ai-gen data-ai-type="building" data-ai-id-el="bdg-id" data-ai-target-el="bdg-desc"><?= ia_icon('wand', 13) ?> Generate AI</button>
+          </div>
+          <textarea class="form-control" name="description" id="bdg-desc" rows="4"></textarea>
+        </div>
         <div>
           <?php
           $pickerName = 'featured_image';
@@ -146,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.querySelector('.modal-title').textContent = mode === 'edit' ? 'Edit building' : 'Add building'
   })
 })
+
 </script>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>

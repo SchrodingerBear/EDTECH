@@ -1,9 +1,7 @@
 <?php
 require_once __DIR__ . '/../../includes/auth.php';
 require_owner();
-/**
- * Innovatech PH — owner: platform settings (SMTP, directories).
- */
+/** SMART: owner — platform settings (SMTP, directories, email debug). */
 $pageTitle = 'System Settings';
 $pageSub = 'System setup and configuration';
 $active = 'System Settings';
@@ -13,42 +11,208 @@ require_once __DIR__ . '/../layout/header.php';
 $settings = crud()->get('platform_settings', 1) ?? [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    crud()->update('platform_settings', [
-        'smtp_host' => trim($_POST['smtp_host'] ?? ''),
-        'smtp_port' => (int) ($_POST['smtp_port'] ?? 587),
-        'smtp_username' => trim($_POST['smtp_username'] ?? ''),
-        'smtp_password_enc' => ($_POST['smtp_password'] ?? '') !== '' ? (string) base64_encode($_POST['smtp_password']) : ($settings['smtp_password_enc'] ?? ''),
-        'smtp_from_name' => trim($_POST['smtp_from_name'] ?? ''),
-        'smtp_from_email' => trim($_POST['smtp_from_email'] ?? ''),
-    ], ['id' => 1]);
-    flash('success', 'Settings saved. Emails will flow through SMTP when configured.');
-    redirect('admin/owner/settings');
+    $action = $_POST['action'] ?? 'save';
+
+    if ($action === 'save') {
+        $host = trim($_POST['smtp_host'] ?? '');
+        $port = (int) ($_POST['smtp_port'] ?? 465);
+        $smtpUser = trim($_POST['smtp_username'] ?? '');
+        $newPass = ($_POST['smtp_password'] ?? '') !== '';
+        $fromEmail = trim($_POST['smtp_from_email'] ?? '');
+        $fromName = trim($_POST['smtp_from_name'] ?? '');
+        $contact = trim($_POST['contact_email'] ?? '');
+
+        if ($host !== '' && !in_array($port, [25, 465, 587], true)) {
+            flash('error', 'Invalid SMTP port. Use 465 (SSL), 587 (STARTTLS), or 25.');
+            redirect('admin/owner/settings#smtp');
+        }
+        if ($host !== '' && $smtpUser === '') {
+            flash('error', 'SMTP host is set but username is empty. Fill in the SMTP username too.');
+            redirect('admin/owner/settings#smtp');
+        }
+        if ($host !== '' && $newPass && trim($_POST['smtp_password']) === '') {
+            flash('error', 'Password cannot be blank.');
+            redirect('admin/owner/settings#smtp');
+        }
+
+        crud()->update('platform_settings', [
+            'smtp_host' => $host,
+            'smtp_port' => $port,
+            'smtp_username' => $smtpUser,
+            'smtp_password_enc' => $newPass
+                ? base64_encode($_POST['smtp_password'])
+                : ($settings['smtp_password_enc'] ?? ''),
+            'smtp_from_name' => $fromName,
+            'smtp_from_email' => $fromEmail,
+            'contact_email' => $contact,
+        ], ['id' => 1]);
+        flash('success', 'Settings saved. Emails will flow through SMTP when configured.');
+        redirect('admin/owner/settings#smtp');
+    }
+
+    if ($action === 'test_email') {
+        $me = current_user();
+        $to = trim($_POST['test_to'] ?? '') ?: ($me['email'] ?? '');
+        if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+            flash('error', 'Invalid test recipient email.');
+            redirect('admin/owner/settings#smtp');
+        }
+        $ok = send_email($to, '[Innovatech PH] SMTP test — ' . date('Y-m-d H:i'), '<p>This is a test email from the Innovatech PH System Settings page (' . date('c') . ').</p>');
+        if ($ok) {
+            // Distinguish "sent via SMTP" vs "spooled" by comparing log lines.
+            $lastLine = email_log_tail(1)[0] ?? '';
+            $via = str_contains($lastLine, 'via SMTP') ? 'via SMTP' : '(check the email debug log below)';
+            flash('success', "Test email sent to {$to} {$via}. Check the inbox and the debug log below.");
+        } else {
+            flash('error', "Test email to {$to} FAILED. See the email debug log below for the SMTP conversation.");
+        }
+        redirect('admin/owner/settings#smtp');
+    }
+
+    if ($action === 'save_template') {
+        $slug = trim($_POST['slug'] ?? '');
+        if ($slug === '') {
+            flash('error', 'Missing template slug.');
+            redirect('admin/owner/settings#email-templates');
+        }
+        crud()->update('email_templates', [
+            'subject' => trim($_POST['subject'] ?? ''),
+            'body_html' => ($_POST['body_html'] ?? ''),
+            'is_active' => isset($_POST['is_active']) ? 1 : 0,
+        ], ['slug' => $slug]);
+        flash('success', 'Template "' . $slug . '" saved.');
+        redirect('admin/owner/settings#email-templates');
+    }
+
+    if ($action === 'test_credentials') {
+        $me = current_user();
+        $u = crud()->get('users', (int) $me['id']);
+        $inst = resolve_active_institution();
+        $sent = $u ? send_credentials($u, 'owner', 'Demo' . random_token(6), $inst['name'] ?? APP_NAME) : false;
+        flash($sent ? 'success' : 'error',
+            $sent
+                ? 'Test credentials email queued to ' . h($me['email']) . ' — check the inbox & debug log.'
+                : 'Test credentials email FAILED — see the SMTP debug log below.');
+        redirect('admin/owner/settings#email-templates');
+    }
+
+    if ($action === 'test_reset') {
+        $me = current_user();
+        $u = crud()->get('users', (int) $me['id']);
+        $tpl = crud()->get('email_templates', ['slug' => 'password_reset']);
+        $name = $u ? display_name($u) : 'there';
+        $url = url('admin/reset-password?token=' . random_token(24));
+        $vars = [
+            '{{name}}' => $name,
+            '{{email}}' => (string) ($u['email'] ?? $me['email']),
+            '{{link}}' => '<a href="' . h($url) . '">' . h($url) . '</a>',
+        ];
+        $subject = strtr((string) ($tpl['subject'] ?? 'Reset your password'), $vars);
+        $body = strtr((string) ($tpl['body_html'] ?? ''), $vars);
+        $sent = send_email((string) $me['email'], $subject, $body);
+        flash($sent ? 'success' : 'error',
+            $sent
+                ? 'Test password-reset email queued to ' . h($me['email']) . ' — check the inbox & debug log.'
+                : 'Test password-reset email FAILED — see the SMTP debug log below.');
+        redirect('admin/owner/settings#email-templates');
+    }
+
+    if ($action === 'test_ticket_status') {
+        $me = current_user();
+        [$sent, $to] = send_ticket_status_email([
+            'id' => 1,
+            'contact_email' => (string) $me['email'],
+            'created_by' => (int) $me['id'],
+            'subject' => 'Test support ticket',
+            'message' => 'This is a test ticket-status notification sent from System Settings.',
+            'status' => 'in_progress',
+        ]);
+        flash($sent ? 'success' : 'error',
+            $sent
+                ? 'Test ticket-status email queued to ' . h($to) . ' — check the inbox & debug log.'
+                : 'Test ticket-status email FAILED — see the SMTP debug log below.');
+        redirect('admin/owner/settings#email-templates');
+    }
 }
+
+$smtpConfigured = !empty($settings['smtp_host']) && !empty($settings['smtp_username']);
+$logTail = email_log_tail(40);
+
+/* --------------------------- email templates --------------------------- */
+$tplParams = [
+    'admin_invite' => ['name', 'email', 'username', 'password', 'role', 'institution', 'link', 'login_link'],
+    'staff_invite' => ['name', 'email', 'username', 'password', 'role', 'institution', 'link', 'login_link'],
+    'password_reset' => ['name', 'email', 'link'],
+    'support_ticket_status' => ['name', 'email', 'ticket_id', 'ticket_subject', 'ticket_message', 'ticket_status', 'link'],
+    'new_ticket' => ['name', 'email', 'ticket_id', 'ticket_subject', 'ticket_message', 'priority', 'institution', 'link'],
+];
+$paramHelp = [
+    'name' => 'Recipient display name',
+    'email' => 'Recipient email address',
+    'username' => 'Account username',
+    'password' => 'Generated login password',
+    'role' => 'Account role label',
+    'institution' => 'Institution name',
+    'link' => 'Confirmation / password-reset link (tickets: link to the support desk)',
+    'login_link' => 'Admin login URL',
+    'ticket_id' => 'Support ticket number',
+    'ticket_subject' => 'Ticket subject line',
+    'ticket_message' => 'Ticket message body',
+    'ticket_status' => 'Ticket status label',
+    'priority' => 'Ticket priority (Low / Normal / High)',
+];
+$templates = crud()->select('email_templates', '*', [], 'ORDER BY slug');
 ?>
 <div class="row g-4">
   <div class="col-lg-7">
-    <div class="ia-card">
-      <div class="card-head"><h3>SMTP / outgoing email</h3></div>
+    <div class="ia-card" id="smtp">
+      <div class="card-head">
+        <h3>SMTP / outgoing email</h3>
+        <span class="badge <?= $smtpConfigured ? 'badge-live' : 'badge-off' ?>"><?= $smtpConfigured ? 'Configured' : 'Not configured' ?></span>
+      </div>
       <div class="card-body">
         <form method="post" class="d-grid gap-3">
+          <input type="hidden" name="action" value="save">
           <div class="row g-3">
-            <div class="col-md-7"><label class="form-label">SMTP host</label><input class="form-control" name="smtp_host" value="<?= h($settings['smtp_host'] ?? '') ?>" placeholder="smtp.gmail.com"></div>
-            <div class="col-md-5"><label class="form-label">Port</label><input type="number" class="form-control" name="smtp_port" value="<?= (int) ($settings['smtp_port'] ?? 587) ?>"></div>
+            <div class="col-md-7"><label class="form-label">SMTP host</label>
+              <input class="form-control" name="smtp_host" value="<?= h($settings['smtp_host'] ?? '') ?>" placeholder="smtp.hostinger.com"></div>
+            <div class="col-md-5"><label class="form-label">Port (465 SSL / 587 STARTTLS / 25)</label>
+              <input type="number" class="form-control" name="smtp_port" value="<?= (int) ($settings['smtp_port'] ?? 465) ?>"></div>
           </div>
           <div class="row g-3">
-            <div class="col-md-6"><label class="form-label">Username</label><input class="form-control" name="smtp_username" value="<?= h($settings['smtp_username'] ?? '') ?>"></div>
-            <div class="col-md-6"><label class="form-label">Password (leave blank to keep)</label>
+            <div class="col-md-6"><label class="form-label">Username (full email)</label>
+              <input class="form-control" name="smtp_username" value="<?= h($settings['smtp_username'] ?? '') ?>" placeholder="support@yourdomain.com"></div>
+            <div class="col-md-6"><label class="form-label">Password (leave blank to keep current)</label>
               <div class="pw-group">
-                <input type="password" class="form-control" name="smtp_password" id="smtp-pw">
+                <input type="password" class="form-control" name="smtp_password" id="smtp-pw" autocomplete="new-password">
                 <button type="button" class="btn btn-outline-ia btn-shrink pw-eye" data-pw="smtp-pw" title="Show password"><?= ia_icon('eye', 14) ?></button>
               </div>
             </div>
           </div>
           <div class="row g-3">
-            <div class="col-md-6"><label class="form-label">From name</label><input class="form-control" name="smtp_from_name" value="<?= h($settings['smtp_from_name'] ?? '') ?>"></div>
-            <div class="col-md-6"><label class="form-label">From email</label><input type="email" class="form-control" name="smtp_from_email" value="<?= h($settings['smtp_from_email'] ?? '') ?>"></div>
+            <div class="col-md-6"><label class="form-label">From name</label>
+              <input class="form-control" name="smtp_from_name" value="<?= h($settings['smtp_from_name'] ?? '') ?>"></div>
+            <div class="col-md-6"><label class="form-label">From email</label>
+              <input type="email" class="form-control" name="smtp_from_email" value="<?= h($settings['smtp_from_email'] ?? '') ?>"></div>
           </div>
+          <div><?php $contact = $settings['contact_email'] ?? ''; ?>
+            <label class="form-label">Contact / reply-to email</label>
+            <input type="email" class="form-control" name="contact_email" value="<?= h($contact) ?>" placeholder="support@yourdomain.com"></div>
           <div class="text-end"><button class="btn btn-grad px-4" type="submit">Save SMTP</button></div>
+        </form>
+
+        <hr class="my-4">
+
+        <form method="post" class="d-grid gap-3">
+          <input type="hidden" name="action" value="test_email">
+          <div class="d-flex flex-wrap align-items-end gap-3">
+            <div class="flex-grow-1">
+              <label class="form-label">Send test email to</label>
+              <input type="email" class="form-control" name="test_to" value="<?= h(current_user()['email'] ?? '') ?>">
+            </div>
+            <button class="btn btn-outline-ia" type="submit"><?= ia_icon('mail', 14) ?> Send test email</button>
+          </div>
+          <div class="form-text">Tests the current SMTP config end-to-end. The SMTP conversation is recorded in the debug log below.</div>
         </form>
       </div>
     </div>
@@ -65,11 +229,197 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <span class="text-muted">Template pack</span><code>templates/org_pack/</code>
         </div>
         <div class="d-flex justify-content-between py-2">
-          <span class="text-muted">A-Frame runtime</span><code>aframe.min.js (local)</code>
+          <span class="text-muted">Email spool (/&#8203;logs)</span><code>storage/</code>
         </div>
+      </div>
+    </div>
+
+    <div class="ia-card mt-4">
+      <div class="card-head">
+        <h3>Email debug log</h3>
+        <span class="ia-meta-sm">storage/logs/email.log</span>
+      </div>
+      <div class="card-body">
+        <?php if ($logTail): ?>
+          <pre class="code-area log-view" style="max-height:340px;overflow:auto;font-size:11px;line-height:1.45"><?= h(implode("\n", $logTail)) ?></pre>
+        <?php else: ?>
+          <p class="ia-meta-md mb-0">No log entries yet. Send a test email to populate this log.</p>
+        <?php endif; ?>
       </div>
     </div>
   </div>
 </div>
+
+<div class="row g-4 mt-0">
+  <div class="col-lg-12">
+    <div class="ia-card" id="email-templates">
+      <div class="card-head">
+        <h3>Email templates &amp; test sends</h3>
+        <span class="ia-meta-sm">rendered by the SMTP config above and delivered to <?= h(current_user()['email'] ?? 'you') ?> on test</span>
+      </div>
+      <div class="card-body">
+        <div class="d-flex flex-wrap gap-2 mb-4">
+          <form method="post"><input type="hidden" name="action" value="test_credentials"><button class="btn btn-outline-ia"><?= ia_icon('users', 14) ?> Test credentials email</button></form>
+          <form method="post"><input type="hidden" name="action" value="test_reset"><button class="btn btn-outline-ia"><?= ia_icon('refresh', 14) ?> Test password-reset email</button></form>
+          <form method="post"><input type="hidden" name="action" value="test_ticket_status"><button class="btn btn-outline-ia"><?= ia_icon('move3d', 14) ?> Test ticket-status email</button></form>
+        </div>
+
+        <div class="row g-4">
+          <?php foreach ($templates as $tpl): ?>
+            <?php $params = $tplParams[$tpl['slug']] ?? []; ?>
+            <div class="col-lg-6">
+              <div class="ia-card">
+                <div class="card-head">
+                  <h3><code style="font-size:14px"><?= h($tpl['slug']) ?></code></h3>
+                  <span class="badge <?= (int) $tpl['is_active'] === 1 ? 'badge-live' : 'badge-off' ?>"><?= (int) $tpl['is_active'] === 1 ? 'Active' : 'Disabled' ?></span>
+                </div>
+                <form method="post" class="card-body d-grid gap-3">
+                  <input type="hidden" name="action" value="save_template">
+                  <input type="hidden" name="slug" value="<?= h($tpl['slug']) ?>">
+                  <div><label class="form-label">Subject</label><input class="form-control" name="subject" value="<?= h($tpl['subject']) ?>"></div>
+                  <div>
+                    <label class="form-label">Body (HTML)</label>
+                    <div class="mb-2">
+                      <span class="ia-meta-md d-block mb-1">Available placeholders — click a chip to copy:</span>
+                      <?php foreach ($params as $p): ?>
+                        <button type="button" class="ph-chip" data-param="{{<?= h($p) ?>}}" title="<?= h($paramHelp[$p] ?? '') ?>">{{<?= h($p) ?>}}</button>
+                      <?php endforeach; ?>
+                      <?php if (!$params): ?>
+                        <span class="ia-meta-md">No placeholders registered for this template.</span>
+                      <?php endif; ?>
+                    </div>
+                    <textarea class="form-control code-area" name="body_html" rows="8"><?= h($tpl['body_html']) ?></textarea>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="is_active" id="act-<?= h($tpl['slug']) ?>" <?= (int) $tpl['is_active'] === 1 ? 'checked' : '' ?>>
+                    <label class="form-check-label ia-meta-lg" for="act-<?= h($tpl['slug']) ?>">Template active</label>
+                  </div>
+                  <div class="text-end"><button class="btn btn-grad px-4" type="submit"><?= ia_icon('save', 14) ?> Save</button></div>
+                </form>
+              </div>
+            </div>
+          <?php endforeach; ?>
+        </div>
+
+        <details class="ia-card mt-4">
+          <summary class="card-head p-3" style="cursor:pointer"><?= ia_icon('info', 15) ?> Parameter guide — what each {{placeholder}} means</summary>
+          <div class="card-body">
+            <table class="table table-sm">
+              <thead><tr><th style="width:180px">Placeholder</th><th>What it renders with</th><th>Used by</th></tr></thead>
+              <tbody>
+                <?php foreach ($paramHelp as $p => $desc): ?>
+                  <?php $usedBy = array_keys(array_filter($tplParams, fn($list) => in_array($p, $list, true))); ?>
+                  <tr>
+                    <td><code>{{<?= h($p) ?>}}</code></td>
+                    <td><?= h($desc) ?></td>
+                    <td class="ia-meta-md"><?= h(implode(', ', $usedBy)) ?></td>
+                  </tr>
+                <?php endforeach; ?>
+              </tbody>
+            </table>
+            <p class="ia-meta-md mb-0">Any placeholder left in a template renders as an empty string if unused. A test send above is the fastest way to verify your templates.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ia-card mt-4" id="ai-chat">
+  <div class="card-head">
+    <h3>AI Test Chat — instant (on-server, no downloads)</h3>
+    <div class="d-flex gap-2 align-items-center">
+      <span class="badge badge-live">Ready</span>
+      <form method="post" id="ai-testmail-form">
+        <input type="hidden" name="action" value="test_email">
+        <input type="hidden" name="test_to" value="<?= h(current_user()['email'] ?? '') ?>">
+        <button class="btn btn-sm btn-outline-ia" type="submit"><?= ia_icon('mail', 13) ?> Send test email</button>
+      </form>
+    </div>
+  </div>
+  <div class="card-body">
+    <div class="chat-box" id="ai-chat-log">
+      <div class="chat-msg ai">Hi — I run right on your server using the built-in Innovatech generator, so replies are instant with no model downloads or WebGPU required. Try it: "Describe the Main Library" or just type a place name.</div>
+    </div>
+    <div class="d-flex gap-2 mt-3">
+      <input class="form-control" id="ai-prompt" placeholder="Ask the on-server AI anything…">
+      <button class="btn btn-grad flex-shrink-0" id="ai-send"><?= ia_icon('send', 15) ?> Send</button>
+    </div>
+    <div class="form-text mt-2">Same engine as <a href="<?= url('admin/ai-demo') ?>">ai-demo.php</a> and the AI Tools pages — zero setup, works on any browser.</div>
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jodit/3.24.2/jodit.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jodit/3.24.2/jodit.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll('textarea[name="body_html"]').forEach(function (el) {
+      Jodit.make(el, { height: 260, toolbarButtonSize: "small" });
+    });
+    document.querySelectorAll('.ph-chip').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var p = btn.getAttribute('data-param');
+        var done = function () {
+          btn.classList.add('is-copied');
+          btn.textContent = 'Copied ✓';
+          setTimeout(function () { btn.classList.remove('is-copied'); btn.textContent = p; }, 900);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(p).then(done).catch(done);
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = p; document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy'); } catch (e) {}
+          document.body.removeChild(ta);
+          done();
+        }
+      });
+    });
+  });
+</script>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  const log = document.getElementById('ai-chat-log')
+  const promptEl = document.getElementById('ai-prompt')
+  const sendBtn = document.getElementById('ai-send')
+  const api = <?= json_encode(url('admin/ai-chat')) ?>
+
+  const chat = (role, text) => {
+    const d = document.createElement('div')
+    d.className = 'chat-msg ' + role
+    d.textContent = text
+    log.appendChild(d)
+    log.scrollTop = log.scrollHeight
+    return d
+  }
+
+  async function doSend() {
+    const text = promptEl.value.trim()
+    if (!text) return
+    chat('user', text)
+    promptEl.value = ''
+    const replyLine = chat('ai', '')
+    replyLine.classList.add('streaming')
+    sendBtn.disabled = true
+    try {
+      const fd = new FormData()
+      fd.append('message', text)
+      const res = await fetch(api, { method: 'POST', body: fd })
+      const data = await res.json()
+      replyLine.textContent = (data && data.reply) ? data.reply : 'No reply.'
+    } catch (e) {
+      replyLine.textContent = '\u26a0 Error: ' + (e?.message || e)
+    } finally {
+      replyLine.classList.remove('streaming')
+      sendBtn.disabled = false
+      log.scrollTop = log.scrollHeight
+    }
+  }
+
+  sendBtn.addEventListener('click', doSend)
+  promptEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSend() })
+})
+</script>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>

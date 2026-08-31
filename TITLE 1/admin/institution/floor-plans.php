@@ -150,8 +150,8 @@ if ($studioPlanId) {
 
 $buildings = crud()->raw("SELECT id,name FROM buildings WHERE institution_id=? AND deleted_at IS NULL ORDER BY name", [$iid]);
 $rooms = crud()->raw("SELECT id,name FROM rooms WHERE institution_id=? AND deleted_at IS NULL ORDER BY name", [$iid]);
-$scenes = crud()->raw("SELECT id,title as name FROM tour_scenes WHERE institution_id=? AND deleted_at IS NULL ORDER BY title", [$iid]);
-$floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE institution_id=? AND deleted_at IS NULL AND id!=? ORDER BY title", [$iid, $studioPlanId ?: 0]);
+$scenes = crud()->raw("SELECT id,title as name FROM tour_scenes WHERE institution_id=? AND deleted_at IS NULL ORDER BY title", [$iid])->fetchAll();
+$floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE institution_id=? AND deleted_at IS NULL AND id!=? ORDER BY title", [$iid, $studioPlanId ?: 0])->fetchAll();
 ?>
 
 <?php if ($studio): ?>
@@ -265,11 +265,11 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label">Link to 360 Tour</label>
-              <select class="form-select" name="target_scene_id"><option value="">— none —</option><?php foreach ($scenes->fetchAll() as $s): ?><option value="<?= (int) $s['id'] ?>"><?= h($s['name']) ?></option><?php endforeach; ?></select>
+              <select class="form-select" name="target_scene_id"><option value="">— none —</option><?php foreach ($scenes as $s): ?><option value="<?= (int) $s['id'] ?>"><?= h($s['name']) ?></option><?php endforeach; ?></select>
             </div>
             <div class="col-md-6">
               <label class="form-label">Link to Sub-Floor Plan</label>
-              <select class="form-select" name="target_floor_plan_id"><option value="">— none —</option><?php foreach ($floorPlansList->fetchAll() as $fp): ?><option value="<?= (int) $fp['id'] ?>"><?= h($fp['name']) ?></option><?php endforeach; ?></select>
+              <select class="form-select" name="target_floor_plan_id"><option value="">— none —</option><?php foreach ($floorPlansList as $fp): ?><option value="<?= (int) $fp['id'] ?>"><?= h($fp['name']) ?></option><?php endforeach; ?></select>
             </div>
           </div>
           <div class="form-text mb-1">
@@ -284,8 +284,8 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
   </div>
 
   <script>
-  window._fpScenes = <?= json_encode(array_map(fn($s) => ['id' => $s['id'], 'name' => $s['name']], iterator_to_array($scenes)), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
-  window._fpPlans  = <?= json_encode(array_map(fn($p) => ['id' => $p['id'], 'name' => $p['name']], iterator_to_array($floorPlansList)), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+  window._fpScenes = <?= json_encode(array_map(fn($s) => ['id' => $s['id'], 'name' => $s['name']], $scenes), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+  window._fpPlans  = <?= json_encode(array_map(fn($p) => ['id' => $p['id'], 'name' => $p['name']], $floorPlansList), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
   </script>
   <script>
   (() => {

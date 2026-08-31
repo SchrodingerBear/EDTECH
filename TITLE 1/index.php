@@ -58,16 +58,21 @@ $featureLoop = array_merge($features, $features);
       </button>
     </div>
 
-    <nav class="nav-mobile wrap" id="mobile-nav" aria-label="Mobile">
-      <a href="#product" data-close-menu>Product</a>
-      <a href="#campuses" data-close-menu>Partner Campuses</a>
-      <a href="#how" data-close-menu>How it works</a>
-      <a href="#about" data-close-menu>About</a>
-      <a href="#contact" data-close-menu>Contact</a>
+    <nav class="nav-mobile" id="mobile-nav" aria-label="Mobile">
+      <button type="button" class="nav-mobile-close" data-close-menu aria-label="Close menu">
+        <?= icon('x', 28) ?>
+      </button>
+      <div>
+        <a href="#product" data-close-menu>Product</a>
+        <a href="#campuses" data-close-menu>Partner Campuses</a>
+        <a href="#how" data-close-menu>How it works</a>
+        <a href="#about" data-close-menu>About</a>
+        <a href="#contact" data-close-menu>Contact</a>
+      </div>
       <div class="nav-mobile-actions">
         <button type="button" class="btn btn-ghost theme-toggle" data-theme-toggle>
-          <span data-icon-sun class="is-hidden"><?= icon('sun', 16) ?></span>
-          <span data-icon-moon><?= icon('moon', 16) ?></span>
+          <span data-icon-sun class="is-hidden"><?= icon('sun', 18) ?></span>
+          <span data-icon-moon><?= icon('moon', 18) ?></span>
           <span data-theme-label>Dark mode</span>
         </button>
         <a class="btn btn-primary" href="<?= h($login) ?>" data-close-menu>Login Portal</a>

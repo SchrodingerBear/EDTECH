@@ -207,8 +207,16 @@ $tabs = [
             <label class="form-check-label" for="pub">Campus landing is live for visitors</label>
           </div>
           <p class="text-muted mb-0 fs-125">Public link: <code><?= h(org_url($inst['slug'], '')) ?></code></p>
+          <?php if ((int) ($inst['is_published'] ?? 0) !== 1): ?>
+            <p class="text-muted mb-0 fs-125 mt-1">Visitors currently see a <em>"not published"</em> notice. Use <strong>Preview tour</strong> to check the real landing.</p>
+          <?php endif; ?>
         </div>
-        <button class="btn btn-grad px-4"><?= ia_icon('rocket', 15) ?> Save publish state</button>
+        <div class="d-flex flex-wrap gap-2 justify-content-end">
+          <?php if ((int) ($inst['is_published'] ?? 0) !== 1): ?>
+            <a class="btn btn-outline-ia" target="_blank" href="<?= h(org_url($inst['slug'], '') . '?preview=1') ?>"><?= ia_icon('eye', 15) ?> Preview tour</a>
+          <?php endif; ?>
+          <button class="btn btn-grad px-4"><?= ia_icon('rocket', 15) ?> Save publish state</button>
+        </div>
       </div>
     </form>
   </div>
@@ -241,7 +249,13 @@ $tabs = [
             <input class="form-control" name="institution_type_other" value="<?= !$isStd ? h($curType) : '' ?>" placeholder="e.g. Technical-Vocational Institute">
           </div>
         </div>
-        <div><label class="form-label">Description</label><textarea class="form-control" name="description" rows="3"><?= h($inst['description'] ?? '') ?></textarea></div>
+        <div>
+          <div class="d-flex justify-content-between align-items-center">
+            <label class="form-label mb-1">Description</label>
+            <button type="button" class="btn btn-sm btn-outline-ia" data-ai-gen data-ai-type="institution" data-ai-id="<?= (int) $inst['id'] ?>" data-ai-target-el="inst-desc"><?= ia_icon('wand', 13) ?> Generate AI</button>
+          </div>
+          <textarea class="form-control" name="description" id="inst-desc" rows="3"><?= h($inst['description'] ?? '') ?></textarea>
+        </div>
         <div class="row g-3">
           <div class="col-md-12">
             <label class="form-label">Address</label>
@@ -503,6 +517,8 @@ resultsEl.classList.remove('d-none');
     document.getElementById('inst-addr').dispatchEvent(new Event('input', { bubbles: true }));
   });
 })();
+
+
 </script>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>

@@ -84,50 +84,45 @@ export class CardUI {
         // Content definitions for info card sections - each can be shown independently
         this.infoContent = {
             about: {
-                icon: './img/about.svg',
-                title: 'VFT Photosphere Camera',
+                icon: '/360_cam/img/about.svg',
+                title: 'Innovatech PH 360 Camera',
                 content: `
-                    <h3 style="color: white; margin-bottom: 10px;">360° Photosphere Capture</h3>
-                    <p style="margin-bottom: 15px;">VFTcam is a progressive web app that guides you through capturing immersive 360° photospheres using your device's orientation sensors.</p>
-                    
+                    <h3 style="color: white; margin-bottom: 10px;">360° Campus Panorama Capture</h3>
+                    <p style="margin-bottom: 15px;">Innovatech PH 360 Camera is part of the AI-Assisted AR 360° Virtual Campus Navigation and Information System for Educational Institutions.</p>
+
                     <h3 style="color: white; margin-bottom: 10px;">How It Works</h3>
-                    <p style="margin-bottom: 15px;">The app uses your device's gyroscope and compass to guide you through capturing 36 precisely positioned images. These images are then stitched together to create a seamless equirectangular photosphere.</p>
-                    
+                    <p style="margin-bottom: 15px;">The app uses your device's gyroscope and compass to guide you through capturing 36 precisely positioned images. These images are then stitched together to create a seamless equirectangular panorama.</p>
+
                     <h3 style="color: white; margin-bottom: 10px;">Features</h3>
                     <ul style="margin-left: 15px; margin-bottom: 15px;">
                         <li>Real-time 3D preview with hotspot guidance</li>
                         <li>Automatic image capture when aligned</li>
-                        <li>Local storage with no cloud uploads</li>
                         <li>High-resolution spherical projection</li>
-                        <li>Built-in photosphere viewer</li>
+                        <li>Built-in panorama viewer</li>
+                        <li>Integrated with Innovatech PH campus navigation system</li>
                     </ul>
 
                     <h3 style="color: white; margin-bottom: 10px;">Version</h3>
-                    <p style="margin-bottom: 15px;">VFTcam v1.3.2</p>
-                    
-                    <h3 style="color: white; margin-bottom: 10px;">Stanford Accelerator for Learning</h3>
+                    <p style="margin-bottom: 15px;">Innovatech 360 Camera v1.0.0</p>
+
+                    <h3 style="color: white; margin-bottom: 10px;">Innovatech PH</h3>
                     <p style="margin-bottom: 15px;">
-                        VFT Photosphere Camera is proudly developed and maintained by the <em>Accelerator Studio</em> within the
-                        <a href="https://acceleratelearning.stanford.edu/" rel="noopener noreferrer" target="_blank" style="color: white;">Stanford Accelerator for Learning</a> 
-                        as part of its mission to accelerate solutions that transform learning and education.
+                        Innovatech PH 360 Camera is part of the AI-Assisted AR 360° Virtual Campus Navigation and Information System.
+                        Designed for educational institutions to create immersive campus tours and navigation experiences.
                     </p>
-                    <p style="margin-bottom: 15px;">
-                        Learn more about the 
-                        <a href="https://acceleratelearning.stanford.edu/how-we-work/accelerator-studio/" rel="noopener noreferrer" target="_blank" style="color: white;">Accelerator Studio</a>.
-                    </p>
-                    <p style="margin-bottom: 15px;text-align: center;">VFT Photosphere Camera<br/>&copy; 2025 Stanford Accelerator for Learning<br/>All Rights Reserved</p>
+                    <p style="margin-bottom: 15px;text-align: center;">Innovatech PH 360 Camera<br/>&copy; 2025 Innovatech PH<br/>All Rights Reserved</p>
                 `
             },
             privacy: {
-                icon: './img/privacy.svg',
+                icon: '/360_cam/img/privacy.svg',
                 title: 'Privacy Policy',
                 content: `
-                    <p style="margin-bottom: 20px; color: rgba(255,255,255,0.9);">Your privacy is our priority. VFT Photosphere Camera is designed to keep your data secure and private.</p>
-                    
-                    <h3 style="color: white; margin-bottom: 10px;"><img src="./img/shield-lock.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Your Data Stays Local</h3>
-                    <p style="margin-bottom: 20px;">VFT Photosphere Camera operates entirely within your web browser. All captured images and generated photospheres remain on your device. We have no access to your photos or any data you create using the app.</p>
-                    
-                    <h3 style="color: white; margin-bottom: 10px;"><img src="./img/cloud-slash.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> No Cloud Uploads</h3>
+                    <p style="margin-bottom: 20px; color: rgba(255,255,255,0.9);">Your privacy is our priority. Innovatech PH 360 Camera is designed to keep your data secure and private.</p>
+
+                    <h3 style="color: white; margin-bottom: 10px;">Your Data Stays Local</h3>
+                    <p style="margin-bottom: 20px;">Innovatech PH 360 Camera operates entirely within your web browser. All captured images and generated panoramas remain on your device. We have no access to your photos or any data you create using the app.</p>
+
+                    <h3 style="color: white; margin-bottom: 10px;">No Cloud Uploads</h3>
                     <ul style="margin-left: 15px; margin-bottom: 10px; list-style-type: disc;">
                         <li>All image processing happens locally using your device's GPU through WebGL2</li>
                         <li>No photos are ever transmitted to external servers</li>
@@ -135,7 +130,7 @@ export class CardUI {
                         <li>The app works completely offline once loaded</li>
                     </ul>
                     
-                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="./img/compass.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Sensor Data Usage</h3>
+                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="/360_cam/img/compass.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Sensor Data Usage</h3>
                     <p style="margin-bottom: 10px;">The app uses your device's orientation sensors solely for real-time capture guidance. This sensor data is:</p>
                     <ul style="margin-left: 15px; margin-bottom: 10px; list-style-type: disc;">
                         <li>Used only to help you align with capture points</li>
@@ -144,7 +139,7 @@ export class CardUI {
                         <li>Required only during active capture sessions</li>
                     </ul>
                     
-                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="./img/camera.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Camera Permissions</h3>
+                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="/360_cam/img/camera.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Camera Permissions</h3>
                     <p style="margin-bottom: 10px;">Camera access is required to capture photos. The permission:</p>
                     <ul style="margin-left: 15px; margin-bottom: 10px; list-style-type: disc;">
                         <li>Is requested only when you start capturing</li>
@@ -153,7 +148,7 @@ export class CardUI {
                         <li>Does not allow background access to your camera</li>
                     </ul>
                     
-                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="./img/trash.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Data Control</h3>
+                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="/360_cam/img/trash.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Data Control</h3>
                     <p style="margin-bottom: 10px;">You have complete control over your data:</p>
                     <ul style="margin-left: 15px; margin-bottom: 10px; list-style-type: disc;">
                         <li>Delete individual photospheres through the camera roll</li>
@@ -162,7 +157,7 @@ export class CardUI {
                         <li>Uninstalling the PWA removes all associated data</li>
                     </ul>
                     
-                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="./img/box-arrow-up.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Sharing Features</h3>
+                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="/360_cam/img/box-arrow-up.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Sharing Features</h3>
                     <p style="margin-bottom: 10px;">When you choose to share a photosphere:</p>
                     <ul style="margin-left: 15px; margin-bottom: 10px; list-style-type: disc;">
                         <li>The app uses your device's native share functionality</li>
@@ -171,7 +166,7 @@ export class CardUI {
                         <li>No analytics or tracking is performed on shared content</li>
                     </ul>
                     
-                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="./img/geo-alt.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Location Data</h3>
+                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="/360_cam/img/geo-alt.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Location Data</h3>
                     <p style="margin-bottom: 10px;">The app can optionally add GPS metadata if you grant permission:</p>
                     <ul style="margin-left: 15px; margin-bottom: 10px; list-style-type: disc;">
                         <li>Location access is completely optional</li>
@@ -180,13 +175,13 @@ export class CardUI {
                         <li>No location data is transmitted to external servers</li>
                     </ul>
 
-                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="./img/envelope.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Contact</h3>
+                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;">Contact</h3>
                     <p style="margin-bottom: 10px;">Questions about this app?<br/>Contact:</p>
-                    <p style="margin-bottom: 10px;">Reuben Thiessen<br>
-                    Stanford Accelerator for Learning</p>
-                    
-                    <p style="margin-top: 25px; font-size: 12px; color: rgba(255,255,255,0.6);">Last updated: September 2025<br>
-                    This policy applies to VFT Photosphere Camera at 360cam.stanford.edu</p>
+                    <p style="margin-bottom: 10px;">Innovatech PH<br>
+                    AI-Assisted AR 360° Virtual Campus Navigation</p>
+
+                    <p style="margin-top: 25px; font-size: 12px; color: rgba(255,255,255,0.6);">Last updated: August 2025<br>
+                    This policy applies to Innovatech PH 360 Camera</p>
                 `
             },
             fov: {
@@ -712,7 +707,7 @@ export class CardUI {
         // If this is the about section, replace the version placeholder
         if (section === 'about') {
             const version = await this.getServiceWorkerVersion();
-            content = content.replace(/VFTcam v[\d.]+/, `VFTcam v${version}`);
+            content = content.replace(/Innovatech 360 v[\d.]+/, `Innovatech 360 v${version}`);
         }
         
         contentElement.innerHTML = content;
@@ -812,9 +807,9 @@ export class CardUI {
                         <div class="equirectangular-container">
                             <div class="equirectangular-preview" style="background-image: url('${pano.imageData}'); background-size: cover; background-position: center;"></div>
                             <div class="action-buttons">
-                                <button class="action-btn" onclick="window.sphereCapture.cardUI.viewPanorama(${panoIndex})" title="View"><img src="./img/view.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="View"></button>
-                                <button class="action-btn" onclick="window.sphereCapture.cardUI.downloadPanorama(${panoIndex})" title="Download"><img src="./img/download.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Download"></button>
-                                <button class="action-btn" onclick="window.sphereCapture.cardUI.deletePanorama(${panoIndex})" title="Delete"><img src="./img/trash.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Delete"></button>
+                                <button class="action-btn" onclick="window.sphereCapture.cardUI.viewPanorama(${panoIndex})" title="View"><img src="/360_cam/img/view.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="View"></button>
+                                <button class="action-btn" onclick="window.sphereCapture.cardUI.downloadPanorama(${panoIndex})" title="Download"><img src="/360_cam/img/download.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Download"></button>
+                                <button class="action-btn" onclick="window.sphereCapture.cardUI.deletePanorama(${panoIndex})" title="Delete"><img src="/360_cam/img/trash.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Delete"></button>
                             </div>
                         </div>
                         <div class="capture-date">${dateStr}</div>
@@ -868,7 +863,7 @@ export class CardUI {
             viewerContainer.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000; background: black;`;
             const closeBtn = document.createElement('button');
             closeBtn.className = 'card-close-btn';
-            closeBtn.innerHTML = '<img src="./img/x.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Close">';
+            closeBtn.innerHTML = '<img src="/360_cam/img/x.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Close">';
             closeBtn.style.cssText = `
                 position: absolute;
                 top: max(15px, calc(15px + env(safe-area-inset-top, 0px)));
@@ -1846,7 +1841,7 @@ export class CardUI {
         
         card.innerHTML = `
             <button class="card-close-btn" aria-label="Close ${title}">
-                <img src="./img/x.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Close icon">
+                <img src="/360_cam/img/x.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Close icon">
             </button>
             <div class="card-header">
                 <h1 class="card-title">${title}</h1>

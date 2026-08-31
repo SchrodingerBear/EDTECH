@@ -68,6 +68,19 @@
     <p>Immaculada Concepcion College</p>
   </div>
 
+  <!-- ====================== NOT-PUBLISHED OVERLAY ====================== -->
+  <div id="not-published" class="np-overlay hidden">
+    <div class="np-card">
+      <div class="brand-chip"><span class="dot"></span> ICC</div>
+      <div class="np-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22"/><path d="M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg>
+      </div>
+      <h1 class="np-title">Immaculada Concepcion College</h1>
+      <p class="np-msg">This virtual campus experience is not yet published.<br>Please check back soon.</p>
+      <p class="np-foot">Powered by Innovatech PH</p>
+    </div>
+  </div>
+
   <!-- A-Frame loaded lazily in openScene() to prevent blocking floor plan -->
   <script>
   (() => {
@@ -95,9 +108,11 @@
 
     // ─── boot ────────────────────────────────────────────────────────────────
     async function boot() {
+      let published = true;
       try {
         const res = await fetch('config.json', { cache: 'no-store' });
         config = await res.json();
+        published = config.published !== false;
       } catch (e) {
         config = {
           landing_mode: '360_rotation',
@@ -106,6 +121,14 @@
           starting_floor_plan: {},
           starting_scene: {}
         };
+      }
+
+      // Not-yet-published guard (admins preview via ?preview=1)
+      const isPreview = new URLSearchParams(location.search).get('preview') === '1';
+      if (!published && !isPreview) {
+        els.loader.classList.add('hidden');
+        $('#not-published') && $('#not-published').classList.remove('hidden');
+        return;
       }
 
       // Apply theme tokens

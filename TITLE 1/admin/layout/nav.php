@@ -44,6 +44,7 @@ function ia_icon(string $name, int $size = 18): string
         'eye' => '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
         'upload' => '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
         'scan-eye' => '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="1"/><path d="M18.944 12.33a1 1 0 0 0 0-.66 7.5 7.5 0 0 0-13.888 0 1 1 0 0 0 0 .66 7.5 7.5 0 0 0 13.888 0"/>',
+        'life-buoy' => '<circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 4.93 0 0"/><path d="m4.93 19.07 4.24-4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m9.17 14.83 0 0"/><circle cx="12" cy="12" r="4"/>',
     ];
     $common = 'xmlns="http://www.w3.org/2000/svg" width="' . $s . '" height="' . $s . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
     return '<svg ' . $common . '>' . ($paths[$name] ?? $paths['grid']) . '</svg>';
@@ -59,93 +60,151 @@ function role_nav(string $role): array
 
     $nav = [
         'owner' => [
-            ['title' => 'Overview', 'items' => [
-                ['Dashboard', '/admin/owner/dashboard', 'home', 'owner.dashboard'],
-            ]],
-            ['title' => 'Manage', 'items' => [
-                ['Institutions', '/admin/owner/institutions', 'school', 'owner.institutions'],
-                ['Accounts', '/admin/owner/accounts', 'users', 'owner.accounts'],
-            ]],
-            ['title' => 'Platform', 'items' => [
-                ['Role Management', '/admin/owner/roles', 'shield', 'owner.roles'],
-                ['System Settings', '/admin/owner/settings', 'settings', 'owner.settings'],
-                ['Website Settings', '/admin/owner/website-settings', 'globe', 'owner.website'],
-                ['Email Templates', '/admin/owner/emails', 'mail', 'owner.emails'],
-                ['Audit Logs', '/admin/owner/logs', 'clock', 'owner.logs'],
-                ['File Manager', '/admin/owner/files', 'folder', 'owner.files'],
-                ['Archive & Restore', '/admin/owner/archive', 'refresh', 'owner.archive'],
-            ]],
-            ['title' => 'Help', 'items' => array_merge($systemHelp, [['Roles & Features', '/admin/help/roles', 'shield']])],
+            [
+                'title' => 'Overview',
+                'items' => [
+                    ['Dashboard', '/admin/owner/dashboard', 'home', 'owner.dashboard'],
+                ]
+            ],
+            [
+                'title' => 'Manage',
+                'items' => [
+                    ['Institutions', '/admin/owner/institutions', 'school', 'owner.institutions'],
+                    ['Accounts', '/admin/owner/accounts', 'users', 'owner.accounts'],
+                ]
+            ],
+            [
+                'title' => 'Platform',
+                'items' => [
+                    ['Role Management', '/admin/owner/roles', 'shield', 'owner.roles'],
+                    ['System Settings', '/admin/owner/settings', 'settings', 'owner.settings'],
+                    ['Website Settings', '/admin/owner/website-settings', 'globe', 'owner.website'],
+                    ['Support Tickets', '/admin/support', 'life-buoy'],
+                    ['Audit Logs', '/admin/owner/logs', 'clock', 'owner.logs'],
+                    ['File Manager', '/admin/owner/files', 'folder', 'owner.files'],
+                    ['Archive & Restore', '/admin/owner/archive', 'refresh', 'owner.archive'],
+                ]
+            ],
+            ['title' => 'Help', 'items' => array_merge($systemHelp, [])],
         ],
         'system_admin' => [
-            ['title' => 'Overview', 'items' => [
-                ['System Dashboard', '/admin/system/dashboard', 'home', 'system.dashboard'],
-            ]],
-            ['title' => 'Manage', 'items' => [
-                ['Institutions', '/admin/owner/institutions', 'school', 'system.institutions'],
-                ['Accounts', '/admin/owner/accounts', 'users', 'system.accounts'],
-            ]],
-            ['title' => 'Platform', 'items' => [
-                ['Audit Logs', '/admin/owner/logs', 'clock', 'system.logs'],
-                ['File Manager', '/admin/owner/files', 'folder', 'system.files'],
-            ]],
-            ['title' => 'Help', 'items' => array_merge($systemHelp, [['Roles & Features', '/admin/help/roles', 'shield']])],
+            [
+                'title' => 'Overview',
+                'items' => [
+                    ['System Dashboard', '/admin/system/dashboard', 'home', 'system.dashboard'],
+                ]
+            ],
+            [
+                'title' => 'Manage',
+                'items' => [
+                    ['Institutions', '/admin/owner/institutions', 'school', 'system.institutions'],
+                    ['Accounts', '/admin/owner/accounts', 'users', 'system.accounts'],
+                ]
+            ],
+            [
+                'title' => 'Platform',
+                'items' => [
+                    ['Audit Logs', '/admin/owner/logs', 'clock', 'system.logs'],
+                    ['File Manager', '/admin/owner/files', 'folder', 'system.files'],
+                    ['Support Tickets', '/admin/support', 'life-buoy'],
+                ]
+            ],
+            ['title' => 'Help', 'items' => array_merge($systemHelp, [])],
         ],
         'system_staff' => [
-            ['title' => 'Overview', 'items' => [
-                ['System Dashboard', '/admin/system/dashboard', 'home', 'system.dashboard'],
-            ]],
-            ['title' => 'Manage', 'items' => [
-                ['Institutions', '/admin/owner/institutions', 'school', 'system.institutions'],
-            ]],
-            ['title' => 'Platform', 'items' => [
-                ['File Manager', '/admin/owner/files', 'folder', 'system.files'],
-            ]],
-            ['title' => 'Help', 'items' => array_merge($systemHelp, [['Roles & Features', '/admin/help/roles', 'shield']])],
+            [
+                'title' => 'Overview',
+                'items' => [
+                    ['System Dashboard', '/admin/system/dashboard', 'home', 'system.dashboard'],
+                ]
+            ],
+            [
+                'title' => 'Manage',
+                'items' => [
+                    ['Institutions', '/admin/owner/institutions', 'school', 'system.institutions'],
+                ]
+            ],
+            [
+                'title' => 'Platform',
+                'items' => [
+                    ['File Manager', '/admin/owner/files', 'folder', 'system.files'],
+                    ['Support Tickets', '/admin/support', 'life-buoy'],
+                ]
+            ],
+            ['title' => 'Help', 'items' => array_merge($systemHelp, [])],
         ],
         'admin' => [
-            ['title' => 'Overview', 'items' => [
-                ['Dashboard', '/admin/institution/dashboard', 'home', 'admin.dashboard'],
-            ]],
-            ['title' => 'Content', 'items' => [
-                ['Buildings', '/admin/institution/buildings', 'building', 'admin.buildings'],
-                ['Rooms & Areas', '/admin/institution/locations', 'map', 'admin.locations'],
-                ['360 Tours', '/admin/institution/tours', 'camera', 'admin.tours'],
-                ['Floor Plans', '/admin/institution/floor-plans', 'compass', 'admin.floorplans'],
-            ]],
-            ['title' => 'Customize', 'items' => [
-                ['Theme & Landing', '/admin/institution/settings', 'palette', 'admin.settings'],
-                ['AI Tools', '/admin/institution/ai', 'sparkles', 'admin.ai'],
-                ['Augmented Reality', '/admin/institution/ar', 'scan-eye', 'admin.ar'],
-            ]],
-            ['title' => 'Files', 'items' => [
-                ['Organization Files', '/admin/institution/files', 'folder', 'admin.files'],
-                ['Archive & Restore', '/admin/institution/archive', 'refresh', 'admin.archive'],
-            ]],
+            [
+                'title' => 'Overview',
+                'items' => [
+                    ['Dashboard', '/admin/institution/dashboard', 'home', 'admin.dashboard'],
+                ]
+            ],
+            [
+                'title' => 'Content',
+                'items' => [
+                    ['Buildings', '/admin/institution/buildings', 'building', 'admin.buildings'],
+                    ['Locations', '/admin/institution/locations', 'map', 'admin.locations'],
+                    ['360 Tours', '/admin/institution/tours', 'camera', 'admin.tours'],
+                    ['Floor Plans', '/admin/institution/floor-plans', 'compass', 'admin.floorplans'],
+                ]
+            ],
+            [
+                'title' => 'Customize',
+                'items' => [
+                    ['Theme & Landing', '/admin/institution/settings', 'palette', 'admin.settings'],
+                    ['AI Tools', '/admin/institution/ai', 'sparkles', 'admin.ai'],
+                    ['Augmented Reality', '/admin/institution/ar', 'scan-eye', 'admin.ar'],
+                ]
+            ],
+            [
+                'title' => 'Files',
+                'items' => [
+                    ['Organization Files', '/admin/institution/files', 'folder', 'admin.files'],
+                    ['Archive & Restore', '/admin/institution/archive', 'refresh', 'admin.archive'],
+                ]
+            ],
+            ['title' => 'Support', 'items' => [['Support Tickets', '/admin/support', 'life-buoy']]],
             ['title' => 'Help', 'items' => $systemHelp],
         ],
         'staff' => [
-            ['title' => 'Overview', 'items' => [
-                ['Dashboard', '/admin/staff/dashboard', 'home', 'staff.dashboard'],
-            ]],
-            ['title' => 'Content', 'items' => [
-                ['Facilities', '/admin/staff/facilities', 'building', 'staff.facilities'],
-                ['Floor Plans', '/admin/staff/floor-plans', 'map', 'staff.floorplans'],
-                ['Media Uploads', '/admin/staff/uploads', 'image', 'staff.uploads'],
-            ]],
-            ['title' => 'AI Tools', 'items' => [
-                ['AI Stitch', '/admin/staff/ai-stitch', 'camera', 'staff.aistitch'],
-                ['AI Info', '/admin/staff/ai-info', 'sparkles', 'staff.aiinfo'],
-            ]],
-            ['title' => 'Files', 'items' => [
-                ['Archive & Restore', '/admin/staff/archive', 'refresh', 'staff.archive'],
-            ]],
+            [
+                'title' => 'Overview',
+                'items' => [
+                    ['Dashboard', '/admin/staff/dashboard', 'home', 'staff.dashboard'],
+                ]
+            ],
+            [
+                'title' => 'Content',
+                'items' => [
+                    ['Facilities', '/admin/staff/facilities', 'building', 'staff.facilities'],
+                    ['Floor Plans', '/admin/staff/floor-plans', 'map', 'staff.floorplans'],
+                    ['Media Uploads', '/admin/staff/uploads', 'image', 'staff.uploads'],
+                ]
+            ],
+            [
+                'title' => 'AI Tools',
+                'items' => [
+                    ['AI Stitch', '/admin/staff/ai-stitch', 'camera', 'staff.aistitch'],
+                    ['AI Info', '/admin/staff/ai-info', 'sparkles', 'staff.aiinfo'],
+                ]
+            ],
+            [
+                'title' => 'Files',
+                'items' => [
+                    ['Archive & Restore', '/admin/staff/archive', 'refresh', 'staff.archive'],
+                ]
+            ],
+            ['title' => 'Support', 'items' => [['Support Tickets', '/admin/support', 'life-buoy']]],
             ['title' => 'Help', 'items' => $systemHelp],
         ],
         'user' => [
-            ['title' => 'Home', 'items' => [
-                ['Public Site', '/', 'home'],
-            ]],
+            [
+                'title' => 'Home',
+                'items' => [
+                    ['Public Site', '/', 'home'],
+                ]
+            ],
         ],
     ];
 

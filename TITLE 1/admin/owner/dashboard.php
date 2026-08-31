@@ -70,7 +70,7 @@ require_once __DIR__ . '/../layout/header.php';
         <h3>Quick actions</h3>
       </div>
       <div class="card-body d-grid gap-2 card-body-px">
-        <a class="btn btn-grad" href="institutions">+ Create institution (auto-generates folder)</a>
+        <a class="btn btn-grad" href="institutions"> Create institution </a>
         <a class="btn btn-outline-ia" href="accounts">Manage admins & staff</a>
         <a class="btn btn-outline-ia" href="website-settings">Edit product landing</a>
         <a class="btn btn-outline-ia" href="files">Open file manager</a>
@@ -95,18 +95,18 @@ require_once __DIR__ . '/../layout/header.php';
           </div>
           <div class="col-md-6 col-xl-4">
             <strong>2. Client Onboarding</strong>
-            <div>Create new partner <a
-                href="institutions">Institutions</a>. A folder will automatically be generated for each client.</div>
+            <div>Create new partner <a href="institutions">Institutions</a>. A folder will automatically be generated
+              for each client.</div>
           </div>
           <div class="col-md-6 col-xl-4">
             <strong>3. Account Access</strong>
-            <div>Add organization admins and staff via <a
-                href="accounts">Accounts</a> and assign them to their institution.</div>
+            <div>Add organization admins and staff via <a href="accounts">Accounts</a> and assign them to their
+              institution.</div>
           </div>
           <div class="col-md-6 col-xl-4">
             <strong>4. Manage Data</strong>
-            <div>Use the <a href="files">File Manager</a> and <a
-                href="archive">Archive & Restore</a> to manage organization assets and deleted content.</div>
+            <div>Use the <a href="files">File Manager</a> and <a href="archive">Archive & Restore</a> to manage
+              organization assets and deleted content.</div>
           </div>
           <div class="col-md-6 col-xl-4">
             <strong>5. Monitor Activity</strong>
@@ -115,8 +115,8 @@ require_once __DIR__ . '/../layout/header.php';
           </div>
           <div class="col-md-6 col-xl-4">
             <strong>6. Server environment</strong>
-            <div>Check PHP version and write permissions in <a
-                href="<?= url('admin/help') ?>">Help Center</a> if uploads fail.</div>
+            <div>Check PHP version and write permissions in <a href="<?= url('admin/help') ?>">Help Center</a> if
+              uploads fail.</div>
           </div>
         </div>
       </div>

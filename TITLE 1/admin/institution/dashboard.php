@@ -61,7 +61,7 @@ $recentScenes = crud()->raw(
 <div class="row g-4 mb-4">
   <?php $cards = [
       ['Buildings', $stats['buildings'], 'building', 'buildings'],
-      ['Rooms & areas', $stats['rooms'], 'map', 'locations'],
+      ['Locations', $stats['rooms'], 'map', 'locations'],
       ['360 Scenes', $stats['scenes'], 'camera', 'tours'],
       ['Floor plans', $stats['floorplans'], 'compass', 'floor-plans'],
   ]; ?>
@@ -137,7 +137,7 @@ $recentScenes = crud()->raw(
         <p class="text-muted fs-13 mb-3">Follow these steps to set up your virtual campus:</p>
         <div class="guide-item">
             <strong>1. Content Foundation</strong>
-            <div>Add <a href="buildings">Buildings</a> first, then create <a href="locations">Rooms & Areas</a> inside them.</div>
+            <div>Add <a href="buildings">Buildings</a> first, then create <a href="locations">Locations</a> inside them.</div>
         </div>
         <div class="guide-item">
             <strong>2. Immersive Media</strong>

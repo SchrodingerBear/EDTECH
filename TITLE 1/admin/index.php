@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form'] ?? '') === 'login')
 $forgotSent = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form'] ?? '') === 'forgot') {
   $email = strtolower(trim($_POST['email'] ?? ''));
-  $row = crud()->raw("SELECT id FROM users WHERE email = :e AND deleted_at IS NULL", ['e' => $email])->fetch();
+  $row = crud()->raw("SELECT id, first_name, last_name FROM users WHERE email = :e AND deleted_at IS NULL", ['e' => $email])->fetch();
 
   // Always pretend to send to avoid user enumeration.
   $forgotSent = true;
@@ -68,9 +68,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form'] ?? '') === 'forgot'
     $sent = false;
     try {
       $tpl = crud()->get('email_templates', ['slug' => 'password_reset']);
-      $settings = crud()->get('platform_settings', 1);
-      $subject = str_replace('{{link}}', $resetUrl, $tpl['subject'] ?? 'Reset your password');
-      $body = str_replace('{{link}}', '<a href="' . h($resetUrl) . '">' . h($resetUrl) . '</a>', $tpl['body_html'] ?? '');
+      $name = trim(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
+      $vars = [
+        '{{name}}' => $name !== '' ? $name : 'there',
+        '{{email}}' => $email,
+        '{{link}}' => '<a href="' . h($resetUrl) . '">' . h($resetUrl) . '</a>',
+      ];
+      $subject = strtr((string) ($tpl['subject'] ?? 'Reset your password'), $vars);
+      $body = strtr((string) ($tpl['body_html'] ?? ''), $vars);
       $sent = send_email($email, $subject, $body);
     } catch (Throwable $e) {
       $sent = false;

@@ -80,6 +80,9 @@ $scenes = crud()->raw(
 $buildings = crud()->select('buildings', 'id,name', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY name');
 $rooms = crud()->select('rooms', 'id,name', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY name');
 $organizationsUrl = org_url($inst['slug'], 'assets/scenes');
+
+// Get available panoramas from 360 camera app
+$panoramas = crud()->select('panoramas', 'id,title,equirect_path', ['institution_id' => $iid, 'status' => 'completed'], 'ORDER BY created_at DESC')->fetchAll();
 ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
   <p class="mb-1 ia-meta-lg"><?= count($scenes) ?> scene(s) · equirect & featured images go to <code><?= h($inst['slug']) ?>/assets/scenes/</code></p>
@@ -158,13 +161,23 @@ $organizationsUrl = org_url($inst['slug'], 'assets/scenes');
         </div>
         <div class="row g-3">
           <div class="col-md-6">
-            <?php
-            $pickerName = 'equirect_image';
-            $pickerValue = '';
-            $pickerLabel = 'Equirect/pano image';
-            $pickerHelp = '2:1 equirectangular panorama (stiched by AI or camera).';
-            require __DIR__ . '/../layout/media-picker.php';
-            ?>
+            <label class="form-label">Equirect/pano image</label>
+            <div class="d-grid gap-2">
+              <select class="form-select" name="panorama_select" id="panorama-select">
+                <option value="">-- Select from 360 Camera App --</option>
+                <?php foreach ($panoramas as $pano): ?>
+                  <option value="<?= h($pano['equirect_path']) ?>" data-title="<?= h($pano['title']) ?>"><?= h($pano['title']) ?></option>
+                <?php endforeach; ?>
+              </select>
+              <div class="text-center text-muted fs-12">— or upload manually —</div>
+              <?php
+              $pickerName = 'equirect_image';
+              $pickerValue = '';
+              $pickerLabel = 'Upload equirect';
+              $pickerHelp = '2:1 equirectangular panorama (stiched by AI or camera).';
+              require __DIR__ . '/../layout/media-picker.php';
+              ?>
+            </div>
           </div>
           <div class="col-md-6">
             <?php
@@ -177,7 +190,10 @@ $organizationsUrl = org_url($inst['slug'], 'assets/scenes');
           </div>
         </div>
         <div>
-          <label class="form-label">Description</label>
+          <div class="d-flex justify-content-between align-items-center">
+            <label class="form-label mb-1">Description</label>
+            <button type="button" class="btn btn-sm btn-outline-ia" data-ai-gen data-ai-type="tour_scene" data-ai-id-el="scene-id" data-ai-target-el="scene-desc"><?= ia_icon('wand', 13) ?> Generate AI</button>
+          </div>
           <textarea class="form-control" name="description" id="scene-desc" rows="3"></textarea>
         </div>
         <div class="row g-3" id="scene-pitch-row">
@@ -205,7 +221,37 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('scene-pitch').value = btn.dataset.pitch || 0
     modal.querySelector('.modal-title').textContent = mode === 'edit' ? 'Edit scene' : 'Add 360 scene'
   })
+
+  // Handle panorama selection from dropdown
+  const panoramaSelect = document.getElementById('panorama-select')
+  if (panoramaSelect) {
+    panoramaSelect.addEventListener('change', function() {
+      const selectedPath = this.value
+      const selectedTitle = this.options[this.selectedIndex].dataset.title
+
+      if (selectedPath) {
+        // Set the equirect_path hidden field
+        const equirectPathInput = document.querySelector('input[name="equirect_path"]')
+        if (!equirectPathInput) {
+          const hiddenInput = document.createElement('input')
+          hiddenInput.type = 'hidden'
+          hiddenInput.name = 'equirect_path'
+          hiddenInput.value = selectedPath
+          document.querySelector('form').appendChild(hiddenInput)
+        } else {
+          equirectPathInput.value = selectedPath
+        }
+
+        // Auto-fill title if empty
+        const titleInput = document.getElementById('scene-title')
+        if (titleInput && !titleInput.value && selectedTitle) {
+          titleInput.value = selectedTitle
+        }
+      }
+    })
+  }
 })
+
 </script>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>

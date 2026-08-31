@@ -187,7 +187,13 @@ $waypoints = crud()->raw("SELECT w.*,b.name AS building_name,r.name AS room_name
         </div>
         <div class="row g-3">
           <div class="col-md-6"><label class="form-label">Overlay title</label><input class="form-control" name="overlay_title" id="wp-overlay-title" placeholder="Science Building"></div>
-          <div class="col-md-6"><label class="form-label">Overlay description (HTML ok)</label><textarea class="form-control" name="overlay_html" id="wp-overlay-html" rows="2"></textarea></div>
+          <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-center">
+              <label class="form-label mb-1">Overlay description (HTML ok)</label>
+              <button type="button" class="btn btn-sm btn-outline-ia" data-ai-gen data-ai-type="waypoint" data-ai-id-el="wp-id" data-ai-target-el="wp-overlay-html"><?= ia_icon('wand', 13) ?> Generate AI</button>
+            </div>
+            <textarea class="form-control" name="overlay_html" id="wp-overlay-html" rows="2"></textarea>
+          </div>
         </div>
         <div>
           <label class="form-label"><?= ia_icon('upload',14) ?> Visual tracking target <code>.mind</code></label>

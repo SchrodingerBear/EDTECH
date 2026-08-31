@@ -213,7 +213,10 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
             <div class="form-text">Only applies to Navigation type hotspots.</div>
           </div>
           <div>
-            <label class="form-label">Popup body (HTML allowed)</label>
+            <div class="d-flex justify-content-between align-items-center">
+              <label class="form-label mb-1">Popup body (HTML allowed)</label>
+              <button type="button" class="btn btn-sm btn-outline-ia" data-ai-gen data-ai-type="hotspot" data-ai-id-el="hs-id" data-ai-target-el="hs-body"><?= ia_icon('wand', 13) ?> Generate AI</button>
+            </div>
             <textarea class="form-control" name="body_html" id="hs-body" rows="4" placeholder="Opening hours, description, link…"></textarea>
           </div>
         </div>

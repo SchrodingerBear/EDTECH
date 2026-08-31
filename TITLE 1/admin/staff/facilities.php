@@ -210,7 +210,13 @@ $areas = crud()->select('campus_areas', 'id,name', ['institution_id' => $iid], '
             <select class="form-select" name="campus_area_id" id="fac-area"><option value="">— none —</option><?php foreach ($areas as $a): ?><option value="<?= (int) $a['id'] ?>"><?= h($a['name']) ?></option><?php endforeach; ?></select>
           </div>
         </div>
-        <div><label class="form-label">Description</label><textarea class="form-control" name="description" id="fac-desc" rows="3"></textarea></div>
+        <div>
+          <div class="d-flex justify-content-between align-items-center">
+            <label class="form-label mb-1">Description</label>
+            <button type="button" class="btn btn-sm btn-outline-ia" data-ai-gen data-ai-type="facility" data-ai-id-el="fac-id" data-ai-target-el="fac-desc" data-ai-url="../institution/ai-generate"><?= ia_icon('wand', 13) ?> Generate AI</button>
+          </div>
+          <textarea class="form-control" name="description" id="fac-desc" rows="3"></textarea>
+        </div>
         <div class="row g-3">
           <div class="col-md-4"><label class="form-label">Operating hours</label><input class="form-control" name="hours" id="fac-hours" placeholder="Mon–Fri 8am–6pm"></div>
           <div class="col-md-4"><label class="form-label">Contact</label><input class="form-control" name="phone" id="fac-phone"></div>
@@ -237,6 +243,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('fac-phone').value = b.dataset.phone || ''
     document.getElementById('fac-cap').value = b.dataset.cap || 0
   })
+
+  
 })
 </script>
 

@@ -127,7 +127,7 @@ if ($usePlatform) {
     <input type="hidden" name="<?= h($pickerName) ?>_url" id="<?= h($pickerId) ?>_url" value="<?= h($pickerValue) ?>">
     <input type="file" name="<?= h($pickerName) ?>_upload" id="<?= h($pickerId) ?>_file_real"
         accept="<?= h($pickerAccept) ?>" class="d-none"
-        onchange="handleDirectFileUpload(this, '<?= h($pickerId) ?>')">
+        onchange="handleDirectFileUpload(this, '<?= h($pickerId) ?>')" style="max-width: 100%">
 
     <?php if ($pickerHelp): ?>
         <div class="form-text mt-1"><?= $pickerHelp ?></div>
@@ -144,7 +144,7 @@ if ($usePlatform) {
                     <h5 class="modal-title fw-bold mb-0" id="modalLabel_<?= h($pickerId) ?>"><?= h($pickerLabel) ?></h5>
                     <p class="text-muted small mb-0">Select or upload media for this field</p>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" onclick="closeMediaPickerModal('<?= h($pickerId) ?>')" aria-label="Close"></button>
             </div>
 
             <div class="modal-body p-0">
@@ -245,7 +245,7 @@ if ($usePlatform) {
             </div>
 
             <div class="modal-footer border-top">
-                <button type="button" class="btn btn-sm btn-outline-ia" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-sm btn-outline-ia" onclick="closeMediaPickerModal('<?= h($pickerId) ?>')">Close</button>
             </div>
         </div>
     </div>
@@ -259,6 +259,34 @@ if ($usePlatform) {
         if (m && m.parentElement !== document.body) {
             document.body.appendChild(m);
         }
+        
+        // Store reference to parent modal if exists
+        var parentModal = m.closest('.modal.show') ? document.querySelector('.modal.show') : null;
+        if (parentModal) {
+            m.dataset.parentModal = parentModal.id;
+        }
+        
+        // Handle modal show event - hide parent modal temporarily
+        m.addEventListener('show.bs.modal', function() {
+            if (parentModal) {
+                var parentInstance = bootstrap.Modal.getInstance(parentModal);
+                if (parentInstance) {
+                    parentInstance.hide();
+                }
+            }
+        });
+        
+        // Handle modal hide event - restore parent modal
+        m.addEventListener('hidden.bs.modal', function() {
+            if (parentModal) {
+                var parentInstance = bootstrap.Modal.getInstance(parentModal);
+                if (parentInstance) {
+                    setTimeout(function() {
+                        parentInstance.show();
+                    }, 150);
+                }
+            }
+        });
     })();
 </script>
 
@@ -273,6 +301,27 @@ if ($usePlatform) {
             return base + '/' + val.replace(/^\/+/, '');
         };
 
+        window.closeMediaPickerModal = function (pickerId) {
+            const modalEl = document.getElementById('modal_' + pickerId);
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            
+            // Get parent modal reference before closing
+            const parentModalId = modalEl.dataset.parentModal;
+            const parentModalEl = parentModalId ? document.getElementById(parentModalId) : null;
+            
+            if (modal) modal.hide();
+            
+            // Restore parent modal after media picker closes
+            if (parentModalEl) {
+                setTimeout(function() {
+                    const parentInstance = bootstrap.Modal.getInstance(parentModalEl);
+                    if (parentInstance) {
+                        parentInstance.show();
+                    }
+                }, 200);
+            }
+        };
+
         window.selectScopedFile = function (pickerId, relPath, fullUrl, fileName) {
             document.getElementById(pickerId + '_url').value = relPath;
             document.getElementById(pickerId + '_file_real').value = '';
@@ -280,9 +329,7 @@ if ($usePlatform) {
             document.getElementById(pickerId + '_sub').textContent = relPath;
             document.getElementById(pickerId + '_preview').innerHTML = '<img src="' + (fullUrl || mediaPreviewSrc(relPath)) + '">';
 
-            const modalEl = document.getElementById('modal_' + pickerId);
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) modal.hide();
+            closeMediaPickerModal(pickerId);
         };
 
         window.handleDirectFileUpload = function (input, pickerId) {
@@ -298,9 +345,7 @@ if ($usePlatform) {
                 };
                 reader.readAsDataURL(file);
 
-                const modalEl = document.getElementById('modal_' + pickerId);
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) modal.hide();
+                closeMediaPickerModal(pickerId);
             }
         };
 
@@ -314,9 +359,7 @@ if ($usePlatform) {
                 document.getElementById(pickerId + '_file_real').value = '';
                 document.getElementById(pickerId + '_preview').innerHTML = '<img src="' + mediaPreviewSrc(val) + '" onerror="this.src=\'data:image/svg+xml;utf8,<svg xmlns=\\\'http://www.w3.org/2000/svg\\\' width=\\\'24\\\' height=\\\'24\\\' viewBox=\\\'0 0 24 24\\\' fill=\\\'none\\\' stroke=\\\'%23999\\\' stroke-width=\\\'2\\\'><rect x=\\\'3\\\' y=\\\'3\\\' width=\\\'18\\\' height=\\\'18\\\' rx=\\\'2\\\'/></svg>\'">';
             }
-            const modalEl = document.getElementById('modal_' + pickerId);
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            if (modal) modal.hide();
+            closeMediaPickerModal(pickerId);
         };
 
         window.clearMediaPicker = function (pickerId) {

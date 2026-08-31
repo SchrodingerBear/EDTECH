@@ -337,7 +337,12 @@ export class CameraRoll {
                                     </svg>
                                 </button>
                                 <button class="action-btn" onclick="window.sphereCapture.cameraRoll.viewVR(${index})" title="VR View">
-                                    <img src="/img/vr-cardboard.svg" width="20" height="20" alt="VR" style="filter: brightness(0) invert(1);">
+                                    <img src="/360_cam/img/vr-cardboard.svg" width="20" height="20" alt="VR" style="filter: brightness(0) invert(1);">
+                                </button>
+                                <button class="action-btn" onclick="window.sphereCapture.cameraRoll.saveToSystem(${index})" title="Save to System">
+                                    <svg width="20" height="20" fill="white" viewBox="0 0 24 24">
+                                        <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+                                    </svg>
                                 </button>
                                 <button class="action-btn" onclick="window.sphereCapture.cameraRoll.sharePanorama(${index})" title="Share">
                                     <svg width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
@@ -722,6 +727,88 @@ export class CameraRoll {
                     // Clean up after download
                     setTimeout(() => URL.revokeObjectURL(link.href), 1000);
                 } else {
+                    link.href = pano.imageData;
+                }
+                link.click();
+            }
+        } catch (error) {
+            console.error('Error sharing panorama:', error);
+            if (this.app && this.app.cardUI) {
+                await this.app.cardUI.alert('Failed to share panorama', 'Error');
+            }
+        }
+    }
+
+    /**
+     * Save panorama to Innovatech PH system
+     * Uploads the panorama to the database via API
+     * @param {number} index - Index of panorama in the list
+     */
+    async saveToSystem(index) {
+        try {
+            const panoramas = await this.database.getAllPanoramas();
+            const pano = panoramas[index];
+
+            if (!pano) {
+                throw new Error('Panorama not found');
+            }
+
+            // Get panorama blob
+            let panoramaBlob;
+            if (pano.imageBlob) {
+                panoramaBlob = pano.imageBlob;
+            } else if (pano.imageData) {
+                const response = await fetch(pano.imageData);
+                panoramaBlob = await response.blob();
+            } else {
+                throw new Error('No image data available');
+            }
+
+            // Generate filename
+            const timestamp = new Date(pano.timestamp);
+            const year = timestamp.getFullYear();
+            const month = String(timestamp.getMonth() + 1).padStart(2, '0');
+            const day = String(timestamp.getDate()).padStart(2, '0');
+            const hours = String(timestamp.getHours()).padStart(2, '0');
+            const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+            const seconds = String(timestamp.getSeconds()).padStart(2, '0');
+            const filename = `panorama_${year}${month}${day}_${hours}${minutes}${seconds}.jpg`;
+
+            // Prepare metadata
+            const metadata = {
+                title: `Panorama ${year}${month}${day}_${hours}${minutes}${seconds}`,
+                description: `360° panorama captured with Innovatech PH 360 Camera`,
+                captureData: {
+                    timestamp: pano.timestamp,
+                    captureCount: pano.captureCount || 36
+                }
+            };
+
+            // Show loading indicator
+            if (this.app && this.app.cardUI) {
+                await this.app.cardUI.alert('Saving panorama to system...', 'Saving');
+            }
+
+            // Save to system via API
+            const result = await photoSphereSharer.saveToSystem(panoramaBlob, filename, metadata);
+
+            if (result.success) {
+                if (this.app && this.app.cardUI) {
+                    await this.app.cardUI.alert('Panorama saved successfully! You can now use it in your 360 tours.', 'Success');
+                }
+            } else {
+                throw new Error(result.error || 'Failed to save panorama');
+            }
+
+        } catch (error) {
+            console.error('Error saving panorama to system:', error);
+            if (this.app && this.app.cardUI) {
+                await this.app.cardUI.alert(`Failed to save panorama: ${error.message}`, 'Error');
+            } else {
+                alert(`Failed to save panorama: ${error.message}`);
+            }
+        }
+    }
                     link.href = pano.imageData; // Legacy base64
                 }
                 link.click();

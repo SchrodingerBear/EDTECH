@@ -51,7 +51,7 @@ if ($tab === 'building') {
     <div class="card-head d-flex align-items-center justify-content-between">
         <div class="d-flex gap-3">
             <a href="?tab=building" class="text-decoration-none <?= $tab === 'building' ? 'fw-bold border-bottom border-2 border-primary pb-2 text-body' : 'text-muted' ?>">Buildings</a>
-            <a href="?tab=room" class="text-decoration-none <?= $tab === 'room' ? 'fw-bold border-bottom border-2 border-primary pb-2 text-body' : 'text-muted' ?>">Rooms & Areas</a>
+            <a href="?tab=room" class="text-decoration-none <?= $tab === 'room' ? 'fw-bold border-bottom border-2 border-primary pb-2 text-body' : 'text-muted' ?>">Locations</a>
             <a href="?tab=tour" class="text-decoration-none <?= $tab === 'tour' ? 'fw-bold border-bottom border-2 border-primary pb-2 text-body' : 'text-muted' ?>">360 Tours</a>
             <a href="?tab=floorplan" class="text-decoration-none <?= $tab === 'floorplan' ? 'fw-bold border-bottom border-2 border-primary pb-2 text-body' : 'text-muted' ?>">Floor Plans</a>
         </div>

@@ -29,7 +29,7 @@ $pageCatalog = [
     'admin' => [
         ['admin.dashboard', 'Dashboard'],
         ['admin.buildings', 'Buildings'],
-        ['admin.locations', 'Rooms & Areas'],
+        ['admin.locations', 'Locations'],
         ['admin.tours', '360 Tours'],
         ['admin.floorplans', 'Floor Plans'],
         ['admin.settings', 'Theme & Landing'],

@@ -364,9 +364,33 @@ CREATE TABLE `email_templates` (
 
 LOCK TABLES `email_templates` WRITE;
 /*!40000 ALTER TABLE `email_templates` DISABLE KEYS */;
-INSERT INTO `email_templates` VALUES (1,'admin_invite','Your Innovatech Campus admin account','<h2>Welcome, {{name}}!</h2><p>Here are your Innovatech Campus login credentials:</p><p><b>Email:</b> {{email}}<br><b>Username:</b> {{username}}<br><b>Temporary password:</b> {{password}}</p><p><b>Role:</b> {{role}}<br><b>Institution:</b> {{institution}}</p><p><a href=\"{{login_link}}\">Sign in to the admin panel</a></p><p>For security, change your password after first login.</p>',1,'2026-08-28 19:45:20'),(2,'staff_invite','Your Innovatech Campus staff account','<h2>Welcome, {{name}}!</h2><p>Here are your Innovatech Campus login credentials:</p><p><b>Email:</b> {{email}}<br><b>Username:</b> {{username}}<br><b>Temporary password:</b> {{password}}</p><p><b>Role:</b> {{role}}<br><b>Institution:</b> {{institution}}</p><p><a href=\"{{login_link}}\">Sign in to the admin panel</a></p><p>For security, change your password after first login.</p>',1,'2026-08-28 19:45:20'),(3,'password_reset','Reset your password','<p>Reset link: {{link}}</p>',1,'2026-08-28 17:16:54');
+INSERT INTO `email_templates` VALUES (1,'admin_invite','Your Innovatech Campus admin account','<h2>Welcome, {{name}}!</h2><p>Here are your Innovatech Campus login credentials:</p><p><b>Email:</b> {{email}}<br><b>Username:</b> {{username}}<br><b>Temporary password:</b> {{password}}</p><p><b>Role:</b> {{role}}<br><b>Institution:</b> {{institution}}</p><p><a href=\"{{login_link}}\">Sign in to the admin panel</a></p><p>For security, change your password after first login.</p>',1,'2026-08-28 19:45:20'),(2,'staff_invite','Your Innovatech Campus staff account','<h2>Welcome, {{name}}!</h2><p>Here are your Innovatech Campus login credentials:</p><p><b>Email:</b> {{email}}<br><b>Username:</b> {{username}}<br><b>Temporary password:</b> {{password}}</p><p><b>Role:</b> {{role}}<br><b>Institution:</b> {{institution}}</p><p><a href=\"{{login_link}}\">Sign in to the admin panel</a></p><p>For security, change your password after first login.</p>',1,'2026-08-28 19:45:20'),(3,'password_reset','Reset your password','<p>Reset link: {{link}}</p>',1,'2026-08-28 17:16:54'),(4,'support_ticket_status','Your support ticket #{{ticket_id}} is {{ticket_status}}','<p>Hi {{name}},</p><p>Your support ticket &quot;<strong>{{ticket_subject}}</strong>&quot; is now <strong>{{ticket_status}}</strong>.</p><p>{{ticket_message}}</p><p><a href="{{link}}">Open the admin dashboard</a></p>',1,'2026-08-31 13:20:00'),(5,'new_ticket','New support ticket #{{ticket_id}} — {{ticket_subject}}','<p>A new support ticket has been opened.</p><p><strong>{{ticket_subject}}</strong></p><p>{{ticket_message}}</p><p>Ticket #{{ticket_id}} &middot; Priority: {{priority}} &middot; {{institution}}</p><p>Submitted by {{name}} ({{email}}).</p><p><a href="{{link}}">Open the support desk</a></p>',1,'2026-08-31 13:41:00');
 /*!40000 ALTER TABLE `email_templates` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `support_tickets`
+--
+
+DROP TABLE IF EXISTS `support_tickets`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `support_tickets` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `subject` varchar(190) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `message` text COLLATE utf8mb4_unicode_ci,
+  `contact_email` varchar(190) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `institution_id` int unsigned DEFAULT NULL,
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'open',
+  `priority` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'normal',
+  `created_by` int unsigned DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Table structure for table `facilities`
