@@ -156,6 +156,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = (int) ($_POST['id'] ?? 0);
         $field = $_POST['field'] === 'publish' ? 'is_published' : 'is_active';
         crud()->raw("UPDATE institutions SET {$field} = 1 - {$field} WHERE id=:id", ['id' => $id]);
+        if ($field === 'is_published') {
+            sync_institution_config($id);
+            // refresh the active institution session snapshot if this is the managed org
+            if (($id === (int) ($_SESSION['user']['institution']['id'] ?? 0))) {
+                $_SESSION['user']['institution']['is_published'] = 1 - (int) ($_SESSION['user']['institution']['is_published'] ?? 0);
+            }
+        }
         flash('success', 'Updated.');
         redirect('admin/owner/institutions');
     }
@@ -239,7 +246,6 @@ $assignable = crud()->raw(
 
 <div class="d-flex align-items-center justify-content-between mb-3">
   <div>
-    <p class="mb-1 ia-meta-lg"><?= count($institutions) ?> institution(s)</p>
   </div>
   <?php if ($canManage): ?>
   <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#inst-create"><?= ia_icon('school', 16) ?> New institution</button>

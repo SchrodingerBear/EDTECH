@@ -84,7 +84,7 @@ export class CardUI {
         // Content definitions for info card sections - each can be shown independently
         this.infoContent = {
             about: {
-                icon: '/360_cam/img/about.svg',
+                icon: './img/about.svg',
                 title: 'Innovatech PH 360 Camera',
                 content: `
                     <h3 style="color: white; margin-bottom: 10px;">360° Campus Panorama Capture</h3>
@@ -114,7 +114,7 @@ export class CardUI {
                 `
             },
             privacy: {
-                icon: '/360_cam/img/privacy.svg',
+                icon: './img/privacy.svg',
                 title: 'Privacy Policy',
                 content: `
                     <p style="margin-bottom: 20px; color: rgba(255,255,255,0.9);">Your privacy is our priority. Innovatech PH 360 Camera is designed to keep your data secure and private.</p>
@@ -130,7 +130,7 @@ export class CardUI {
                         <li>The app works completely offline once loaded</li>
                     </ul>
                     
-                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="/360_cam/img/compass.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Sensor Data Usage</h3>
+                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="./img/compass.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Sensor Data Usage</h3>
                     <p style="margin-bottom: 10px;">The app uses your device's orientation sensors solely for real-time capture guidance. This sensor data is:</p>
                     <ul style="margin-left: 15px; margin-bottom: 10px; list-style-type: disc;">
                         <li>Used only to help you align with capture points</li>
@@ -139,7 +139,7 @@ export class CardUI {
                         <li>Required only during active capture sessions</li>
                     </ul>
                     
-                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="/360_cam/img/camera.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Camera Permissions</h3>
+                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="./img/camera.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Camera Permissions</h3>
                     <p style="margin-bottom: 10px;">Camera access is required to capture photos. The permission:</p>
                     <ul style="margin-left: 15px; margin-bottom: 10px; list-style-type: disc;">
                         <li>Is requested only when you start capturing</li>
@@ -148,7 +148,7 @@ export class CardUI {
                         <li>Does not allow background access to your camera</li>
                     </ul>
                     
-                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="/360_cam/img/trash.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Data Control</h3>
+                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="./img/trash.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Data Control</h3>
                     <p style="margin-bottom: 10px;">You have complete control over your data:</p>
                     <ul style="margin-left: 15px; margin-bottom: 10px; list-style-type: disc;">
                         <li>Delete individual photospheres through the camera roll</li>
@@ -157,7 +157,7 @@ export class CardUI {
                         <li>Uninstalling the PWA removes all associated data</li>
                     </ul>
                     
-                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="/360_cam/img/box-arrow-up.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Sharing Features</h3>
+                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="./img/box-arrow-up.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Sharing Features</h3>
                     <p style="margin-bottom: 10px;">When you choose to share a photosphere:</p>
                     <ul style="margin-left: 15px; margin-bottom: 10px; list-style-type: disc;">
                         <li>The app uses your device's native share functionality</li>
@@ -166,7 +166,7 @@ export class CardUI {
                         <li>No analytics or tracking is performed on shared content</li>
                     </ul>
                     
-                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="/360_cam/img/geo-alt.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Location Data</h3>
+                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="./img/geo-alt.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Location Data</h3>
                     <p style="margin-bottom: 10px;">The app can optionally add GPS metadata if you grant permission:</p>
                     <ul style="margin-left: 15px; margin-bottom: 10px; list-style-type: disc;">
                         <li>Location access is completely optional</li>
@@ -807,9 +807,9 @@ export class CardUI {
                         <div class="equirectangular-container">
                             <div class="equirectangular-preview" style="background-image: url('${pano.imageData}'); background-size: cover; background-position: center;"></div>
                             <div class="action-buttons">
-                                <button class="action-btn" onclick="window.sphereCapture.cardUI.viewPanorama(${panoIndex})" title="View"><img src="/360_cam/img/view.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="View"></button>
-                                <button class="action-btn" onclick="window.sphereCapture.cardUI.downloadPanorama(${panoIndex})" title="Download"><img src="/360_cam/img/download.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Download"></button>
-                                <button class="action-btn" onclick="window.sphereCapture.cardUI.deletePanorama(${panoIndex})" title="Delete"><img src="/360_cam/img/trash.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Delete"></button>
+                                <button class="action-btn" onclick="window.sphereCapture.cardUI.viewPanorama(${panoIndex})" title="View"><img src="./img/view.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="View"></button>
+                                <button class="action-btn" onclick="window.sphereCapture.cardUI.downloadPanorama(${panoIndex})" title="Download"><img src="./img/download.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Download"></button>
+                                <button class="action-btn" onclick="window.sphereCapture.cardUI.deletePanorama(${panoIndex})" title="Delete"><img src="./img/trash.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Delete"></button>
                             </div>
                         </div>
                         <div class="capture-date">${dateStr}</div>
@@ -863,7 +863,7 @@ export class CardUI {
             viewerContainer.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000; background: black;`;
             const closeBtn = document.createElement('button');
             closeBtn.className = 'card-close-btn';
-            closeBtn.innerHTML = '<img src="/360_cam/img/x.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Close">';
+            closeBtn.innerHTML = '<img src="./img/x.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Close">';
             closeBtn.style.cssText = `
                 position: absolute;
                 top: max(15px, calc(15px + env(safe-area-inset-top, 0px)));
@@ -1841,7 +1841,7 @@ export class CardUI {
         
         card.innerHTML = `
             <button class="card-close-btn" aria-label="Close ${title}">
-                <img src="/360_cam/img/x.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Close icon">
+                <img src="./img/x.svg" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="Close icon">
             </button>
             <div class="card-header">
                 <h1 class="card-title">${title}</h1>

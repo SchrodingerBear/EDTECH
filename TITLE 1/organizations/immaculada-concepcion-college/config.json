@@ -4,7 +4,7 @@
     "short_name": "ICC",
     "landing_mode": "360_rotation",
     "require_landscape_mobile": true,
-    "published": false,
+    "published": true,
     "theme": {
         "primary": "#1a365d",
         "secondary": "#ed8936",
@@ -16,7 +16,7 @@
         "1": {
             "id": 1,
             "title": "Entrance",
-            "featured_image_path": "assets/6d6aad8e775553ac.avif",
+            "featured_image_path": "assets/30f14122e6d46f89.avif",
             "equirect_path": "assets/scenes/ae72511ab1f73793.jpg",
             "initial_yaw": 0,
             "initial_pitch": 0,

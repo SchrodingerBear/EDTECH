@@ -104,10 +104,7 @@ $autoOpen = ($_GET['open'] ?? '') === '1';
 ?>
 
 <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-  <p class="mb-0 ia-meta-lg"><?= count($tickets) ?> ticket(s) total — opening a ticket
-    automatically emails the <strong>organization owner</strong> and the <strong>Innovatech support desk</strong>
-    (contact email in System Settings). Changing a status emails the submitter with the
-    <code>support_ticket_status</code> template.</p>
+  <p class="mb-0 ia-meta-lg"><?= count($tickets) ?> ticket(s) total</p>
   <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#ticket-modal"><?= ia_icon('plus', 15) ?> New ticket</button>
 </div>
 

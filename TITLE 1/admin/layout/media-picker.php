@@ -252,41 +252,30 @@ if ($usePlatform) {
 </div>
 
 <script>
-    // Move the media picker modal to body to avoid Bootstrap nested modal z-index/backdrop issues
+    // Move the media picker modal to body to avoid Bootstrap nested modal z-index/backdrop issues.
+    // Capture the parent modal BEFORE moving, so we can restore it on close.
     (function () {
         var modalId = "modal_<?= h($pickerId) ?>";
         var m = document.getElementById(modalId);
-        if (m && m.parentElement !== document.body) {
-            document.body.appendChild(m);
-        }
-        
-        // Store reference to parent modal if exists
-        var parentModal = m.closest('.modal.show') ? document.querySelector('.modal.show') : null;
+        var parentModal = m.closest('.modal.show');
         if (parentModal) {
             m.dataset.parentModal = parentModal.id;
         }
-        
-        // Handle modal show event - hide parent modal temporarily
-        m.addEventListener('show.bs.modal', function() {
-            if (parentModal) {
+        if (m && m.parentElement !== document.body) {
+            document.body.appendChild(m);
+        }
+        if (parentModal) {
+            m.addEventListener('show.bs.modal', function () {
                 var parentInstance = bootstrap.Modal.getInstance(parentModal);
-                if (parentInstance) {
-                    parentInstance.hide();
-                }
-            }
-        });
-        
-        // Handle modal hide event - restore parent modal
-        m.addEventListener('hidden.bs.modal', function() {
-            if (parentModal) {
-                var parentInstance = bootstrap.Modal.getInstance(parentModal);
-                if (parentInstance) {
-                    setTimeout(function() {
-                        parentInstance.show();
-                    }, 150);
-                }
-            }
-        });
+                if (parentInstance) parentInstance.hide();
+            });
+            m.addEventListener('hidden.bs.modal', function () {
+                setTimeout(function () {
+                    var parentInstance = bootstrap.Modal.getInstance(parentModal);
+                    if (parentInstance) parentInstance.show();
+                }, 150);
+            });
+        }
     })();
 </script>
 

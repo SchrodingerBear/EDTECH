@@ -96,6 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $published = isset($_POST['is_published']) ? 1 : 0;
             crud()->update('institutions', ['is_published' => $published], ['id' => $iid]);
             $_SESSION['user']['institution']['is_published'] = $published;
+            sync_institution_config($iid);
             flash('success', 'Publish state updated.');
         }
 

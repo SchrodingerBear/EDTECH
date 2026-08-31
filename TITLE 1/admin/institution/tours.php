@@ -82,7 +82,7 @@ $rooms = crud()->select('rooms', 'id,name', ['institution_id' => $iid, 'deleted_
 $organizationsUrl = org_url($inst['slug'], 'assets/scenes');
 
 // Get available panoramas from 360 camera app
-$panoramas = crud()->select('panoramas', 'id,title,equirect_path', ['institution_id' => $iid, 'status' => 'completed'], 'ORDER BY created_at DESC')->fetchAll();
+$panoramas = crud()->select('panoramas', 'id,title,equirect_path', ['institution_id' => $iid, 'status' => 'completed'], 'ORDER BY created_at DESC');
 ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
   <p class="mb-1 ia-meta-lg"><?= count($scenes) ?> scene(s) · equirect & featured images go to <code><?= h($inst['slug']) ?>/assets/scenes/</code></p>

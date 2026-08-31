@@ -233,6 +233,8 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
 document.addEventListener('DOMContentLoaded', () => {
   const hotspots  = <?= $hotspotsJson ?>;
   const sceneId   = <?= $sceneId ?>;
+  const initialYaw   = <?= (float) ($scene['initial_yaw'] ?? 0) ?>;
+  const initialPitch = <?= (float) ($scene['initial_pitch'] ?? 0) ?>;
   const aScene    = document.getElementById('a-studio');
   const aSky      = document.getElementById('studio-sky');
 
@@ -288,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('hs-body').value = '';
     document.getElementById('hs-to').value = '';
     document.getElementById('hs-type').value = 'info';
-    const modal = bootstrap.Modal.getOrCreate(document.getElementById('hs-modal'));
+    const modal = new bootstrap.Modal(document.getElementById('hs-modal'));
     modal.show();
   });
 
@@ -316,9 +318,24 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('hs-pitch').value = look.pitch.toFixed(1);
   });
 
+  // Face the configured initial heading so the camera looks the direction set in Tours.
+  function applyInitialHeading() {
+    const cam = document.getElementById('studio-cam');
+    if (!cam) return;
+    const rig = document.getElementById('camera-rig');
+    if (rig) rig.setAttribute('rotation', `0 ${initialYaw} 0`);
+    if (initialPitch) cam.setAttribute('rotation', `${initialPitch} 0 0`);
+  }
+
   // Build after A-Frame is ready
-  aScene.addEventListener('loaded', buildHotspots);
-  if (aScene.hasLoaded) buildHotspots();
+  aScene.addEventListener('loaded', () => {
+    applyInitialHeading();
+    buildHotspots();
+  });
+  if (aScene.hasLoaded) {
+    applyInitialHeading();
+    buildHotspots();
+  }
 });
 </script>
 

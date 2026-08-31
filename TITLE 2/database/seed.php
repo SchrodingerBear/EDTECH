@@ -55,7 +55,7 @@ if (!$services) {
 }
 
 // Create sample orders over the last 30 days
-$statuses = ['pending', 'in_progress', 'in_progress', 'ready', 'completed', 'completed', 'completed'];
+$statuses = ['pending', 'washing', 'drying', 'ready', 'completed', 'completed', 'completed'];
 $count = 0;
 for ($i = 1; $i <= 40; $i++) {
     $custId = $customerIds[array_rand($customerIds)];

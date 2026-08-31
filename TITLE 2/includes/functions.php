@@ -381,9 +381,10 @@ function order_statuses(): array
 {
     return [
         'pending'      => 'Pending',
-        'in_progress'  => 'In Progress',
+        'washing'      => 'Washing',
+        'drying'       => 'Drying',
         'ready'        => 'Ready for Pickup',
-        'completed'    => 'Completed',
+        'completed'    => 'Claimed',
         'cancelled'    => 'Cancelled',
     ];
 }
@@ -393,7 +394,8 @@ function status_badge(string $status): string
 {
     $map = [
         'pending'     => 'badge-warn',
-        'in_progress' => 'badge-info',
+        'washing'     => 'badge-info',
+        'drying'      => 'badge-info',
         'ready'       => 'badge-live',
         'completed'   => 'badge-success',
         'cancelled'   => 'badge-off',
@@ -425,4 +427,45 @@ function next_order_number(?int $lastId = null, ?PDO $pdo = null): string
         }
     }
     return 'LAV-' . date('Y') . '-' . str_pad((string) $id, 4, '0', STR_PAD_LEFT);
+}
+
+/* ------------------------------- inventory -------------------------------- */
+
+/**
+ * Deduct smart-inventory stock when an order is claimed (completed).
+ * Uses configured usage_per_kg × quantity (kg) for each order line item.
+ * Dispatches inside the caller's transaction. Never throws.
+ */
+function deduct_inventory_for_order(DbCrud $crud, array $order): void
+{
+    try {
+        $items = $crud->select('order_items', '*', ['order_id' => (int) $order['id']]);
+        foreach ($items as $it) {
+            $svcId = (int) $it['service_id'];
+            $qty = (float) $it['quantity']; // weight in kg for kg-based services
+            $usages = $crud->select('inventory_usage', '*', ['service_id' => $svcId]);
+            foreach ($usages as $u) {
+                $itemId = (int) $u['inventory_item_id'];
+                $rate = (float) $u['usage_per_kg'];
+                if ($rate <= 0) continue;
+                $consume = round($qty * $rate, 2);
+                if ($consume <= 0) continue;
+                $inv = $crud->get('inventory_items', $itemId);
+                if (!$inv) continue;
+                $newStock = round((float) $inv['current_stock'] - $consume, 2);
+                if ($newStock < 0) $newStock = 0;
+                $crud->update('inventory_items', ['current_stock' => $newStock], ['id' => $itemId]);
+                $crud->insert('inventory_movements', [
+                    'inventory_item_id' => $itemId,
+                    'type' => 'out',
+                    'quantity' => $consume,
+                    'reference' => $order['order_no'] ?? null,
+                    'notes' => 'Auto-deducted on claim',
+                    'created_by' => current_user()['id'] ?? null,
+                ]);
+            }
+        }
+    } catch (Throwable $e) {
+        // inventory tracking must never break the status change
+    }
 }

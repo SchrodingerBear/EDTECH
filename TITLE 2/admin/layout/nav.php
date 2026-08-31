@@ -35,6 +35,8 @@ function ia_icon(string $name, int $size = 18): string
         'shirt' => '<path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>',
         'layers' => '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>',
         'info' => '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+        'package' => '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>',
+        'alert-triangle' => '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
     ];
     $common = 'xmlns="http://www.w3.org/2000/svg" width="' . $s . '" height="' . $s . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
     return '<svg ' . $common . '>' . ($paths[$name] ?? $paths['home']) . '</svg>';
@@ -57,13 +59,17 @@ function role_nav(string $role): array
                 ['Services & Pricing', '/admin/services', 'tag', 'services'],
                 ['Staff Roster', '/admin/employees', 'user', 'employees'],
             ]],
+            ['title' => 'Inventory', 'items' => [
+                ['Inventory', '/admin/inventory', 'layers', 'inventory'],
+                ['Inventory Config', '/admin/inventory-settings', 'settings', 'inventory_settings'],
+            ]],
             ['title' => 'Insights', 'items' => [
                 ['Reports', '/admin/reports', 'chart', 'reports'],
                 ['Audit Logs', '/admin/logs', 'clock', 'logs'],
             ]],
             ['title' => 'System', 'items' => [
                 ['Accounts', '/admin/accounts', 'shield', 'accounts'],
-                ['Business Settings', '/admin/settings', 'settings', 'settings'],
+                ['System Settings', '/admin/system-settings', 'settings', 'system_settings'],
             ]],
         ],
         'staff' => [
@@ -74,10 +80,8 @@ function role_nav(string $role): array
                 ['Orders', '/admin/orders', 'clipboard', 'orders'],
                 ['Customers', '/admin/customers', 'users', 'customers'],
             ]],
-        ],
-        'user' => [
-            ['title' => 'Home', 'items' => [
-                ['Public Site', '/', 'home'],
+            ['title' => 'Inventory', 'items' => [
+                ['Inventory', '/admin/inventory', 'layers', 'inventory'],
             ]],
         ],
     ];

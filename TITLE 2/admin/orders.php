@@ -141,7 +141,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $orderId = (int) ($_POST['order_id'] ?? 0);
     $status = $_POST['status'] ?? '';
     if (array_key_exists($status, order_statuses()) && $orderId > 0) {
-      $c->update('laundry_orders', ['status' => $status], ['id' => $orderId]);
+      db_transaction(function (PDO $pdo) use ($c, $orderId, $status) {
+        $crud = new DbCrud($pdo);
+        $order = $crud->get('laundry_orders', $orderId);
+        if (!$order) return;
+        $crud->update('laundry_orders', ['status' => $status], ['id' => $orderId]);
+
+        // Smart inventory: when an order becomes 'completed' (claimed),
+        // deduct stock based on configured per-kg usage rates.
+        if ($status === 'completed' && $order['status'] !== 'completed') {
+          deduct_inventory_for_order($crud, $order);
+        }
+      });
       audit('order.status', 'orders', 'order', $orderId);
       flash('success', 'Order status updated to ' . order_statuses()[$status] . '.');
     }
@@ -370,7 +381,7 @@ require_once __DIR__ . '/layout/header.php';
           <div class="col-md-6">
             <label class="form-label">Customer</label>
             <select class="form-select" name="customer_id" id="customer-select">
-              <option value="0">— Add a new customer —</option>
+              <option value="0">+ Add new customer (basic info)</option>
               <?php foreach ($customers as $cm): ?>
                 <option value="<?= (int) $cm['id'] ?>" <?= ($fields['customer_id'] ?? null) == $cm['id'] ? 'selected' : '' ?>>
                   <?= h($cm['first_name'] . ' ' . $cm['last_name'] . ' (' . $cm['phone'] . ')') ?>
@@ -390,19 +401,22 @@ require_once __DIR__ . '/layout/header.php';
             <label class="form-label">Pickup date</label>
             <input type="date" class="form-control" name="pickup_date" value="<?= h($fields['pickup_date'] ?? '') ?>">
           </div>
+        </div>
 
-          <div class="col-md-4" id="new-customer-fields">
+        <div class="row g-2 mt-1" id="new-customer-fields" style="display:none">
+          <div class="col-12">
             <div class="ia-card-light p-3">
+              <div class="ia-micro mb-2 fw-semibold text-ia-primary">+ New customer — basic info only</div>
               <div class="row g-2">
-                <div class="col-6"><input class="form-control form-control-sm" name="c_first_name" placeholder="First name"></div>
-                <div class="col-6"><input class="form-control form-control-sm" name="c_last_name" placeholder="Last name"></div>
-                <div class="col-6"><input class="form-control form-control-sm" name="c_phone" placeholder="Phone"></div>
-                <div class="col-6"><input class="form-control form-control-sm" name="c_email" placeholder="Email (optional)"></div>
-                <div class="col-12"><input class="form-control form-control-sm" name="c_address" placeholder="Address (optional)"></div>
+                <div class="col-md-4"><input class="form-control" name="c_first_name" placeholder="First name *"></div>
+                <div class="col-md-4"><input class="form-control" name="c_last_name" placeholder="Last name *"></div>
+                <div class="col-md-4"><input class="form-control" name="c_phone" placeholder="Phone *" inputmode="tel"></div>
               </div>
             </div>
           </div>
+        </div>
 
+        <div class="row g-3">
           <div class="col-md-4">
             <label class="form-label">Assign staff</label>
             <select class="form-select" name="assigned_employee_id">

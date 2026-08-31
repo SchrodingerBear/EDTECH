@@ -12,6 +12,9 @@ SET time_zone = '+08:00';
 -- -----------------------------------------------------------------------------
 -- DROP TABLES (safe re-import). Reverse dependency order; FK checks are off.
 -- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS `inventory_movements`;
+DROP TABLE IF EXISTS `inventory_usage`;
+DROP TABLE IF EXISTS `inventory_items`;
 DROP TABLE IF EXISTS `order_items`;
 DROP TABLE IF EXISTS `laundry_orders`;
 DROP TABLE IF EXISTS `employees`;
@@ -61,7 +64,9 @@ INSERT INTO `permissions` (`slug`, `module`, `description`) VALUES
 ('employees.manage', 'laundry', 'Manage laundry staff roster'),
 ('reports.view', 'laundry', 'View revenue and report analytics'),
 ('settings.manage', 'laundry', 'Configure business settings'),
-('logs.view', 'system', 'View audit logs');
+('logs.view', 'system', 'View audit logs'),
+('inventory.manage', 'laundry', 'View and manage inventory stock and settings'),
+('settings.manage_system', 'laundry', 'Manage system settings');
 
 CREATE TABLE `role_permissions` (
   `role_id` TINYINT UNSIGNED NOT NULL,
@@ -78,7 +83,7 @@ SELECT 1, `id` FROM `permissions`;
 -- staff -> orders + customers only
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT 2, `id` FROM `permissions`
-WHERE `slug` IN ('orders.manage', 'customers.manage');
+WHERE `slug` IN ('orders.manage', 'customers.manage', 'inventory.manage');
 
 -- per-account page access (owner-controlled; empty set = full access)
 
@@ -199,6 +204,23 @@ INSERT INTO `services` (`name`, `unit`, `price`, `icon`, `description`, `is_acti
 ('Comforter', 'piece', 180.00, 'layers', 'Full wash and dry for blankets, quilts and comforters.', 1),
 ('Shoes & Sneakers', 'pair', 120.00, 'shirt', 'Deep clean wash for footwear. Per pair.', 1);
 
+-- Default inventory items
+INSERT INTO `inventory_items` (`name`, `category`, `unit`, `current_stock`, `minimum_stock`, `cost_per_unit`, `is_active`) VALUES
+('Laundry Detergent', 'detergent', 'ml', 5000, 1000, 0.15, 1),
+('Fabric Softener', 'softener', 'ml', 3000, 800, 0.20, 1),
+('Bleach', 'bleach', 'ml', 2000, 500, 0.10, 1),
+('Packaging Bags', 'packaging', 'pieces', 200, 50, 2.00, 1),
+('Stain Remover', 'other', 'ml', 1000, 300, 0.25, 1);
+
+-- Default inventory usage rates (per kg of laundry)
+-- These map to service IDs: 1=Wash&Fold, 2=Wash&Iron, 3=DryCleaning, 4=IronOnly, 5=Comforter, 6=Shoes
+INSERT INTO `inventory_usage` (`service_id`, `inventory_item_id`, `usage_per_kg`) VALUES
+(1, 1, 15.00), (1, 2, 10.00), (1, 3, 5.00),
+(2, 1, 15.00), (2, 2, 10.00), (2, 3, 5.00), (2, 5, 3.00),
+(3, 1, 20.00), (3, 2, 15.00), (3, 3, 8.00), (3, 5, 5.00),
+(5, 1, 25.00), (5, 2, 20.00), (5, 3, 10.00),
+(6, 1, 20.00), (6, 2, 15.00), (6, 5, 5.00);
+
 -- Customers
 CREATE TABLE `customers` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -235,7 +257,7 @@ CREATE TABLE `laundry_orders` (
   `order_no` VARCHAR(32) NOT NULL,
   `customer_id` INT UNSIGNED NOT NULL,
   `assigned_employee_id` INT UNSIGNED DEFAULT NULL,
-  `status` ENUM('pending','in_progress','ready','completed','cancelled') NOT NULL DEFAULT 'pending',
+  `status` ENUM('pending','washing','drying','ready','completed','cancelled') NOT NULL DEFAULT 'pending',
   `payment_status` ENUM('unpaid','partial','paid') NOT NULL DEFAULT 'unpaid',
   `pickup_type` ENUM('walk_in','pickup','delivery') NOT NULL DEFAULT 'walk_in',
   `delivery_address` VARCHAR(255) DEFAULT NULL,
@@ -270,6 +292,55 @@ CREATE TABLE `order_items` (
   KEY `idx_items_order` (`order_id`),
   CONSTRAINT `fk_items_order` FOREIGN KEY (`order_id`) REFERENCES `laundry_orders` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_items_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 4. INVENTORY SYSTEM
+-- -----------------------------------------------------------------------------
+
+-- Inventory items (detergent, softener, bleach, packaging, etc.)
+CREATE TABLE `inventory_items` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(120) NOT NULL,
+  `category` ENUM('detergent','softener','bleach','packaging','other') NOT NULL DEFAULT 'other',
+  `unit` VARCHAR(32) NOT NULL DEFAULT 'ml' COMMENT 'ml, kg, pieces, liters',
+  `current_stock` DECIMAL(10,2) NOT NULL DEFAULT 0,
+  `minimum_stock` DECIMAL(10,2) NOT NULL DEFAULT 0,
+  `cost_per_unit` DECIMAL(10,2) NOT NULL DEFAULT 0,
+  `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Smart inventory: usage rates per service per kg
+CREATE TABLE `inventory_usage` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `service_id` INT UNSIGNED NOT NULL,
+  `inventory_item_id` INT UNSIGNED NOT NULL,
+  `usage_per_kg` DECIMAL(10,4) NOT NULL DEFAULT 0 COMMENT 'ml or g per kg of laundry',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_usage_service_item` (`service_id`, `inventory_item_id`),
+  CONSTRAINT `fk_usage_service` FOREIGN KEY (`service_id`) REFERENCES `services` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_usage_item` FOREIGN KEY (`inventory_item_id`) REFERENCES `inventory_items` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Inventory movement log
+CREATE TABLE `inventory_movements` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `inventory_item_id` INT UNSIGNED NOT NULL,
+  `type` ENUM('in','out','adjust') NOT NULL,
+  `quantity` DECIMAL(10,2) NOT NULL,
+  `reference` VARCHAR(120) DEFAULT NULL,
+  `notes` TEXT,
+  `created_by` INT UNSIGNED DEFAULT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_movements_item` (`inventory_item_id`),
+  CONSTRAINT `fk_movements_item` FOREIGN KEY (`inventory_item_id`) REFERENCES `inventory_items` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_movements_user` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

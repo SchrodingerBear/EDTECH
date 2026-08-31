@@ -31,6 +31,7 @@ $brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : u
   <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet">
   <link rel="stylesheet" href="<?= url('admin/assets/css/dashboard.css') ?>">
   <script>window.IA_BASE_URL = <?= json_encode(BASE_URL, JSON_UNESCAPED_SLASHES) ?>;</script>
+  <script>window.LAVADORA_SHOP_NAME = <?= json_encode($settings['business_name'] ?? APP_NAME) ?>;</script>
 </head>
 
 <body class="<?= h(trim((string) ($bodyClass ?? ''))) ?>">
@@ -76,9 +77,6 @@ $brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : u
 
     <!-- ============================== TOPBAR ============================== -->
     <header class="ia-topbar">
-      <button type="button" class="ia-btn-ghost d-lg-none" id="sidebar-open" aria-label="Open menu">
-        <?= ia_icon('menu') ?>
-      </button>
       <button type="button" class="ia-btn-ghost d-none d-lg-grid" id="sidebar-collapse" aria-label="Collapse sidebar">
         <?= ia_icon('home') ?>
       </button>
@@ -88,11 +86,6 @@ $brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : u
         <?php if (!empty($pageSub)): ?>
           <p class="page-sub mb-0 d-none d-sm-block"><?= h($pageSub) ?></p><?php endif; ?>
       </div>
-
-      <a class="ia-btn-ghost" href="<?= url('/') ?>" target="_blank" title="View public landing"
-        aria-label="View landing">
-        <?= ia_icon('globe') ?>
-      </a>
 
       <button type="button" class="theme-switch" data-theme-toggle aria-label="Toggle theme"
         title="Toggle dark / light">

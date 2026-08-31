@@ -1015,7 +1015,199 @@ body.page-floor-plans .fp-marker-dot::before {
   white-space: nowrap;
 }
 
-/* ===== Font-size utilities (externalized from inline styles) ===== */
+/* ===== Floor Plan AR Studio (compass, waypoints, paths, connections) ===== */
+body.page-floor-plans .fp-marker-dot {
+  transition: opacity .2s;
+}
+body.page-floor-plans .fp-marker-dot:not(.mode-visible),
+body.page-floor-plans .fp-wp-dot:not(.mode-visible),
+body.page-floor-plans .fp-compass:not(.mode-visible) {
+  opacity: .15;
+  pointer-events: none;
+}
+body.page-floor-plans .fp-mktype-badge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  color: var(--ia-primary);
+  font-size: 8px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 4px;
+  letter-spacing: .02em;
+  z-index: 2;
+}
+.fp-marker-dot[data-mktype="entrance"]::before {
+  background: radial-gradient(circle at 32% 28%, #43d17c, #1d9e53);
+}
+.fp-marker-dot[data-mktype="exit"]::before {
+  background: radial-gradient(circle at 32% 28%, #ff8e6a, #e0491f);
+}
+.fp-marker-dot .fp-mktype-badge {
+  pointer-events: none;
+}
+.fp-facing-arrow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 32px;
+  height: 32px;
+  transform: translate(-50%, -50%) rotate(var(--facing));
+  pointer-events: auto;
+  cursor: crosshair;
+  opacity: 0;
+  transition: opacity .15s;
+}
+.fp-marker-dot:hover .fp-facing-arrow,
+.fp-marker-dot.mode-visible .fp-facing-arrow {
+  opacity: 1;
+}
+.fp-facing-arrow::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top: 12px solid var(--ia-primary);
+}
+.fp-facing-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+}
+.fp-wp-dot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  cursor: grab;
+  touch-action: none;
+  z-index: 4;
+}
+.fp-wp-dot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #22b8cf;
+  box-shadow: 0 2px 8px rgba(0,0,0,.4), 0 0 0 3px rgba(255,255,255,.9);
+  transition: transform .12s;
+}
+.fp-wp-dot.is-corner::before {
+  border-radius: 4px;
+  background: #f7c948;
+  transform: rotate(45deg);
+}
+.fp-wp-dot:hover::before {
+  transform: scale(1.25);
+}
+.fp-wp-dot.is-corner:hover::before {
+  transform: rotate(45deg) scale(1.25);
+}
+.fp-wp-dot::after {
+  content: attr(data-name);
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%);
+  background: #11142a;
+  color: #fff;
+  padding: 2px 6px;
+  margin-bottom: 5px;
+  border-radius: 6px;
+  font-size: 10px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s;
+}
+.fp-wp-dot:hover::after { opacity: 1; }
+
+/* compass dial */
+.fp-compass {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  cursor: crosshair;
+  touch-action: none;
+  z-index: 5;
+}
+.fp-compass-dial {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #37415a, #1c2236);
+  box-shadow: 0 6px 20px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.12);
+}
+.fp-compass-dial::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.18);
+}
+.fp-compass-needle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 64%;
+  transform-origin: 50% 100%;
+  transform: translateX(-50%) rotate(var(--north));
+  transition: transform .08s linear;
+  pointer-events: none;
+}
+.fp-compass-needle::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 50%;
+  background: linear-gradient(var(--ia-danger, #ff5a5a), rgba(255,90,90,.1));
+  border-radius: 3px 3px 0 0;
+}
+.fp-compass-needle::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 50%;
+  background: #fff;
+  opacity: .85;
+  border-radius: 0 0 3px 3px;
+}
+.fp-compass-n {
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.fp-path-svg { pointer-events: none; }
+#fp-path-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
 .fs-12 {
   font-size: 12px;
 }

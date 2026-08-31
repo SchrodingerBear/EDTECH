@@ -1131,7 +1131,52 @@ function sync_institution_config(int $iid): void
                 'title'      => $plan['title'],
                 'image_path' => $stripOrg($plan['image_path']),
                 'object_fit' => $plan['object_fit'] ?? 'contain',
+                'north_angle'=> (float) ($plan['north_angle'] ?? 0),
+                'building_id'=> isset($plan['building_id']) ? (int) $plan['building_id'] : null,
+                'floor_level'=> $plan['floor_level'] ?? null,
             ];
+
+            // Navigation waypoints (walking graph) for this floor plan
+            $cfg['fp_waypoints'] = [];
+            $wstmt = $pdo->prepare("SELECT * FROM fp_waypoints WHERE floor_plan_id=? AND institution_id=? ORDER BY sort_order, id");
+            $wstmt->execute([(int) $plan['id'], $iid]);
+            foreach ($wstmt->fetchAll(PDO::FETCH_ASSOC) as $wp) {
+                $cfg['fp_waypoints'][] = [
+                    'id' => (int) $wp['id'],
+                    'label' => $wp['label'],
+                    'x' => (float) $wp['x_percent'],
+                    'y' => (float) $wp['y_percent'],
+                    'type' => $wp['type'] === 'corner' ? 'corner' : 'normal',
+                ];
+            }
+
+            // Navigation paths (ordered waypoint references)
+            $cfg['fp_paths'] = [];
+            $pstmt = $pdo->prepare("SELECT * FROM fp_navigation_paths WHERE floor_plan_id=? AND institution_id=? ORDER BY id");
+            $pstmt->execute([(int) $plan['id'], $iid]);
+            foreach ($pstmt->fetchAll(PDO::FETCH_ASSOC) as $path) {
+                $cfg['fp_paths'][] = [
+                    'id' => (int) $path['id'],
+                    'name' => $path['name'],
+                    'nodes' => array_values(array_filter(array_map('intval', json_decode($path['nodes_json'] ?? '[]', true) ?: []))),
+                ];
+            }
+
+            // Exit connections
+            $cfg['fp_connections'] = [];
+            $cstmt = $pdo->prepare("SELECT * FROM fp_connections WHERE from_floor_plan_id=? AND institution_id=? ORDER BY id");
+            $cstmt->execute([(int) $plan['id'], $iid]);
+            foreach ($cstmt->fetchAll(PDO::FETCH_ASSOC) as $con) {
+                $cfg['fp_connections'][] = [
+                    'id' => (int) $con['id'],
+                    'from_marker_id' => (int) $con['from_marker_id'],
+                    'to_marker_id' => $con['to_marker_id'] ? (int) $con['to_marker_id'] : null,
+                    'to_floor_plan_id' => $con['to_floor_plan_id'] ? (int) $con['to_floor_plan_id'] : null,
+                    'to_scene_id' => $con['to_scene_id'] ? (int) $con['to_scene_id'] : null,
+                    'to_building_id' => $con['to_building_id'] ? (int) $con['to_building_id'] : null,
+                    'note' => $con['note'] ?? '',
+                ];
+            }
 
             // Markers for this floor plan
             $stmt = $pdo->prepare(
@@ -1154,9 +1199,15 @@ function sync_institution_config(int $iid): void
                     'x'           => (float) $m['x_percent'],
                     'y'           => (float) $m['y_percent'],
                     'size_percent'=> (float) ($m['size_percent'] ?? 4),
+                    'marker_type' => in_array($m['marker_type'] ?? '', ['scene', 'entrance', 'exit'], true) ? $m['marker_type'] : 'scene',
+                    'facing_angle'=> (float) ($m['facing_angle'] ?? 0),
                     'popup_title' => $m['popup_title'] ?? '',
                     'popup_html'  => $m['popup_html'] ?? '',
                 ];
+                if (!empty($m['marker_image_path'])) {
+                    $out['marker_image']  = $stripOrg($m['marker_image_path']);
+                    $out['marker_image_url'] = media_url($m['marker_image_path']);
+                }
                 // Navigation target
                 if (!empty($m['target_scene_id'])) {
                     $out['target_type']     = 'scene';

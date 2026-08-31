@@ -387,3 +387,86 @@ document.addEventListener('DOMContentLoaded', () => {
     applyPerPageLabel(table, dt)
   })
 })
+
+/* -- POS dashboard: receipt modal -- */
+; (function () {
+  const el = document.getElementById('receipt-data')
+  if (!el) return
+  let data = {}
+  try { data = JSON.parse(el.textContent) } catch (e) { data = {} }
+
+  function peso(v) {
+    v = parseFloat(v) || 0
+    return '\u20B1' + (Number.isInteger(v) ? v.toLocaleString() : v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    })
+  }
+
+  const BADGES = {
+    pending: 'rgba(245,158,11,.16);color:#f59e0b',
+    washing: 'rgba(91,91,214,.14);color:var(--ia-primary)',
+    drying: 'rgba(91,91,214,.14);color:var(--ia-primary)',
+    ready: 'rgba(16,185,129,.16);color:#10b981',
+    completed: 'rgba(16,185,129,.16);color:#10b981',
+    cancelled: 'rgba(239,68,68,.15);color:#ef4444',
+    paid: 'rgba(16,185,129,.16);color:#10b981',
+    partial: 'rgba(245,158,11,.16);color:#f59e0b',
+    unpaid: 'rgba(239,68,68,.15);color:#ef4444'
+  }
+  function pill(badgeStyle, label) {
+    return '<span class="badge" style="background:' + badgeStyle + '">' + label + '</span>'
+  }
+  const slot = document.getElementById('receipt-slot')
+  const openLink = document.getElementById('receipt-open')
+  const shop = (window.LAVADORA_SHOP_NAME) || 'Lavadora Laundry'
+
+  function build(r) {
+    const date = new Date(r.created_at)
+    const dateStr = date.toLocaleString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+    })
+    const items = (r.items || []).map(function (it) {
+      return '<div class="r-item"><div class="r-line"><span class="r-itm-name">' + esc(it.name) + '</span><span>' + peso(it.line) + '</span></div>' +
+        '<div class="r-itm-qty" style="margin-left:2px">' + esc(it.qty) + ' ' + esc(it.unit) + ' \u00D7 ' + esc(it.price.toLocaleString()) + '</div></div>'
+    }).join('')
+
+    const balance = r.balance > 0
+    const statusStyle = BADGES[r.status_slug] || BADGES.pending
+    const payKey = (r.payment || '').toLowerCase()
+    const payStyle = BADGES[payKey] || BADGES.unpaid
+    return '<div class="pos-receipt">' +
+      '<div class="r-head"><div class="r-shop">' + esc(shop) + '</div>' +
+      '<div class="r-meta">' + esc(r.order_no) + '</div></div>' +
+      '<div class="r-meta" style="text-align:center">' + esc(dateStr) + '</div>' +
+      '<div class="r-line" style="margin-top:10px"><span class="r-itm-name">Customer</span><span>' + esc(r.customer) + '</span></div>' +
+      '<div class="r-line"><span class="r-meta">Phone</span><span class="r-meta">' + esc(r.phone || '\u2014') + '</span></div>' +
+      '<div class="r-badges">' + pill(statusStyle, r.status) + pill(payStyle, r.payment) + '</div>' +
+      '<div style="margin-top:12px" class="r-subhead"><span>Item</span><span>Amount</span></div>' + items +
+      '<div class="r-totals">' +
+      '<div class="r-line"><span>Subtotal</span><span>' + peso(r.subtotal) + '</span></div>' +
+      '<div class="r-line"><span>Delivery fee</span><span>' + peso(r.delivery_fee) + '</span></div>' +
+      '<div class="r-line"><span>Discount</span><span>\u2212' + peso(r.discount) + '</span></div>' +
+      '<div class="r-line r-grand"><span>Total</span><span>' + peso(r.total) + '</span></div>' +
+      '<div class="r-line"><span>Amount paid</span><span class="' + (balance ? '' : 'r-paid-true') + '">' + peso(r.amount_paid) + '</span></div>' +
+      '<div class="r-line' + (balance ? ' r-balance' : '') + '"><span>Balance</span><span>' + peso(r.balance) + '</span></div>' +
+      '</div>' +
+      '<div class="r-foot">Thank you for your patronage!</div>' +
+      '</div>'
+  }
+
+  const modalEl = document.getElementById('receiptModal')
+  const modal = modalEl ? bootstrap.Modal.getOrCreateInstance(modalEl) : null
+  document.querySelectorAll('.pos-row[data-receipt]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const r = data[btn.getAttribute('data-receipt')]
+      if (!r) return
+      if (slot) slot.innerHTML = build(r)
+      if (openLink) openLink.setAttribute('href', 'orders?view=' + r.id)
+      if (modal) modal.show()
+    })
+  })
+})()

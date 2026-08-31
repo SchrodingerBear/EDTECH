@@ -222,7 +222,7 @@ $previewExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
                 <?php if (is_file($currentDir . '/' . $it['name'])): ?>
                   <a class="btn btn-sm btn-outline-ia" target="_blank" rel="noopener" href="<?= h($fmRootUrl . '/' . ($relative ? $relative . '/' : '') . rawurlencode($it['name'])) ?>" title="Download"><?= ia_icon('rocket', 13) ?></a>
                 <?php endif; ?>
-                <form method="post" class="d-inline" data-delete-form data-confirm="Delete '<?= h($it['name']) ?>'? This cannot be undone.">
+                <form method="post" class="d-inline" data-native-delete data-confirm="Delete '<?= h($it['name']) ?>'? This cannot be undone.">
                   <input type="hidden" name="fm_action" value="delete">
                   <input type="hidden" name="fm_path" value="<?= h($currentDir) ?>">
                   <input type="hidden" name="name" value="<?= h($it['name']) ?>">

@@ -138,7 +138,7 @@ $businessName = $settings['business_name'] ?? APP_NAME;
         <?php endif; ?>
 
         <div class="text-center mt-4">
-          <a class="back-link" href="<?= url('/') ?>" target="_blank">← Back to the public site</a>
+          <span class="ia-micro text-ia-muted"><?= h(APP_NAME) ?> &middot; <?= h(APP_PRODUCT) ?></span>
         </div>
       </div>
     </div>

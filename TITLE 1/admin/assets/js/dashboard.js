@@ -208,7 +208,7 @@
     const target = e.target.closest('[data-confirm]')
     if (!target) return
     // Skip if this element is also part of a data-delete-form (handled below)
-    if (target.closest('[data-delete-form]')) return
+    if (target.closest('[data-delete-form]') || target.closest('[data-native-delete]')) return
     e.preventDefault()
     const ok = await window.iaConfirm(target.dataset.confirm || 'Are you sure?')
     if (ok) {
@@ -238,6 +238,17 @@
     } catch (err) {
       window.iaToast('Network error', 'error')
     }
+  })
+
+  /* ---------- native (server-redirect) delete — file explorer etc. --------- */
+  document.body.addEventListener('submit', async (e) => {
+    const form = e.target
+    if (!form.matches('[data-native-delete]')) return
+    e.preventDefault()
+    const ok = await window.iaConfirm(form.dataset.confirm || 'Delete this?', 'Confirm delete')
+    if (!ok) return
+    // Submit normally so the server handles the redirect + flash.
+    form.submit()
   })
 
   function escapeHtml(str) {

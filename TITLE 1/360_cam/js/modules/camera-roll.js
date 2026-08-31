@@ -337,7 +337,7 @@ export class CameraRoll {
                                     </svg>
                                 </button>
                                 <button class="action-btn" onclick="window.sphereCapture.cameraRoll.viewVR(${index})" title="VR View">
-                                    <img src="/360_cam/img/vr-cardboard.svg" width="20" height="20" alt="VR" style="filter: brightness(0) invert(1);">
+                                    <img src="./img/vr-cardboard.svg" width="20" height="20" alt="VR" style="filter: brightness(0) invert(1);">
                                 </button>
                                 <button class="action-btn" onclick="window.sphereCapture.cameraRoll.saveToSystem(${index})" title="Save to System">
                                     <svg width="20" height="20" fill="white" viewBox="0 0 24 24">
