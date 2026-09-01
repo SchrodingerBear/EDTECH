@@ -210,7 +210,7 @@ require_once __DIR__ . '/layout/header.php';
 </div>
 
 <!-- ============================ MORE DETAILS (collapsible, no scroll) ============================ -->
-<details class="pos-more mb-3">
+<details class="pos-more mb-3 mt-4">
   <summary class="pos-more-sum">
     <span>More details</span>
     <span class="ia-micro text-ia-muted">revenue · pipeline · customers</span>
