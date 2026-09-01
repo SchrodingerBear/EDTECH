@@ -56,7 +56,7 @@ $buildings = crud()->raw(
 ?>
 <div class="d-flex align-items-center justify-content-between mb-3">
   <p class="mb-1 ia-meta-lg"><?= count($buildings) ?> building(s)</p>
-  <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#bdg-modal" data-mode="create"><?= ia_icon('building', 16) ?> Add building</button>
+  <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#bdg-modal" data-mode="create"><i class="fas fa-building me-2"></i>Add building</button>
 </div>
 
 <div class="ia-card">
@@ -70,20 +70,20 @@ $buildings = crud()->raw(
             <td><span class="badge badge-surface"><?= h($b['code'] ?: '—') ?></span></td>
             <td class="text-ia-muted"><?= (int) $b['room_count'] ?></td>
             <td><?= $b['ai_description'] ? '<span class="badge badge-live">yes</span>' : '<span class="badge badge-off">none</span>' ?></td>
-            <td><a class="btn btn-sm btn-outline-ia" href="floor-plans?building=<?= (int)$b['id'] ?>" title="View floor plans for this building"><?= ia_icon('compass', 13) ?> Floor Plans</a></td>
+            <td><a class="btn btn-sm btn-outline-ia" href="floor-plans?building=<?= (int)$b['id'] ?>" title="View floor plans for this building"><i class="fas fa-compass me-1"></i> Floor Plans</a></td>
             <td class="text-end">
               <div class="d-inline-flex gap-1">
                 <button class="btn btn-sm btn-outline-ia" data-bs-toggle="modal" data-bs-target="#bdg-modal"
-                  data-mode="edit" data-id="<?= (int) $b['id'] ?>" data-name="<?= h($b['name'], ENT_QUOTES) ?>" data-code="<?= h($b['code'], ENT_QUOTES) ?>" data-desc="<?= h($b['description'], ENT_QUOTES) ?>"><?= ia_icon('file', 13) ?></button>
+                  data-mode="edit" data-id="<?= (int) $b['id'] ?>" data-name="<?= h($b['name'], ENT_QUOTES) ?>" data-code="<?= h($b['code'], ENT_QUOTES) ?>" data-desc="<?= h($b['description'], ENT_QUOTES) ?>"><i class="fas fa-edit"></i></button>
                 <form method="post" class="d-inline" data-delete-form data-confirm="Archive '<?= h($b['name']) ?>'?">
                   <input type="hidden" name="bdg_action" value="delete"><input type="hidden" name="id" value="<?= (int) $b['id'] ?>">
-                  <button class="btn btn-sm btn-outline-ia text-danger"><?= ia_icon('x', 13) ?></button>
+                  <button class="btn btn-sm btn-outline-ia text-danger"><i class="fas fa-trash"></i></button>
                 </form>
               </div>
             </td>
           </tr>
         <?php endforeach; ?>
-        <?php if (!$buildings): ?><tr><td colspan="5"><div class="empty-state"><div class="empty-icon"><?= ia_icon('building', 26) ?></div><h4>No buildings yet</h4><p>Organize your campus before adding scenes.</p></div></td></tr><?php endif; ?>
+        <?php if (!$buildings): ?><tr><td colspan="5"><div class="empty-state"><div class="empty-icon"><i class="fas fa-building fa-2x"></i></div><h4>No buildings yet</h4><p>Organize your campus before adding scenes.</p></div></td></tr><?php endif; ?>
       </tbody>
     </table>
   </div>
@@ -102,7 +102,7 @@ $buildings = crud()->raw(
         <div>
           <div class="d-flex justify-content-between align-items-center">
             <label class="form-label mb-1">Description</label>
-            <button type="button" class="btn btn-sm btn-outline-ia" data-ai-gen data-ai-type="building" data-ai-id-el="bdg-id" data-ai-target-el="bdg-desc"><?= ia_icon('wand', 13) ?> Generate AI</button>
+            <button type="button" class="btn btn-sm btn-outline-ia" data-ai-gen data-ai-type="building" data-ai-id-el="bdg-id" data-ai-target-el="bdg-desc"><i class="fas fa-magic me-1"></i> Generate AI</button>
           </div>
           <textarea class="form-control" name="description" id="bdg-desc" rows="4"></textarea>
         </div>

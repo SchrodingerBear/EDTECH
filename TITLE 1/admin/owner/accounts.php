@@ -142,7 +142,7 @@ $roles = crud()->select('roles', 'id, slug, name', ['slug' => ['IN', $roleList]]
 
 <div class="d-flex align-items-center justify-content-between mb-3">
   <p class="mb-1 ia-meta-lg"><?= count($accounts) ?> account(s)</p>
-  <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#acc-create"><?= ia_icon('users', 16) ?> Add
+  <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#acc-create"><i class="fas fa-users me-2"></i>Add
     account</button>
 </div>
 
@@ -204,18 +204,7 @@ $roles = crud()->select('roles', 'id, slug, name', ['slug' => ['IN', $roleList]]
       title="Edit account"
       aria-label="Edit account">
 
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round">
-        <path d="M12 20h9"/>
-        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-      </svg>
+      <img src="<?= url('assets/icons/edit.svg') ?>" width="14" height="14" alt="Edit">
 
     </button>
 
@@ -241,37 +230,12 @@ $roles = crud()->select('roles', 'id, slug, name', ['slug' => ['IN', $roleList]]
         <?php if ((int) $acc['is_active'] === 1): ?>
 
           <!-- Shield -->
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            <path d="M9 12l2 2 4-4"/>
-          </svg>
+          <img src="<?= url('assets/icons/shield.svg') ?>" width="14" height="14" alt="Deactivate">
 
         <?php else: ?>
 
           <!-- Activate / Rocket -->
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round">
-            <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
-            <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.56-6.05 11a22.35 22.35 0 0 1-3.95 2z"/>
-            <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
-            <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
-            <circle cx="16" cy="8" r="1"/>
-          </svg>
+          <img src="<?= url('assets/icons/rocket.svg') ?>" width="14" height="14" alt="Activate">
 
         <?php endif; ?>
 
@@ -303,21 +267,7 @@ $roles = crud()->select('roles', 'id, slug, name', ['slug' => ['IN', $roleList]]
         aria-label="Archive account">
 
         <!-- Trash -->
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round">
-          <polyline points="3 6 5 6 21 6"/>
-          <path d="M19 6l-1 14H6L5 6"/>
-          <path d="M10 11v6"/>
-          <path d="M14 11v6"/>
-          <path d="M9 6V4h6v2"/>
-        </svg>
+        <img src="<?= url('assets/icons/trash.svg') ?>" width="14" height="14" alt="Archive">
 
       </button>
 
@@ -439,7 +389,7 @@ $roles = crud()->select('roles', 'id, slug, name', ['slug' => ['IN', $roleList]]
       <td colspan="6">
         <div class="empty-state">
           <div class="empty-icon">
-            <?= ia_icon('users', 26) ?>
+            <i class="fas fa-users fa-2x"></i>
           </div>
 
           <h4>No staff or admins yet</h4>
@@ -497,9 +447,9 @@ $roles = crud()->select('roles', 'id, slug, name', ['slug' => ['IN', $roleList]]
             <div class="pw-group">
               <input class="form-control" name="password" id="acc-pw" placeholder="blank = auto-generated">
               <button type="button" class="btn btn-outline-ia btn-shrink" data-gen="acc-pw"
-                title="Generate a temporary password"><?= ia_icon('refresh', 14) ?> Generate</button>
+                title="Generate a temporary password"><i class="fas fa-sync-alt"></i> Generate</button>
               <button type="button" class="btn btn-outline-ia btn-shrink pw-eye" data-pw="acc-pw"
-                title="Show / hide password"><?= ia_icon('eye', 14) ?></button>
+                title="Show / hide password"><i class="fas fa-eye"></i></button>
             </div>
             <div class="form-text">Leave blank to auto-generate a secure temporary password and email it.</div>
           </div>

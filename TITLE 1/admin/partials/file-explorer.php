@@ -10,10 +10,11 @@ $fmRootUrl = rtrim($fmRootUrl ?? '', '/');
 $fmTab = $tab ?? ($_GET['tab'] ?? '');
 
 $fmLink = static function (array $q = []) use ($fmTab): string {
+    $base = strtok($_SERVER['REQUEST_URI'] ?? '', '?') ?: url($_SERVER['PHP_SELF']);
     if ($fmTab !== '') {
         $q = ['tab' => $fmTab] + $q;
     }
-    return '?' . http_build_query($q);
+    return $base . ($q ? '?' . http_build_query($q) : '');
 };
 
 $fmErr = null;
@@ -114,8 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['fm_action'] ?? '') !== '')
     if ($relative !== '') {
         $q['path'] = $relative;
     }
-    $base = strtok($_SERVER['REQUEST_URI'] ?? '', '?') ?: url($_SERVER['PHP_SELF']);
-    header('Location: ' . $base . ($q ? '?' . http_build_query($q) : ''));
+    header('Location: ' . $fmLink($q));
     exit;
 }
 
@@ -155,24 +155,24 @@ $previewExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
 
 <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
   <nav class="d-flex align-items-center gap-1 flex-wrap fs-135">
-    <a class="back-link" href="<?= h($fmLink(['path' => ''])) ?>"><?= ia_icon('home', 14) ?> <?= h(basename($fmRoot)) ?></a>
+    <a class="back-link" href="<?= h($fmLink(['path' => ''])) ?>"><?= ia_icon('home', 14) ?> Organization Root</a>
     <?php foreach ($breadcrumb as $cr): ?>
       <span class="text-ia-muted">/</span>
       <?php if ($cr['last']): ?>
         <a class="back-link" href="<?= h($fmLink(['path' => $cr['path']])) ?>"><?= h($cr['label']) ?></a>
       <?php else: ?>
-        <span class="back-link text-ia-muted"><?= h($cr['label']) ?></span>
+        <a class="back-link" href="<?= h($fmLink(['path' => $cr['path']])) ?>"><?= h($cr['label']) ?></a>
       <?php endif; ?>
     <?php endforeach; ?>
   </nav>
 
   <div class="ms-auto d-flex gap-2 flex-wrap">
-    <button class="btn btn-outline-ia btn-sm" data-bs-toggle="modal" data-bs-target="#fmod-mkdir"><?= ia_icon('folder', 15) ?> New folder</button>
+    <button class="btn btn-outline-ia btn-sm" data-bs-toggle="modal" data-bs-target="#fmod-mkdir"><i class="fas fa-folder-plus me-1"></i> New folder</button>
     <form method="post" enctype="multipart/form-data" class="d-inline-flex align-items-center gap-2">
       <input type="hidden" name="fm_action" value="upload">
       <input type="hidden" name="fm_path" value="<?= h($currentDir) ?>">
       <label class="btn btn-sm btn-grad mb-0 cursor-pointer">
-        <?= ia_icon('image', 15) ?> Upload files
+        <i class="fas fa-upload me-1"></i> Upload files
         <input type="file" name="files[]" multiple hidden onchange="this.form.submit()">
       </label>
     </form>
@@ -194,14 +194,18 @@ $previewExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
             <td>
               <?php if ($it['dir']): ?>
                 <a class="d-inline-flex align-items-center gap-2" class="text-reset fw-semibold" href="<?= h($fmLink(['path' => ($relative ? $relative . '/' : '') . $it['name']])) ?>">
-                  <?= ia_icon('folder', 17) ?> <?= h($it['name']) ?>
+                  <i class="fas fa-folder"></i> <?= h($it['name']) ?>
                 </a>
               <?php elseif (in_array($ext, $previewExts, true)): ?>
-                <a class="d-inline-flex align-items-center gap-2" class="text-reset fw-semibold" href="#" data-bs-toggle="modal" data-bs-target="#fmod-preview" data-preview="<?= h($fmRootUrl . '/' . ($relative ? $relative . '/' : '') . rawurlencode($it['name'])) ?>" data-name="<?= h($it['name']) ?>">
-                  <?= ia_icon('image', 17) ?> <?= h($it['name']) ?>
+                <?php
+                $filePath = $relative ? $relative . '/' . $it['name'] : $it['name'];
+                $fileUrl = $fmRootUrl . '/' . $filePath;
+                ?>
+                <a class="d-inline-flex align-items-center gap-2" class="text-reset fw-semibold" href="#" data-bs-toggle="modal" data-bs-target="#fmod-preview" data-preview="<?= h($fileUrl) ?>" data-name="<?= h($it['name']) ?>">
+                  <i class="fas fa-image"></i> <?= h($it['name']) ?>
                 </a>
               <?php else: ?>
-                <span class="d-inline-flex align-items-center gap-2"><?= ia_icon('file', 17) ?> <?= h($it['name']) ?></span>
+                <span class="d-inline-flex align-items-center gap-2"><i class="fas fa-file"></i> <?= h($it['name']) ?></span>
               <?php endif; ?>
             </td>
             <td><span class="badge badge-surface"><?= $it['dir'] ? 'folder' : ($it['mime'] ?: 'file') ?></span></td>
@@ -217,16 +221,20 @@ $previewExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
                     data-fm-rename
                     data-old="<?= h($it['name'], ENT_QUOTES) ?>"
                     data-form="rename-form-<?= md5($it['name']) ?>"
-                    title="Rename"><?= ia_icon('file', 13) ?></button>
+                    title="Rename"><i class="fas fa-edit"></i></button>
                 </form>
                 <?php if (is_file($currentDir . '/' . $it['name'])): ?>
-                  <a class="btn btn-sm btn-outline-ia" target="_blank" rel="noopener" href="<?= h($fmRootUrl . '/' . ($relative ? $relative . '/' : '') . rawurlencode($it['name'])) ?>" title="Download"><?= ia_icon('rocket', 13) ?></a>
+                  <?php
+                  $filePath = $relative ? $relative . '/' . $it['name'] : $it['name'];
+                  $fileUrl = $fmRootUrl . '/' . $filePath;
+                  ?>
+                  <a class="btn btn-sm btn-outline-ia" target="_blank" rel="noopener" href="<?= h($fileUrl) ?>" title="Download"><i class="fas fa-download"></i></a>
                 <?php endif; ?>
                 <form method="post" class="d-inline" data-native-delete data-confirm="Delete '<?= h($it['name']) ?>'? This cannot be undone.">
                   <input type="hidden" name="fm_action" value="delete">
                   <input type="hidden" name="fm_path" value="<?= h($currentDir) ?>">
                   <input type="hidden" name="name" value="<?= h($it['name']) ?>">
-                  <button class="btn btn-sm btn-outline-ia text-danger" type="submit" title="Delete"><?= ia_icon('x', 14) ?></button>
+                  <button class="btn btn-sm btn-outline-ia text-danger" type="submit" title="Delete"><i class="fas fa-trash"></i></button>
                 </form>
               </div>
             </td>

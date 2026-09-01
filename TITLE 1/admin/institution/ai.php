@@ -160,7 +160,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if ($sid) {
         $pano = crud()->select('panoramas', 'equirect_path', ['id' => $pid, 'institution_id' => $iid])->fetch();
         if ($pano) {
-          crud()->update('tour_scenes', ['equirect_path' => $pano['equirect_path']], ['id' => $sid, 'institution_id' => $iid]);
+          // Use full organization path format for tour_scenes
+          $fullPath = trim($inst['folder_path'], '/') . '/' . $pano['equirect_path'];
+          crud()->update('tour_scenes', ['equirect_path' => $fullPath], ['id' => $sid, 'institution_id' => $iid]);
           audit('panorama.attach', 'ai', 'panorama', $pid);
           flash('success', 'Panorama attached to scene.');
         } else {
@@ -183,18 +185,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // data ---------------------------------------------------------------
-$jobs = crud()->raw("SELECT j.*, (SELECT COUNT(*) FROM cubemap_faces f WHERE f.job_id=j.id) AS face_count, s.title AS scene_title FROM ai_stitch_jobs j LEFT JOIN tour_scenes s ON s.id=j.output_scene_id WHERE j.institution_id=:iid ORDER BY j.created_at DESC LIMIT 30", ['iid' => $iid]);
+$jobsResult = crud()->raw("SELECT j.*, (SELECT COUNT(*) FROM cubemap_faces f WHERE f.job_id=j.id) AS face_count, s.title AS scene_title FROM ai_stitch_jobs j LEFT JOIN tour_scenes s ON s.id=j.output_scene_id WHERE j.institution_id=:iid ORDER BY j.created_at DESC LIMIT 30", ['iid' => $iid]);
+$jobs = is_array($jobsResult) ? $jobsResult : $jobsResult->fetchAll();
+
 $order = ['front', 'back', 'left', 'right', 'up', 'down'];
 $facesByJob = [];
-$faceRows = crud()->raw("SELECT job_id, face, image_path FROM cubemap_faces ORDER BY id");
-foreach ($faceRows->fetchAll() as $fr) {
+$faceRowsResult = crud()->raw("SELECT job_id, face, image_path FROM cubemap_faces ORDER BY id");
+$faceRows = is_array($faceRowsResult) ? $faceRowsResult : $faceRowsResult->fetchAll();
+foreach ($faceRows as $fr) {
   $facesByJob[(int) $fr['job_id']][$fr['face']] = $fr['image_path'];
 }
 
-$scenesForAttach = crud()->select('tour_scenes', 'id,title', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY title');
+$scenesForAttachResult = crud()->select('tour_scenes', 'id,title', ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 'ORDER BY title');
+$scenesForAttach = is_array($scenesForAttachResult) ? $scenesForAttachResult : $scenesForAttachResult->fetchAll();
 
 // Get saved panoramas from 360 camera app
-$panoramas = crud()->select('panoramas', '*', ['institution_id' => $iid], 'ORDER BY created_at DESC LIMIT 30');
+$panoramasResult = crud()->select('panoramas', '*', ['institution_id' => $iid], 'ORDER BY created_at DESC LIMIT 30');
+$panoramas = is_array($panoramasResult) ? $panoramasResult : $panoramasResult->fetchAll();
 
 $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued' => 'badge-draft', 'processing' => 'badge-live', 'completed' => 'badge-live', 'failed' => 'badge-dead'];
 ?>
@@ -205,7 +212,7 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
     <div class="d-flex align-items-center justify-content-between mb-3">
       <h4 class="fw-800">360 Camera Panoramas</h4>
       <a href="<?= url('360_cam') ?>" target="_blank" class="btn btn-grad px-4">
-        <?= ia_icon('camera', 16) ?> Create 360
+        <i class="fas fa-camera me-2"></i> Create 360
       </a>
     </div>
 
@@ -227,7 +234,7 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
           <form method="post" data-delete-form data-confirm="Delete stitch job #<?= (int) $job['id'] ?>?">
             <input type="hidden" name="ai_action" value="job-delete"><input type="hidden" name="id"
               value="<?= (int) $job['id'] ?>">
-            <button class="btn btn-sm btn-outline-ia text-danger"><?= ia_icon('x', 13) ?></button>
+            <button class="btn btn-sm btn-outline-ia text-danger"><i class="fas fa-trash"></i></button>
           </form>
         </div>
 
@@ -253,7 +260,7 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
                     <option value="<?= (int) $sc['id'] ?>" <?= (int) ($job['output_scene_id'] ?? 0) === (int) $sc['id'] ? 'selected' : '' ?>><?= h($sc['title']) ?></option>
                   <?php endforeach; ?>
                 </select>
-                <button class="btn btn-sm btn-grad" type="submit"><?= ia_icon('save', 13) ?></button>
+                <button class="btn btn-sm btn-grad" type="submit"><i class="fas fa-save"></i></button>
               </form>
             </div>
           </div>
@@ -270,13 +277,13 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
                   <form method="post" class="cube-re" data-delete-form data-confirm="Replace <?= h($face) ?> face?">
                     <input type="hidden" name="ai_action" value="face-replace-flag">
                     <button class="btn btn-sm btn-light" type="button" data-replace-face="<?= h($face) ?>"
-                      data-job="<?= (int) $job['id'] ?>"><?= ia_icon('refresh', 12) ?></button>
+                      data-job="<?= (int) $job['id'] ?>"><i class="fas fa-sync-alt"></i></button>
                   </form>
                 <?php else: ?>
                   <label class="cube-empty">
                     <input type="file" accept="image/*" class="d-none" data-face-upload data-job="<?= (int) $job['id'] ?>"
                       data-face="<?= h($face) ?>">
-                    <span class="cube-plus"><?= ia_icon('camera', 20) ?></span>
+                    <span class="cube-plus"><i class="fas fa-camera fa-lg"></i></span>
                     <span class="cube-label"><?= h($face) ?></span>
                   </label>
                 <?php endif; ?>
@@ -291,7 +298,7 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
               <form method="post">
                 <input type="hidden" name="ai_action" value="stitch"><input type="hidden" name="job_id"
                   value="<?= (int) $job['id'] ?>">
-                <button class="btn btn-grad px-4" <?= $job['status'] === 'completed' ? 'disabled' : '' ?>><?= ia_icon('wand', 15) ?> Stitch now</button>
+                <button class="btn btn-grad px-4" <?= $job['status'] === 'completed' ? 'disabled' : '' ?>><i class="fas fa-magic me-2"></i> Stitch now</button>
               </form>
             <?php endif; ?>
           </div>
@@ -299,10 +306,10 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
       </div>
     <?php endforeach; ?>
 
-    <?php if ($jobs->rowCount() === 0): ?>
+    <?php if (count($jobs) === 0): ?>
       <div class="ia-card">
         <div class="empty-state">
-          <div class="empty-icon"><?= ia_icon('wand', 26) ?></div>
+          <div class="empty-icon"><i class="fas fa-magic fa-2x"></i></div>
           <h4>No stitch jobs</h4>
           <p>Create a job, drop six cube faces (front/back/left/right/up/down) or capture in app, then hit Stitch.</p>
         </div>
@@ -326,10 +333,10 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
         <div class="row g-3 align-items-center card-body-night">
           <div class="col-md-3">
             <?php if ($pano['thumbnail_path']): ?>
-              <img src="<?= h(org_url($inst['slug'], $pano['thumbnail_path'])) ?>" class="equirect-thumb rounded-3"
+              <img src="<?= h(url($inst['folder_path'] . '/' . $pano['thumbnail_path'])) ?>" class="equirect-thumb rounded-3"
                 alt="thumbnail">
             <?php elseif ($pano['equirect_path']): ?>
-              <img src="<?= h(org_url($inst['slug'], $pano['equirect_path'])) ?>" class="equirect-thumb rounded-3"
+              <img src="<?= h(url($inst['folder_path'] . '/' . $pano['equirect_path'])) ?>" class="equirect-thumb rounded-3"
                 alt="panorama">
             <?php else: ?>
               <div class="equirect-thumb rounded-3 bg-light d-flex align-items-center justify-content-center">
@@ -356,15 +363,15 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
                   <option value="<?= (int) $sc['id'] ?>"><?= h($sc['title']) ?></option>
                 <?php endforeach; ?>
               </select>
-              <button class="btn btn-sm btn-grad" type="submit"><?= ia_icon('save', 13) ?></button>
+              <button class="btn btn-sm btn-grad" type="submit"><i class="fas fa-save"></i></button>
             </form>
             <div class="mt-2 d-flex gap-2">
-              <a href="<?= h(org_url($inst['slug'], $pano['equirect_path'])) ?>" download
+              <a href="<?= h(url($inst['folder_path'] . '/' . $pano['equirect_path'])) ?>" download
                 class="btn btn-sm btn-outline-ia">Download</a>
               <form method="post" data-delete-form data-confirm="Delete panorama?">
                 <input type="hidden" name="ai_action" value="panorama-delete"><input type="hidden" name="id"
                   value="<?= (int) $pano['id'] ?>">
-                <button class="btn btn-sm btn-outline-ia text-danger"><?= ia_icon('x', 13) ?></button>
+                <button class="btn btn-sm btn-outline-ia text-danger"><i class="fas fa-trash"></i></button>
               </form>
             </div>
           </div>
@@ -372,10 +379,10 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
       </div>
     <?php endforeach; ?>
 
-    <?php if ($panoramas->rowCount() === 0): ?>
+    <?php if (count($panoramas) === 0): ?>
       <div class="ia-card">
         <div class="empty-state">
-          <div class="empty-icon"><?= ia_icon('camera', 26) ?></div>
+          <div class="empty-icon"><i class="fas fa-camera fa-2x"></i></div>
           <h4>No 360 panoramas</h4>
           <p>Use the 360 Camera App to capture and save panoramas. They will appear here automatically.</p>
         </div>
@@ -396,12 +403,12 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
         <div class="modal-body d-grid gap-3">
           <label class="mode-card-dashed">
             <input type="radio" name="source_type" value="cubemap_upload" checked>
-            <span class="mode-box-2"><strong><?= ia_icon('upload', 16) ?> Cubemap upload</strong><small>Six square
+            <span class="mode-box-2"><strong><i class="fas fa-upload me-2"></i> Cubemap upload</strong><small>Six square
                 faces, upload all then stitch.</small></span>
           </label>
           <label class="mode-card-dashed">
             <input type="radio" name="source_type" value="in_app_capture">
-            <span class="mode-box-2"><strong><?= ia_icon('camera', 16) ?> 360 Camera App</strong><small>Automatic
+            <span class="mode-box-2"><strong><i class="fas fa-camera me-2"></i> 360 Camera App</strong><small>Automatic
                 36-point capture with guided alignment. Opens in new tab.</small></span>
           </label>
         </div>

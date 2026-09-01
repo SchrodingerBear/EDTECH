@@ -322,7 +322,13 @@ function icon(string $name, int $size = 19): string
 /** URL to a file under organizations/{slug}/… */
 function org_url(string $slug, string $sub = ''): string
 {
-    return ORG_ROOT_URL . '/index.php?org=' . rawurlencode($slug);
+    $cleanSlug = trim($slug, '/\\');
+    $cleanSub = trim($sub, '/\\');
+    $path = 'organizations/' . $cleanSlug;
+    if ($cleanSub !== '') {
+        $path .= '/' . $cleanSub;
+    }
+    return url($path);
 }
 
 /** Start a guarded session (safe to call multiple times). */

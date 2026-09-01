@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Install Innovatech PH App</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+    .install-container {
+      text-align: center;
+      padding: 3rem;
+      max-width: 500px;
+    }
+    .app-icon {
+      width: 120px;
+      height: 120px;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      margin: 0 auto 2rem;
+      box-shadow: 0 20px 40px rgba(79, 70, 229, 0.3);
+    }
+    .btn-install {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      border: none;
+      padding: 1rem 3rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+      transition: all 0.3s ease;
+      border-radius: 50px;
+    }
+    .btn-install:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(79, 70, 229, 0.4);
+    }
+    .feature-list {
+      text-align: left;
+      margin-top: 2rem;
+    }
+    .feature-list .list-group-item {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="install-container">
+    <div class="app-icon">
+      <i class="fas fa-graduation-cap"></i>
+    </div>
+    <h1 class="h3 mb-3">Innovatech PH</h1>
+    <p class="text-muted mb-4">AI-Assisted AR 360° Virtual Campus Navigation</p>
+
+    <button id="installBtn" class="btn btn-install btn-lg">
+      <i class="fas fa-download me-2"></i>
+      Install App
+    </button>
+
+    <div class="feature-list">
+      <div class="list-group">
+        <div class="list-group-item">
+          <i class="fas fa-wifi me-2 text-success"></i>
+          Works offline
+        </div>
+        <div class="list-group-item">
+          <i class="fas fa-sync me-2 text-info"></i>
+          Auto-sync when online
+        </div>
+        <div class="list-group-item">
+          <i class="fas fa-bolt me-2 text-warning"></i>
+          Fast & responsive
+        </div>
+        <div class="list-group-item">
+          <i class="fas fa-database me-2 text-primary"></i>
+          Local data storage
+        </div>
+      </div>
+    </div>
+
+    <p class="text-muted mt-4 small">
+      <i class="fas fa-info-circle me-1"></i>
+      Install this app for offline access and better performance
+    </p>
+  </div>
+
+  <script>
+    let deferredPrompt;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      console.log('[PWA] Install prompt available');
+
+      // Show install button
+      const installBtn = document.getElementById('installBtn');
+      installBtn.style.display = 'inline-block';
+    });
+
+    document.getElementById('installBtn').addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`[PWA] User response: ${outcome}`);
+
+        if (outcome === 'accepted') {
+          console.log('[PWA] App installed');
+          document.getElementById('installBtn').style.display = 'none';
+        }
+
+        deferredPrompt = null;
+      } else {
+        // Fallback: show instructions
+        alert('To install this app:\n\n' +
+              'Chrome/Edge: Click menu → "Install Innovatech PH"\n' +
+              'Safari: Click Share → "Add to Home Screen"\n' +
+              'Firefox: Not supported yet');
+      }
+    });
+
+    // Check if already installed
+    window.addEventListener('appinstalled', () => {
+      console.log('[PWA] App was installed');
+      document.getElementById('installBtn').style.display = 'none';
+      document.getElementById('installBtn').textContent = 'App Installed!';
+    });
+  </script>
+</body>
+</html>

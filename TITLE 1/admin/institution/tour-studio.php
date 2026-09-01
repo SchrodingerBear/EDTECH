@@ -108,7 +108,7 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
           </a-scene>
         </div>
         <div id="studio-crosshair">
-          <svg viewBox="0 0 20 20" fill="none" stroke="white" stroke-width="2"><line x1="10" y1="0" x2="10" y2="8"/><line x1="10" y1="12" x2="10" y2="20"/><line x1="0" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="20" y2="10"/></svg>
+          <img src="<?= url('assets/icons/crosshair.svg') ?>" width="20" height="20" alt="Crosshair">
         </div>
         <div class="studio-hint">
           Drag to look · Double-click to place hotspot at crosshair

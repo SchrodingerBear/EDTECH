@@ -166,7 +166,7 @@ $panoramas = crud()->select('panoramas', 'id,title,equirect_path', ['institution
               <select class="form-select" name="panorama_select" id="panorama-select">
                 <option value="">-- Select from 360 Camera App --</option>
                 <?php foreach ($panoramas as $pano): ?>
-                  <option value="<?= h($pano['equirect_path']) ?>" data-title="<?= h($pano['title']) ?>"><?= h($pano['title']) ?></option>
+                  <option value="<?= h(trim($inst['folder_path'], '/') . '/' . $pano['equirect_path']) ?>" data-title="<?= h($pano['title']) ?>"><?= h($pano['title']) ?></option>
                 <?php endforeach; ?>
               </select>
               <div class="text-center text-muted fs-12">— or upload manually —</div>

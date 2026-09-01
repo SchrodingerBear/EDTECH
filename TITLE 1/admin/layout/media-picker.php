@@ -90,12 +90,7 @@ if ($usePlatform) {
                 <?php if ($pickerPreview && preg_match('/\.(jpe?g|png|webp|gif|svg|avif)(\?|$)/i', $pickerPreview)): ?>
                     <img src="<?= h($pickerPreview) ?>" alt="preview">
                 <?php else: ?>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" />
-                        <circle cx="9" cy="9" r="2" />
-                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                    </svg>
+                    <img src="<?= url('assets/icons/image-placeholder.svg') ?>" width="22" height="22" alt="No media">
                 <?php endif; ?>
             </div>
 
@@ -176,13 +171,7 @@ if ($usePlatform) {
                     <div class="tab-pane fade show active" id="tab-upload-<?= h($pickerId) ?>" role="tabpanel">
                         <div class="text-center p-4 border rounded-3 mp-dropzone">
                             <div class="mb-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                    <polyline points="17 8 12 3 7 8" />
-                                    <line x1="12" y1="3" x2="12" y2="15" />
-                                </svg>
+                                <img src="<?= url('assets/icons/upload-cloud.svg') ?>" width="40" height="40" alt="Upload">
                             </div>
                             <h6 class="fw-bold">Upload an image file</h6>
                             <p class="text-muted small mb-3">Accepted formats: PNG, JPG, WebP, SVG, AVIF</p>
@@ -346,7 +335,7 @@ if ($usePlatform) {
                 document.getElementById(pickerId + '_label').textContent = name;
                 document.getElementById(pickerId + '_sub').textContent = val;
                 document.getElementById(pickerId + '_file_real').value = '';
-                document.getElementById(pickerId + '_preview').innerHTML = '<img src="' + mediaPreviewSrc(val) + '" onerror="this.src=\'data:image/svg+xml;utf8,<svg xmlns=\\\'http://www.w3.org/2000/svg\\\' width=\\\'24\\\' height=\\\'24\\\' viewBox=\\\'0 0 24 24\\\' fill=\\\'none\\\' stroke=\\\'%23999\\\' stroke-width=\\\'2\\\'><rect x=\\\'3\\\' y=\\\'3\\\' width=\\\'18\\\' height=\\\'18\\\' rx=\\\'2\\\'/></svg>\'">';
+                document.getElementById(pickerId + '_preview').innerHTML = '<img src="' + mediaPreviewSrc(val) + '" onerror="this.src=\'<?= url('assets/icons/image-placeholder.svg') ?>\'">';
             }
             closeMediaPickerModal(pickerId);
         };
@@ -357,7 +346,7 @@ if ($usePlatform) {
             if (fileInput) fileInput.value = '';
             document.getElementById(pickerId + '_label').innerHTML = '<span class="text-muted">No media selected</span>';
             document.getElementById(pickerId + '_sub').textContent = 'Choose a file or enter a link';
-            document.getElementById(pickerId + '_preview').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>';
+            document.getElementById(pickerId + '_preview').innerHTML = '<img src="<?= url('assets/icons/image-placeholder.svg') ?>" width="22" height="22" alt="No media">';
         };
     }
 </script>

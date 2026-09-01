@@ -94,7 +94,7 @@ try {
         }
     }
 
-    // Save to database
+    // Save to database - use RELATIVE path only (no leading slash, no org prefix)
     $relativePath = 'assets/panos/' . $filename;
     $captureDataJson = $capture_data ? json_decode($capture_data, true) : null;
 

@@ -2,9 +2,8 @@
 /**
  * Innovatech PH — Unified organization landing page
  * 
- * Serves ALL org landing pages from this single file.
- * Queries DB directly for published status (source of truth).
- * Reads config.json only for scene/hotspot data.
+ * PURE DATABASE-DRIVEN approach.
+ * No config.json dependency - everything from DB.
  */
 
 require_once dirname(__DIR__) . '/includes/bootstrap.php';
@@ -20,17 +19,17 @@ $slug = $_GET['org'] ?? null;
 
 // Fallback: try to extract from REQUEST_URI (for direct requests)
 if (!$slug) {
-    $pathParts = array_filter(explode('/', trim($_SERVER['REQUEST_URI'] ?? '', '/')));
-    $orgIndex = array_search('organizations', $pathParts, true);
-    $slug = $pathParts[$orgIndex + 1] ?? null;
+  $pathParts = array_filter(explode('/', trim($_SERVER['REQUEST_URI'] ?? '', '/')));
+  $orgIndex = array_search('organizations', $pathParts, true);
+  $slug = $pathParts[$orgIndex + 1] ?? null;
 }
 
 if (!$slug || !preg_match('/^[a-z0-9\-]+$/', $slug)) {
-    http_response_code(404);
-    die('Organization not found.');
+  http_response_code(404);
+  die('Organization not found.');
 }
 
-// Query DB for org — DB is source of truth, not config.json
+// Query DB for org — DB is source of truth
 $org = crud()->raw(
     "SELECT id, name, short_name, is_published, landing_mode, folder_path 
      FROM institutions 
@@ -39,23 +38,25 @@ $org = crud()->raw(
 )->fetch();
 
 if (!$org) {
-    http_response_code(404);
-    die('Organization not found.');
+  http_response_code(404);
+  die('Organization not found.');
 }
+
+$iid = (int)$org['id'];
 
 // Check admin preview mode
 $isPreview = ($_GET['preview'] ?? '') === '1';
 
-// If not published, show not-published overlay (DB is truth)
+// If not published, show not-published overlay
 if (!(int)$org['is_published'] && !$isPreview) {
-    ?><!DOCTYPE html>
+  ?><!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#0b0d16">
   <title><?= htmlspecialchars($org['name']) ?> · Virtual Campus</title>
-  <link rel="stylesheet" href="<?= htmlspecialchars($slug) ?>/assets/style.css">
+  <link rel="stylesheet" href="<?= url('organizations/' . htmlspecialchars($slug) . '/assets/style.css') ?>">
 </head>
 <body>
   <div id="not-published" class="np-overlay">
@@ -74,57 +75,271 @@ if (!(int)$org['is_published'] && !$isPreview) {
     exit;
 }
 
-// Published — load config.json for scene/hotspot data
-$configFile = dirname(__DIR__) . '/' . ltrim($org['folder_path'], '/') . '/config.json';
-$config = null;
+// Published — load ALL data from DB (pure database-driven)
+$iid = (int)$org['id'];
 
-if (is_file($configFile)) {
-    $raw = file_get_contents($configFile);
-    $config = json_decode($raw, true);
+// Query theme settings from DB
+$themeResult = crud()->select('institution_themes', '*', ['institution_id' => $iid]);
+if (is_array($themeResult)) {
+  $theme = $themeResult[0] ?? [];
+} else {
+  $theme = $themeResult->fetch() ?: [];
 }
 
-if (!$config) {
-    $config = [
-        'landing_mode' => $org['landing_mode'] ?: '360_rotation',
-        'scenes' => [],
-        'starting_scene' => [],
+if (!$theme) {
+  $theme = [
+    'primary_color' => '#1a365d',
+    'secondary_color' => '#ed8936',
+    'accent_color' => '#38b2ac',
+    'popup_animation' => 'fade',
+    'marker_style' => 'circle',
+    'infographic_style' => 'card'
+  ];
+}
+
+// Query scenes from DB
+try {
+  $scenesResult = crud()->select('tour_scenes', '*', 
+    ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 
+    'ORDER BY sort_order ASC'
+  );
+  if (is_array($scenesResult)) {
+    $scenes = $scenesResult;
+  } else {
+    $scenes = $scenesResult->fetchAll();
+  }
+} catch (Exception $e) {
+  $scenes = [];
+}
+
+// Query hotspots from DB
+try {
+  $hotspotsResult = crud()->select('scene_hotspots', '*', 
+    ['institution_id' => $iid], 
+    'ORDER BY from_scene_id, id ASC'
+  );
+  if (is_array($hotspotsResult)) {
+    $hotspots = $hotspotsResult;
+  } else {
+    $hotspots = $hotspotsResult->fetchAll();
+  }
+} catch (Exception $e) {
+  $hotspots = [];
+}
+
+// Query floor plans from DB
+try {
+  $floorPlansResult = crud()->select('floor_plans', '*', 
+    ['institution_id' => $iid, 'deleted_at' => ['IS', null]], 
+    'ORDER BY is_campus_landing DESC, id ASC'
+  );
+  if (is_array($floorPlansResult)) {
+    $floorPlans = $floorPlansResult;
+  } else {
+    $floorPlans = $floorPlansResult->fetchAll();
+  }
+} catch (Exception $e) {
+  $floorPlans = [];
+}
+
+// Query floor plan markers from DB
+try {
+  $markersResult = crud()->select('floor_plan_markers', '*', 
+    ['institution_id' => $iid], 
+    'ORDER BY floor_plan_id, id ASC'
+  );
+  if (is_array($markersResult)) {
+    $markers = $markersResult;
+  } else {
+    $markers = $markersResult->fetchAll();
+  }
+} catch (Exception $e) {
+  $markers = [];
+}
+
+// Build config dynamically from DB
+$config = [
+  'institution_id' => $iid,
+  'name' => $org['name'],
+  'short_name' => $org['short_name'],
+  'landing_mode' => $org['landing_mode'],
+  'require_landscape_mobile' => true,
+  'published' => true,
+  'theme' => [
+    'primary' => is_array($theme) ? ($theme['primary_color'] ?? '#1a365d') : '#1a365d',
+    'secondary' => is_array($theme) ? ($theme['secondary_color'] ?? '#ed8936') : '#ed8936',
+    'accent' => is_array($theme) ? ($theme['accent_color'] ?? '#38b2ac') : '#38b2ac',
+    'popup_animation' => is_array($theme) ? ($theme['popup_animation'] ?? 'fade') : 'fade',
+    'marker_glow' => false
+  ],
+  'scenes' => [],
+  'starting_scene' => null
+];
+
+// Build scenes array
+$scenesMap = [];
+foreach ($scenes as $scene) {
+  $scenesMap[(int)$scene['id']] = [
+    'id' => (int)$scene['id'],
+    'title' => $scene['title'],
+    'slug' => $scene['slug'],
+    'description' => $scene['description'],
+    'ai_description' => $scene['ai_description'],
+    'featured_image_path' => $scene['featured_image_path'],
+    'equirect_path' => $scene['equirect_path'],
+    'initial_yaw' => (float)$scene['initial_yaw'],
+    'initial_pitch' => (float)$scene['initial_pitch'],
+    'hotspots' => []
+  ];
+  
+  // Set as starting scene if marked
+  if ((int)$scene['is_landing_start']) {
+    $config['starting_scene'] = [
+      'id' => (int)$scene['id'],
+      'title' => $scene['title'],
+      'equirect_path' => $scene['equirect_path'],
+      'initial_yaw' => (float)$scene['initial_yaw'],
+      'initial_pitch' => (float)$scene['initial_pitch']
     ];
+  }
 }
 
-// Convert all absolute paths to relative (for cross-origin safety)
-function makePathsRelative(&$arr, $slug) {
+// Attach hotspots to scenes
+foreach ($hotspots as $hs) {
+  $fromSceneId = (int)$hs['from_scene_id'];
+  if (isset($scenesMap[$fromSceneId])) {
+    $scenesMap[$fromSceneId]['hotspots'][] = [
+      'id' => (int)$hs['id'],
+      'label' => $hs['label'],
+      'hotspot_type' => $hs['hotspot_type'],
+      'yaw' => (float)$hs['yaw'],
+      'pitch' => (float)$hs['pitch'],
+      'body_html' => $hs['body_html'],
+      'to_scene_id' => $hs['to_scene_id'] ? (int)$hs['to_scene_id'] : null,
+      'target_facility_id' => $hs['target_facility_id'] ? (int)$hs['target_facility_id'] : null
+    ];
+  }
+}
+
+$config['scenes'] = $scenesMap;
+
+// If no starting scene set, use first scene
+if (!$config['starting_scene'] && !empty($scenesMap)) {
+  $firstScene = reset($scenesMap);
+  $config['starting_scene'] = [
+    'id' => $firstScene['id'],
+    'title' => $firstScene['title'],
+    'equirect_path' => $firstScene['equirect_path'],
+    'initial_yaw' => $firstScene['initial_yaw'],
+    'initial_pitch' => $firstScene['initial_pitch']
+  ];
+}
+
+// Add floor plans to config
+$config['floor_plans'] = [];
+$markersByFloorPlan = [];
+
+foreach ($markers as $m) {
+  $fpId = (int)$m['floor_plan_id'];
+  if (!isset($markersByFloorPlan[$fpId])) {
+    $markersByFloorPlan[$fpId] = [];
+  }
+  $markersByFloorPlan[$fpId][] = [
+    'id' => (int)$m['id'],
+    'x' => (float)$m['x_percent'],
+    'y' => (float)$m['y_percent'],
+    'label' => $m['label'],
+    'target_type' => $m['target_type'],
+    'target_scene_id' => $m['target_scene_id'] ? (int)$m['target_scene_id'] : null,
+    'target_facility_id' => $m['target_facility_id'] ? (int)$m['target_facility_id'] : null,
+    'size_percent' => $m['size_percent'] ?? 4
+  ];
+}
+
+foreach ($floorPlans as $fp) {
+  $fpId = (int)$fp['id'];
+  $config['floor_plans'][$fpId] = [
+    'id' => $fpId,
+    'title' => $fp['title'],
+    'image_path' => $fp['image_path'],
+    'original_width' => (int)$fp['original_width'],
+    'original_height' => (int)$fp['original_height'],
+    'aspect_ratio' => (float)$fp['aspect_ratio'],
+    'object_fit' => $fp['object_fit'],
+    'north_angle' => (float)$fp['north_angle'],
+    'is_campus_landing' => (bool)$fp['is_campus_landing'],
+    'markers' => $markersByFloorPlan[$fpId] ?? []
+  ];
+  
+  // Set as starting floor plan if marked
+  if ((bool)$fp['is_campus_landing']) {
+    $config['starting_floor_plan'] = [
+      'id' => $fpId,
+      'title' => $fp['title'],
+      'image_path' => $fp['image_path']
+    ];
+  }
+}
+
+// If no starting floor plan set, use first one
+if (!$config['starting_floor_plan'] && !empty($config['floor_plans'])) {
+  $firstFP = reset($config['floor_plans']);
+  $config['starting_floor_plan'] = [
+    'id' => $firstFP['id'],
+    'title' => $firstFP['title'],
+    'image_path' => $firstFP['image_path']
+  ];
+}
+
+// Function to normalize paths - convert to absolute URLs with base path
+function normalizePaths(&$arr, $slug) {
     if (!is_array($arr)) return;
-    
-    $pathKeys = ['equirect_path', 'featured_image_path', 'image_path', 'pano_url', 'sub_fp_image', 'floor_plan_image', 'scene_equirect'];
-    
+
+    $pathKeys = ['equirect_path', 'featured_image_path', 'image_path', 'pano_url', 'sub_fp_image', 'floor_plan_image', 'scene_equirect', 'thumbnail_path'];
+
     foreach ($arr as $k => &$v) {
         if (is_string($v)) {
-            // Remove absolute /organizations/{slug}/ prefix if present
-            $v = preg_replace('#^/organizations/' . preg_quote($slug, '#') . '/#', '', $v);
-            // Only prefix relative paths with slug if this is a path key
-            if (in_array($k, $pathKeys) && $v && $v[0] !== '/' && strpos($v, 'http') === false) {
-                $v = $slug . '/' . $v;
+            // Skip if already absolute URL (http) or empty
+            if (!$v || strpos($v, 'http') === 0) continue;
+            
+            // Skip if already has full base path (starts with /G7 or similar)
+            if (preg_match('#^/[A-Z0-9%]+#', $v)) continue;
+
+            // Build the organization-relative path
+            $orgPath = 'organizations/' . $slug . '/';
+            
+            // If path already has organizations/slug/ prefix, keep it
+            if (preg_match('#^organizations/' . preg_quote($slug, '#') . '/#', $v)) {
+                $relativePath = $v;
+            }
+            // If path starts with slug/, add organizations/ prefix
+            elseif (preg_match('#^' . preg_quote($slug, '#') . '/#', $v)) {
+                $relativePath = 'organizations/' . $v;
+            }
+            // Otherwise, add full organizations/slug/ prefix
+            else {
+                $relativePath = $orgPath . ltrim($v, '/');
+            }
+            
+            // Use url() helper to get full absolute URL with base path
+            if (in_array($k, $pathKeys)) {
+                $v = url($relativePath);
             }
         } elseif (is_array($v)) {
-            makePathsRelative($v, $slug);
+            normalizePaths($v, $slug);
         }
     }
 }
-makePathsRelative($config, $slug);
-
-// Ensure org details from DB override config (DB is truth)
-$config['institution_id'] = (int)$org['id'];
-$config['name'] = $org['name'];
-$config['short_name'] = $org['short_name'];
-$config['published'] = true; // We already checked this above
-?><!DOCTYPE html>
+normalizePaths($config, $slug);
+?>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#0b0d16">
   <title><?= htmlspecialchars($org['name']) ?> · Virtual Campus</title>
-  <link rel="stylesheet" href="<?= htmlspecialchars($slug) ?>/assets/style.css">
+  <link rel="stylesheet" href="<?= url('organizations/' . htmlspecialchars($slug) . '/assets/style.css') ?>">
 </head>
 <body>
   <!-- =========================== 360 MODE (A-Frame) =========================== -->
@@ -214,7 +429,7 @@ $config['published'] = true; // We already checked this above
         config = {
           landing_mode: '360_rotation',
           require_landscape_mobile: true,
-          floor_plan_markers: [],
+          floor_plans: {},
           starting_floor_plan: {},
           starting_scene: {}
         };
@@ -230,7 +445,9 @@ $config['published'] = true; // We already checked this above
       renderSceneCarousel();
 
       if (config.landing_mode === 'floor_plan' && config.starting_floor_plan && config.starting_floor_plan.image_path) {
-        openFloorPlan(config.starting_floor_plan.image_path, config.floor_plan_markers || [], config.short_name || 'ORG', false);
+        const fp = config.floor_plans[config.starting_floor_plan.id];
+        const markers = fp ? fp.markers : [];
+        openFloorPlan(config.starting_floor_plan.image_path, markers, config.short_name || 'ORG', false);
       } else if (config.starting_scene && config.starting_scene.equirect_path) {
         openScene(config.starting_scene);
       } else {
@@ -484,7 +701,7 @@ $config['published'] = true; // We already checked this above
       if (document.getElementById('aframe-script')) return;
       const s = document.createElement('script');
       s.id = 'aframe-script';
-      s.src = '<?= htmlspecialchars($slug) ?>/assets/aframe.min.js';
+      s.src = '<?= url('organizations/' . htmlspecialchars($slug) . '/assets/aframe.min.js') ?>';
       s.onload = () => { aframeReady = true; aframeCallbacks.forEach(fn => fn()); aframeCallbacks = []; };
       document.head.appendChild(s);
     }

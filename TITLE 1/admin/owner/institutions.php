@@ -248,7 +248,7 @@ $assignable = crud()->raw(
   <div>
   </div>
   <?php if ($canManage): ?>
-  <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#inst-create"><?= ia_icon('school', 16) ?> New institution</button>
+  <button class="btn btn-grad px-4" data-bs-toggle="modal" data-bs-target="#inst-create"><i class="fas fa-school me-2"></i>New institution</button>
   <?php endif; ?>
 </div>
 
@@ -277,22 +277,22 @@ $assignable = crud()->raw(
             </td>
             <td class="text-end">
               <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
-                <a class="btn btn-sm btn-outline-ia" href="<?= h(org_url($inst['slug'])) ?>" target="_blank" title="Open landing"><?= ia_icon('globe', 13) ?></a>
-                <button class="btn btn-sm btn-outline-ia" data-bs-toggle="modal" data-bs-target="#inst-edit-<?= (int) $inst['id'] ?>" title="Edit Info & Admin"><?= ia_icon('settings', 13) ?></button>
+                <a class="btn btn-sm btn-outline-ia" href="<?= h(org_url($inst['slug'])) ?>" target="_blank" title="Open landing"><i class="fas fa-globe"></i></a>
+                <button class="btn btn-sm btn-outline-ia" data-bs-toggle="modal" data-bs-target="#inst-edit-<?= (int) $inst['id'] ?>" title="Edit Info & Admin"><i class="fas fa-cog"></i></button>
                 <?php if ($canManage): ?>
                 <form method="post" class="d-inline"><input type="hidden" name="inst_action" value="toggle"><input type="hidden" name="id" value="<?= (int) $inst['id'] ?>"><input type="hidden" name="field" value="publish">
                   <button class="btn btn-sm btn-outline-ia" title="<?= (int) $inst['is_published'] ? 'Unpublish' : 'Publish' ?>">
-                    <?= (int) $inst['is_published'] ? ia_icon('shield', 13) . ' unpublish' : ia_icon('rocket', 13) . ' publish' ?>
+                    <?= (int) $inst['is_published'] ? '<i class="fas fa-shield-alt"></i> unpublish' : '<i class="fas fa-rocket"></i> publish' ?>
                   </button>
                 </form>
                 <form method="post" class="d-inline"><input type="hidden" name="inst_action" value="resync"><input type="hidden" name="id" value="<?= (int) $inst['id'] ?>">
-                  <button class="btn btn-sm btn-outline-ia" title="Force sync config"><?= ia_icon('refresh-cw', 13) ?></button>
+                  <button class="btn btn-sm btn-outline-ia" title="Force sync config"><i class="fas fa-sync-alt"></i></button>
                 </form>
                 <?php endif; ?>
                 <?php if ($canManage): ?>
                 <form method="post" class="d-inline" data-delete-form data-confirm="Archive '<?= h($inst['name']) ?>'?">
                   <input type="hidden" name="inst_action" value="delete"><input type="hidden" name="id" value="<?= (int) $inst['id'] ?>">
-                  <button class="btn btn-sm btn-outline-ia text-danger" title="Archive"><?= ia_icon('x', 13) ?></button>
+                  <button class="btn btn-sm btn-outline-ia text-danger" title="Archive"><i class="fas fa-trash"></i></button>
                 </form>
                 <?php endif; ?>
               </div>

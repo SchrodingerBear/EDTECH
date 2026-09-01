@@ -139,18 +139,18 @@ $areaCount = count(array_filter($rows, fn($r) => $r['kind'] === 'area'));
                     <button class="btn btn-sm btn-outline-ia" data-bs-toggle="modal" data-bs-target="#location-modal"
                       data-mode="edit" data-kind="<?= $r['kind'] ?>" data-id="<?= (int) $r['id'] ?>" data-name="<?= h($r['name'], ENT_QUOTES) ?>" data-building="<?= (int) $r['building_id'] ?>"
                       data-category="<?= h($r['category'], ENT_QUOTES) ?>" data-code="<?= h($r['code'], ENT_QUOTES) ?>" data-floor="<?= h($r['floor_label'], ENT_QUOTES) ?>"
-                      data-cap="<?= (int) $r['capacity'] ?>" data-desc="<?= h($r['description'], ENT_QUOTES) ?>"><?= ia_icon('file', 13) ?></button>
+                      data-cap="<?= (int) $r['capacity'] ?>" data-desc="<?= h($r['description'], ENT_QUOTES) ?>"><i class="fas fa-edit"></i></button>
                     <form method="post" class="d-inline" data-delete-form data-confirm="<?= $isRoom ? 'Archive' : 'Remove' ?> '<?= h($r['name']) ?>'?">
                       <input type="hidden" name="loc_action" value="loc-delete">
                       <input type="hidden" name="loc_type" value="<?= $r['kind'] ?>"><input type="hidden" name="id" value="<?= (int) $r['id'] ?>">
-                      <button class="btn btn-sm btn-outline-ia text-danger"><?= ia_icon('x', 13) ?></button>
+                      <button class="btn btn-sm btn-outline-ia text-danger"><i class="fas fa-trash"></i></button>
                     </form>
                   </div>
                 </td>
               </tr>
             <?php endforeach; ?>
             <?php if (!$rows): ?>
-              <tr><td colspan="6"><div class="empty-state"><div class="empty-icon"><?= ia_icon('map', 26) ?></div><h4>No locations</h4><p>Add buildings first, then create room or area locations inside them.</p></div></td></tr>
+              <tr><td colspan="6"><div class="empty-state"><div class="empty-icon"><i class="fas fa-map-marked-alt fa-2x"></i></div><h4>No locations</h4><p>Add buildings first, then create room or area locations inside them.</p></div></td></tr>
             <?php endif; ?>
           </tbody>
         </table>

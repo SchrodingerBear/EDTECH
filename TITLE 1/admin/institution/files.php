@@ -11,7 +11,9 @@ $pageTitle = 'Files';
 $pageSub = 'Project folder for this institution';
 $active = 'Files';
 
-$fmRoot = ROOT_PATH . '/' . trim(resolve_active_institution()['folder_path'], '/');
-$fmRootUrl = org_url(resolve_active_institution()['slug'], '');
+$inst = resolve_active_institution();
+$fmRoot = ROOT_PATH . '/' . trim($inst['folder_path'], '/');
+$fmRootUrl = org_url($inst['slug'], '');
+
 require __DIR__ . '/../partials/file-explorer.php';
 require __DIR__ . '/../layout/footer.php';
