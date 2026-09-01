@@ -4,7 +4,7 @@
     "short_name": "ICC",
     "landing_mode": "360_rotation",
     "require_landscape_mobile": true,
-    "published": true,
+    "published": false,
     "theme": {
         "primary": "#1a365d",
         "secondary": "#ed8936",
@@ -20,7 +20,16 @@
             "equirect_path": "assets/scenes/ae72511ab1f73793.jpg",
             "initial_yaw": 0,
             "initial_pitch": 0,
-            "hotspots": []
+            "hotspots": [
+                {
+                    "id": 3,
+                    "label": "Guard Post",
+                    "hotspot_type": "navigation",
+                    "yaw": 160.5,
+                    "pitch": -3.8,
+                    "body_html": "Guard Post is a tour hotspot of Immaculada Concepcion College."
+                }
+            ]
         }
     },
     "starting_scene": {

@@ -159,90 +159,296 @@ $roles = crud()->select('roles', 'id, slug, name', ['slug' => ['IN', $roleList]]
           <th class="text-end">Actions</th>
         </tr>
       </thead>
-      <tbody>
-        <?php foreach ($accounts as $acc): ?>
-          <tr>
-            <td>
-              <div class="fw-bold"><?= h($acc['first_name'] . ' ' . $acc['last_name']) ?></div>
-              <div class="fs-125 text-ia-muted"><?= h($acc['email']) ?></div>
-            </td>
-            <td><span class="badge badge-surface"><?= h(ucwords(str_replace('_', ' ', $acc['role_slug']))) ?></span>
-            </td>
-            <td class="text-ia-muted"><?= h($acc['inst_name'] ?? '—') ?></td>
-            <td class="text-ia-muted">
-              <?= $acc['last_login_at'] ? h(date('M j, g:i A', strtotime($acc['last_login_at']))) : 'never' ?>
-            </td>
-            <td><span
-                class="badge <?= (int) $acc['is_active'] === 1 ? 'badge-live' : 'badge-off' ?>"><?= (int) $acc['is_active'] === 1 ? 'Active' : 'Inactive' ?></span>
-            </td>
-            <td class="text-end">
-              <div class="d-inline-flex gap-1">
-                <button class="btn btn-sm btn-outline-ia" data-bs-toggle="modal" data-bs-target="#acc-edit-<?= (int) $acc['id'] ?>" title="Edit account"><?= ia_icon('edit', 12) ?></button>
-                <form method="post" class="d-inline"><input type="hidden" name="acc_action" value="toggle"><input
-                    type="hidden" name="id" value="<?= (int) $acc['id'] ?>">
-                  <button class="btn btn-sm btn-outline-ia"
-                    title="Toggle active"><?= (int) $acc['is_active'] === 1 ? ia_icon('shield', 12) . ' Deactivate' : ia_icon('rocket', 12) . ' Activate' ?></button>
-                </form>
-                <form method="post" class="d-inline" data-delete-form data-confirm="Archive <?= h($acc['email']) ?>?">
-                  <input type="hidden" name="acc_action" value="delete"><input type="hidden" name="id"
-                    value="<?= (int) $acc['id'] ?>">
-                  <button class="btn btn-sm btn-outline-ia text-danger" title="Delete account"><?= ia_icon('x', 13) ?></button>
-                </form>
-              </div>
-            </td>
-          </tr>
+<tbody>
+  <?php foreach ($accounts as $acc): ?>
+    <tr>
+      <td>
+        <div class="fw-bold">
+          <?= h($acc['first_name'] . ' ' . $acc['last_name']) ?>
+        </div>
+        <div class="fs-125 text-ia-muted">
+          <?= h($acc['email']) ?>
+        </div>
+      </td>
 
-          <!-- edit modal for this account -->
-          <div class="modal fade" id="acc-edit-<?= (int) $acc['id'] ?>" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Edit account — <?= h($acc['email']) ?></h5><button class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form method="post">
-                  <input type="hidden" name="acc_action" value="edit">
-                  <input type="hidden" name="id" value="<?= (int) $acc['id'] ?>">
-                  <div class="modal-body d-grid gap-3">
-                    <?php if (in_array($acc['role_slug'], ['admin', 'staff'])): ?>
-                    <div>
-                      <label class="form-label">Institution</label>
-                      <select class="form-select" name="institution_id">
-                        <option value="">— none / unassigned —</option>
-                        <?php foreach ($institutions as $i): ?>
-                          <option value="<?= (int) $i['id'] ?>" <?= $i['id'] == $acc['institution_id'] ? 'selected' : '' ?>><?= h($i['name']) ?></option>
-                        <?php endforeach; ?>
-                      </select>
-                      <div class="form-text">Change which institution this account belongs to.</div>
-                    </div>
-                    <?php endif; ?>
-                    <div class="row g-3">
-                      <div class="col-md-6"><label class="form-label">First name</label><input class="form-control"
-                          name="first_name" value="<?= h($acc['first_name']) ?>"></div>
-                      <div class="col-md-6"><label class="form-label">Last name</label><input class="form-control"
-                          name="last_name" value="<?= h($acc['last_name']) ?>"></div>
-                    </div>
-                    <div>
-                      <label class="form-label">New password</label>
-                      <input class="form-control" name="password" placeholder="Leave blank to keep current password">
-                    </div>
-                  </div>
-                  <div class="modal-footer"><button class="btn btn-grad px-4" type="submit">Save changes</button></div>
-                </form>
-              </div>
-            </div>
+      <td>
+        <span class="badge badge-surface">
+          <?= h(ucwords(str_replace('_', ' ', $acc['role_slug']))) ?>
+        </span>
+      </td>
+
+      <td class="text-ia-muted">
+        <?= h($acc['inst_name'] ?? '—') ?>
+      </td>
+
+      <td class="text-ia-muted">
+        <?= $acc['last_login_at']
+          ? h(date('M j, g:i A', strtotime($acc['last_login_at'])))
+          : 'never' ?>
+      </td>
+
+      <td>
+        <span class="badge <?= (int) $acc['is_active'] === 1 ? 'badge-live' : 'badge-off' ?>">
+          <?= (int) $acc['is_active'] === 1 ? 'Active' : 'Inactive' ?>
+        </span>
+      </td>
+ <td class="text-end">
+  <div class="d-inline-flex gap-1">
+
+    <!-- Edit Account -->
+    <button
+      type="button"
+      class="btn btn-sm btn-outline-ia"
+      data-bs-toggle="modal"
+      data-bs-target="#acc-edit-<?= (int) $acc['id'] ?>"
+      title="Edit account"
+      aria-label="Edit account">
+
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round">
+        <path d="M12 20h9"/>
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+      </svg>
+
+    </button>
+
+
+    <!-- Activate / Deactivate -->
+    <form method="post" class="d-inline">
+      <input
+        type="hidden"
+        name="acc_action"
+        value="toggle">
+
+      <input
+        type="hidden"
+        name="id"
+        value="<?= (int) $acc['id'] ?>">
+
+      <button
+        type="submit"
+        class="btn btn-sm btn-outline-ia"
+        title="<?= (int) $acc['is_active'] === 1 ? 'Deactivate account' : 'Activate account' ?>"
+        aria-label="<?= (int) $acc['is_active'] === 1 ? 'Deactivate account' : 'Activate account' ?>">
+
+        <?php if ((int) $acc['is_active'] === 1): ?>
+
+          <!-- Shield -->
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+
+        <?php else: ?>
+
+          <!-- Activate / Rocket -->
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>
+            <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.56-6.05 11a22.35 22.35 0 0 1-3.95 2z"/>
+            <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>
+            <path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>
+            <circle cx="16" cy="8" r="1"/>
+          </svg>
+
+        <?php endif; ?>
+
+      </button>
+    </form>
+
+
+    <!-- Archive / Delete -->
+    <form
+      method="post"
+      class="d-inline"
+      data-delete-form
+      data-confirm="Archive <?= h($acc['email']) ?>?">
+
+      <input
+        type="hidden"
+        name="acc_action"
+        value="delete">
+
+      <input
+        type="hidden"
+        name="id"
+        value="<?= (int) $acc['id'] ?>">
+
+      <button
+        type="submit"
+        class="btn btn-sm btn-outline-ia text-danger"
+        title="Archive account"
+        aria-label="Archive account">
+
+        <!-- Trash -->
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14H6L5 6"/>
+          <path d="M10 11v6"/>
+          <path d="M14 11v6"/>
+          <path d="M9 6V4h6v2"/>
+        </svg>
+
+      </button>
+
+    </form>
+
+  </div>
+</td>
+    </tr>
+
+    <!-- Edit Modal -->
+    <div
+      class="modal fade"
+      id="acc-edit-<?= (int) $acc['id'] ?>"
+      tabindex="-1"
+      aria-hidden="true">
+
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+          <div class="modal-header">
+            <h5 class="modal-title">
+              Edit account — <?= h($acc['email']) ?>
+            </h5>
+
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close">
+            </button>
           </div>
-        <?php endforeach; ?>
-        <?php if (!$accounts): ?>
-          <tr>
-            <td colspan="6">
-              <div class="empty-state">
-                <div class="empty-icon"><?= ia_icon('users', 26) ?></div>
-                <h4>No staff or admins yet</h4>
-                <p>Add admins for your institutions.</p>
+
+          <form method="post">
+
+            <input type="hidden" name="acc_action" value="edit">
+            <input type="hidden" name="id" value="<?= (int) $acc['id'] ?>">
+
+            <div class="modal-body d-grid gap-3">
+
+              <?php if (in_array($acc['role_slug'], ['admin', 'staff'])): ?>
+                <div>
+                  <label class="form-label">Institution</label>
+
+                  <select class="form-select" name="institution_id">
+                    <option value="">— none / unassigned —</option>
+
+                    <?php foreach ($institutions as $i): ?>
+                      <option
+                        value="<?= (int) $i['id'] ?>"
+                        <?= $i['id'] == $acc['institution_id'] ? 'selected' : '' ?>>
+                        <?= h($i['name']) ?>
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
+
+                  <div class="form-text">
+                    Change which institution this account belongs to.
+                  </div>
+                </div>
+              <?php endif; ?>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">First name</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="first_name"
+                    value="<?= h($acc['first_name']) ?>">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Last name</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="last_name"
+                    value="<?= h($acc['last_name']) ?>">
+                </div>
               </div>
-            </td>
-          </tr><?php endif; ?>
-      </tbody>
+
+              <div>
+                <label class="form-label">New password</label>
+
+                <input
+                  type="password"
+                  class="form-control"
+                  name="password"
+                  placeholder="Leave blank to keep current password">
+              </div>
+
+            </div>
+
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                data-bs-dismiss="modal">
+                Cancel
+              </button>
+
+              <button
+                type="submit"
+                class="btn btn-grad px-4">
+                Save changes
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+  <?php endforeach; ?>
+
+  <?php if (!$accounts): ?>
+    <tr>
+      <td colspan="6">
+        <div class="empty-state">
+          <div class="empty-icon">
+            <?= ia_icon('users', 26) ?>
+          </div>
+
+          <h4>No staff or admins yet</h4>
+          <p>Add admins for your institutions.</p>
+        </div>
+      </td>
+    </tr>
+  <?php endif; ?>
+</tbody>
     </table>
   </div>
 </div>

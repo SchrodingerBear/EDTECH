@@ -322,7 +322,7 @@ function icon(string $name, int $size = 19): string
 /** URL to a file under organizations/{slug}/… */
 function org_url(string $slug, string $sub = ''): string
 {
-    return ORG_ROOT_URL . '/' . rawurlencode($slug) . ($sub !== '' ? '/' . ltrim($sub, '/') : '');
+    return ORG_ROOT_URL . '/index.php?org=' . rawurlencode($slug);
 }
 
 /** Start a guarded session (safe to call multiple times). */
@@ -1231,15 +1231,12 @@ function sync_institution_config(int $iid): void
 
     file_put_contents($configPath, json_encode($cfg, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
-    // Regenerate index.html from template (with name substitutions)
-    $tplPath    = ROOT_PATH . '/templates/org_pack/index.html';
+    // Regenerate index.php from template (PHP template doesn't need templating - reads config.json dynamically)
+    $tplPath    = ROOT_PATH . '/templates/org_pack/index.php';
     $tplCssPath = ROOT_PATH . '/templates/org_pack/assets/style.css';
     $orgDir     = ROOT_PATH . '/' . ltrim($inst['folder_path'], '/');
     if (is_file($tplPath)) {
-        $html = file_get_contents($tplPath);
-        $html = str_replace('{{NAME}}', htmlspecialchars($inst['name'], ENT_QUOTES), $html);
-        $html = str_replace('{{SHORT}}', htmlspecialchars($inst['short_name'] ?: $inst['name'], ENT_QUOTES), $html);
-        file_put_contents($orgDir . '/index.html', $html);
+        copy($tplPath, $orgDir . '/index.php');
     }
     if (is_file($tplCssPath)) {
         copy($tplCssPath, $orgDir . '/assets/style.css');

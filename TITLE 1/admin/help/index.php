@@ -59,7 +59,40 @@ $matrix = [
   ['Help Center', 'yes', 'yes', 'yes', 'yes', 'yes'],
 ];
 ?>
-<div class="row g-4">
+<?php if (in_array($role, ['owner', 'system_admin', 'system_staff'])): ?>
+  <div class="ia-card mt-4">
+    <div class="card-head">
+      <h3>Feature matrix</h3>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-ia">
+        <thead>
+          <tr><?php foreach ($matrix[0] as $h): ?>
+              <th class="<?= $h === 'Feature' ? '' : 'text-center' ?>"><?= h($h) ?></th><?php endforeach; ?>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach (array_slice($matrix, 1) as $row): ?>
+            <tr>
+              <?php foreach ($row as $i => $cell): ?>
+                <td class="<?= $i === 0 ? 'fw-semibold' : 'text-center' ?>">
+                  <?php if (in_array($cell, ['yes', 'no'], true)): ?>
+                    <span
+                      class="badge <?= $cell === 'yes' ? 'badge-live' : 'badge-off' ?>"><?= $cell === 'yes' ? '✓ yes' : 'no' ?></span>
+                  <?php else: ?>
+                    <span class="text-ia-muted"><?= h($cell) ?></span>
+                  <?php endif; ?>
+                </td>
+              <?php endforeach; ?>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<?php endif; ?>
+
+<div class="row g-4 mt-2">
   <div class="col-lg-8">
     <div class="ia-card">
       <div class="card-head">
@@ -117,37 +150,6 @@ $matrix = [
   </div>
 </div>
 
-<?php if (in_array($role, ['owner', 'system_admin', 'system_staff'])): ?>
-  <div class="ia-card mt-4">
-    <div class="card-head">
-      <h3>Feature matrix</h3>
-    </div>
-    <div class="table-responsive">
-      <table class="table table-ia">
-        <thead>
-          <tr><?php foreach ($matrix[0] as $h): ?>
-              <th class="<?= $h === 'Feature' ? '' : 'text-center' ?>"><?= h($h) ?></th><?php endforeach; ?>
-          </tr>
-        </thead>
-        <tbody>
-          <?php foreach (array_slice($matrix, 1) as $row): ?>
-            <tr>
-              <?php foreach ($row as $i => $cell): ?>
-                <td class="<?= $i === 0 ? 'fw-semibold' : 'text-center' ?>">
-                  <?php if (in_array($cell, ['yes', 'no'], true)): ?>
-                    <span
-                      class="badge <?= $cell === 'yes' ? 'badge-live' : 'badge-off' ?>"><?= $cell === 'yes' ? '✓ yes' : 'no' ?></span>
-                  <?php else: ?>
-                    <span class="text-ia-muted"><?= h($cell) ?></span>
-                  <?php endif; ?>
-                </td>
-              <?php endforeach; ?>
-            </tr>
-          <?php endforeach; ?>
-        </tbody>
-      </table>
-    </div>
-  </div>
-<?php endif; ?>
+
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>

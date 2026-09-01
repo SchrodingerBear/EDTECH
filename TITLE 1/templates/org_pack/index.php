@@ -1,17 +1,72 @@
-<!DOCTYPE html>
+<?php
+/**
+ * Innovatech PH — Organization landing page (index.php)
+ * 
+ * Directly loads config.json with zero browser caching.
+ * Server controls headers to always serve fresh config.
+ * No JavaScript cache-busting needed.
+ */
+
+// Prevent all caching
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+header('Content-Type: text/html; charset=utf-8');
+
+// Load config
+$configFile = __DIR__ . '/config.json';
+$config = null;
+$published = false;
+$name = 'Organization';
+$shortName = 'ORG';
+
+if (is_file($configFile)) {
+    $raw = file_get_contents($configFile);
+    $config = json_decode($raw, true);
+    $published = $config['published'] ?? false;
+    $name = $config['name'] ?? 'Organization';
+    $shortName = $config['short_name'] ?? 'ORG';
+}
+
+// Preview bypass for admins
+$isPreview = ($_GET['preview'] ?? '') === '1';
+
+// If not published and not preview mode, show not-published overlay
+if (!$published && !$isPreview) {
+    ?><!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#0b0d16">
-  <title>Immaculada Concepcion College · Virtual Campus</title>
-  <!--
-    Innovatech PH org landing template.
-    Renders 360_rotation (A-Frame) or floor_plan mode from config.json.
-    Floor-plan markers use PERCENTAGE coordinates (0–100) so every screen stays aligned.
-    Supports: popup, navigate-to-360-scene, navigate-to-sub-floor-plan.
-    Edit visually via the admin dashboard; this file is generated, not hand-edited.
-  -->
+  <title>{{NAME}} · Virtual Campus</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <div id="not-published" class="np-overlay">
+    <div class="np-card">
+      <div class="brand-chip"><span class="dot"></span> {{SHORT}}</div>
+      <div class="np-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22"/><path d="M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg>
+      </div>
+      <h1 class="np-title">{{NAME}}</h1>
+      <p class="np-msg">This virtual campus experience is not yet published.<br>Please check back soon.</p>
+      <p class="np-foot">Powered by Innovatech PH</p>
+    </div>
+  </div>
+</body>
+</html><?php
+    exit;
+}
+
+// Config is published — render full page
+?><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d16">
+  <title>{{NAME}} · Virtual Campus</title>
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -33,7 +88,7 @@
       <button class="round-btn" id="btn-360-back" title="Back to floor plan">←</button>
     </div>
     <div class="hud top-right">
-      <div class="brand-chip"><span class="dot"></span> ICC</div>
+      <div class="brand-chip"><span class="dot"></span> {{SHORT}}</div>
     </div>
     <div class="hud bottom hint" id="scene-hint">Drag to look around</div>
 
@@ -52,34 +107,26 @@
   <div id="mode-floor" class="mode hidden">
     <div class="fp-stage" id="fp-stage">
       <div class="fp-wrap" id="fp-wrap">
-        <img id="fp-image" src="" alt="Immaculada Concepcion College floor plan">
+        <img id="fp-image" src="" alt="{{NAME}} floor plan">
         <div id="fp-markers" class="fp-markers"></div>
       </div>
       <div class="fp-buttons">
         <button class="round-btn" id="btn-fp-back" title="Go back">←</button>
-        <div class="brand-chip"><span class="dot"></span> <span id="fp-title">ICC</span></div>
+        <div class="brand-chip"><span class="dot"></span> <span id="fp-title">{{SHORT}}</span></div>
       </div>
     </div>
   </div>
 
-  <!-- ================================ OVERLAY ================================ -->
+  <!-- ================================ LOADER ================================ -->
   <div id="loader" class="loader">
     <div class="spinner"></div>
-    <p>Immaculada Concepcion College</p>
+    <p>{{NAME}}</p>
   </div>
 
-  <!-- ====================== NOT-PUBLISHED OVERLAY ====================== -->
-  <div id="not-published" class="np-overlay hidden">
-    <div class="np-card">
-      <div class="brand-chip"><span class="dot"></span> ICC</div>
-      <div class="np-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22"/><path d="M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg>
-      </div>
-      <h1 class="np-title">Immaculada Concepcion College</h1>
-      <p class="np-msg">This virtual campus experience is not yet published.<br>Please check back soon.</p>
-      <p class="np-foot">Powered by Innovatech PH</p>
-    </div>
-  </div>
+  <!-- ====================== CONFIG EMBEDDED IN PAGE ====================== -->
+  <script>
+  window.__CONFIG__ = <?= json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+  </script>
 
   <!-- A-Frame loaded lazily in openScene() to prevent blocking floor plan -->
   <script>
@@ -91,7 +138,7 @@
       mfp:    $('#mode-floor'),
     };
 
-    let config       = null;
+    let config       = window.__CONFIG__; // Use embedded config, always fresh from PHP
     let fpStack      = [];   // navigation stack of floor plan states [{image, markers, title}]
     let currentMode  = null; // 'floor' | '360'
     let sceneCount   = 0;    // number of scenes available for the carousel
@@ -107,13 +154,8 @@
     }
 
     // ─── boot ────────────────────────────────────────────────────────────────
-    async function boot() {
-      let published = true;
-      try {
-        const res = await fetch('config.json', { cache: 'no-store' });
-        config = await res.json();
-        published = config.published !== false;
-      } catch (e) {
+    function boot() {
+      if (!config) {
         config = {
           landing_mode: '360_rotation',
           require_landscape_mobile: true,
@@ -121,14 +163,6 @@
           starting_floor_plan: {},
           starting_scene: {}
         };
-      }
-
-      // Not-yet-published guard (admins preview via ?preview=1)
-      const isPreview = new URLSearchParams(location.search).get('preview') === '1';
-      if (!published && !isPreview) {
-        els.loader.classList.add('hidden');
-        $('#not-published') && $('#not-published').classList.remove('hidden');
-        return;
       }
 
       // Apply theme tokens
@@ -143,7 +177,7 @@
       renderSceneCarousel();
 
       if (config.landing_mode === 'floor_plan' && config.starting_floor_plan && config.starting_floor_plan.image_path) {
-        openFloorPlan(config.starting_floor_plan.image_path, config.floor_plan_markers || [], config.short_name || 'ICC', false);
+        openFloorPlan(config.starting_floor_plan.image_path, config.floor_plan_markers || [], config.short_name || 'ORG', false);
       } else if (config.starting_scene && config.starting_scene.equirect_path) {
         openScene(config.starting_scene);
       } else {
@@ -169,7 +203,7 @@
       }
       currentMarkers = markers;
       $('#fp-image').src = imagePath;
-      $('#fp-title').textContent = title || 'ICC';
+      $('#fp-title').textContent = title || 'ORG';
       renderMarkers(markers);
       activate('floor');
     }
@@ -384,7 +418,7 @@
         openFloorPlan(
           config.starting_floor_plan.image_path,
           config.floor_plan_markers || [],
-          config.short_name || 'ICC',
+          config.short_name || 'ORG',
           false
         );
         fpStack = [];
@@ -425,4 +459,4 @@
   })();
   </script>
 </body>
-</html>
+</html><?php

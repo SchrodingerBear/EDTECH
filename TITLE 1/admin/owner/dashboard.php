@@ -46,7 +46,7 @@ require_once __DIR__ . '/../layout/header.php';
     ['Sign-ins', $stats['logins'], 'shield', 'Recorded logins', 'logs'],
   ]; ?>
   <?php foreach ($statCards as [$label, $num, $icon, $note, $link]): ?>
-    <div class="col-6 col-xl-3">
+    <div class="col-12 col-md-6 col-lg-4 col-xl-3">
       <a href="<?= h($link) ?>" class="stat-card-link d-block text-decoration-none text-reset">
         <div class="ia-stat">
           <div class="stat-icon"><?= ia_icon($icon) ?></div>

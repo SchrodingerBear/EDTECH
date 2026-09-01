@@ -1,18 +1,130 @@
-<!DOCTYPE html>
+<?php
+/**
+ * Innovatech PH — Unified organization landing page
+ * 
+ * Serves ALL org landing pages from this single file.
+ * Queries DB directly for published status (source of truth).
+ * Reads config.json only for scene/hotspot data.
+ */
+
+require_once dirname(__DIR__) . '/includes/bootstrap.php';
+
+// Prevent all caching
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+header('Content-Type: text/html; charset=utf-8');
+
+// Extract org slug from query parameter (?org=slug) set by .htaccess rewrite
+$slug = $_GET['org'] ?? null;
+
+// Fallback: try to extract from REQUEST_URI (for direct requests)
+if (!$slug) {
+    $pathParts = array_filter(explode('/', trim($_SERVER['REQUEST_URI'] ?? '', '/')));
+    $orgIndex = array_search('organizations', $pathParts, true);
+    $slug = $pathParts[$orgIndex + 1] ?? null;
+}
+
+if (!$slug || !preg_match('/^[a-z0-9\-]+$/', $slug)) {
+    http_response_code(404);
+    die('Organization not found.');
+}
+
+// Query DB for org — DB is source of truth, not config.json
+$org = crud()->raw(
+    "SELECT id, name, short_name, is_published, landing_mode, folder_path 
+     FROM institutions 
+     WHERE slug = :slug AND deleted_at IS NULL",
+    ['slug' => $slug]
+)->fetch();
+
+if (!$org) {
+    http_response_code(404);
+    die('Organization not found.');
+}
+
+// Check admin preview mode
+$isPreview = ($_GET['preview'] ?? '') === '1';
+
+// If not published, show not-published overlay (DB is truth)
+if (!(int)$org['is_published'] && !$isPreview) {
+    ?><!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#0b0d16">
-  <title>{{NAME}} · Virtual Campus</title>
-  <!--
-    Innovatech PH org landing template.
-    Renders 360_rotation (A-Frame) or floor_plan mode from config.json.
-    Floor-plan markers use PERCENTAGE coordinates (0–100) so every screen stays aligned.
-    Supports: popup, navigate-to-360-scene, navigate-to-sub-floor-plan.
-    Edit visually via the admin dashboard; this file is generated, not hand-edited.
-  -->
-  <link rel="stylesheet" href="assets/style.css">
+  <title><?= htmlspecialchars($org['name']) ?> · Virtual Campus</title>
+  <link rel="stylesheet" href="<?= htmlspecialchars($slug) ?>/assets/style.css">
+</head>
+<body>
+  <div id="not-published" class="np-overlay">
+    <div class="np-card">
+      <div class="brand-chip"><span class="dot"></span> <?= htmlspecialchars($org['short_name'] ?: $org['name']) ?></div>
+      <div class="np-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22"/><path d="M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg>
+      </div>
+      <h1 class="np-title"><?= htmlspecialchars($org['name']) ?></h1>
+      <p class="np-msg">This virtual campus experience is not yet published.<br>Please check back soon.</p>
+      <p class="np-foot">Powered by Innovatech PH</p>
+    </div>
+  </div>
+</body>
+</html><?php
+    exit;
+}
+
+// Published — load config.json for scene/hotspot data
+$configFile = dirname(__DIR__) . '/' . ltrim($org['folder_path'], '/') . '/config.json';
+$config = null;
+
+if (is_file($configFile)) {
+    $raw = file_get_contents($configFile);
+    $config = json_decode($raw, true);
+}
+
+if (!$config) {
+    $config = [
+        'landing_mode' => $org['landing_mode'] ?: '360_rotation',
+        'scenes' => [],
+        'starting_scene' => [],
+    ];
+}
+
+// Convert all absolute paths to relative (for cross-origin safety)
+function makePathsRelative(&$arr, $slug) {
+    if (!is_array($arr)) return;
+    
+    $pathKeys = ['equirect_path', 'featured_image_path', 'image_path', 'pano_url', 'sub_fp_image', 'floor_plan_image', 'scene_equirect'];
+    
+    foreach ($arr as $k => &$v) {
+        if (is_string($v)) {
+            // Remove absolute /organizations/{slug}/ prefix if present
+            $v = preg_replace('#^/organizations/' . preg_quote($slug, '#') . '/#', '', $v);
+            // Only prefix relative paths with slug if this is a path key
+            if (in_array($k, $pathKeys) && $v && $v[0] !== '/' && strpos($v, 'http') === false) {
+                $v = $slug . '/' . $v;
+            }
+        } elseif (is_array($v)) {
+            makePathsRelative($v, $slug);
+        }
+    }
+}
+makePathsRelative($config, $slug);
+
+// Ensure org details from DB override config (DB is truth)
+$config['institution_id'] = (int)$org['id'];
+$config['name'] = $org['name'];
+$config['short_name'] = $org['short_name'];
+$config['published'] = true; // We already checked this above
+?><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d16">
+  <title><?= htmlspecialchars($org['name']) ?> · Virtual Campus</title>
+  <link rel="stylesheet" href="<?= htmlspecialchars($slug) ?>/assets/style.css">
 </head>
 <body>
   <!-- =========================== 360 MODE (A-Frame) =========================== -->
@@ -33,7 +145,7 @@
       <button class="round-btn" id="btn-360-back" title="Back to floor plan">←</button>
     </div>
     <div class="hud top-right">
-      <div class="brand-chip"><span class="dot"></span> {{SHORT}}</div>
+      <div class="brand-chip"><span class="dot"></span> <?= htmlspecialchars($org['short_name'] ?: $org['name']) ?></div>
     </div>
     <div class="hud bottom hint" id="scene-hint">Drag to look around</div>
 
@@ -52,34 +164,26 @@
   <div id="mode-floor" class="mode hidden">
     <div class="fp-stage" id="fp-stage">
       <div class="fp-wrap" id="fp-wrap">
-        <img id="fp-image" src="" alt="{{NAME}} floor plan">
+        <img id="fp-image" src="" alt="<?= htmlspecialchars($org['name']) ?> floor plan">
         <div id="fp-markers" class="fp-markers"></div>
       </div>
       <div class="fp-buttons">
         <button class="round-btn" id="btn-fp-back" title="Go back">←</button>
-        <div class="brand-chip"><span class="dot"></span> <span id="fp-title">{{SHORT}}</span></div>
+        <div class="brand-chip"><span class="dot"></span> <span id="fp-title"><?= htmlspecialchars($org['short_name'] ?: $org['name']) ?></span></div>
       </div>
     </div>
   </div>
 
-  <!-- ================================ OVERLAY ================================ -->
+  <!-- ================================ LOADER ================================ -->
   <div id="loader" class="loader">
     <div class="spinner"></div>
-    <p>{{NAME}}</p>
+    <p><?= htmlspecialchars($org['name']) ?></p>
   </div>
 
-  <!-- ====================== NOT-PUBLISHED OVERLAY ====================== -->
-  <div id="not-published" class="np-overlay hidden">
-    <div class="np-card">
-      <div class="brand-chip"><span class="dot"></span> {{SHORT}}</div>
-      <div class="np-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.17a2 2 0 0 0-.59-1.42L12 12l-4.41 4.41A2 2 0 0 0 7 17.83V22"/><path d="M7 2v4.17a2 2 0 0 0 .59 1.42L12 12l4.41-4.41A2 2 0 0 0 17 6.17V2"/></svg>
-      </div>
-      <h1 class="np-title">{{NAME}}</h1>
-      <p class="np-msg">This virtual campus experience is not yet published.<br>Please check back soon.</p>
-      <p class="np-foot">Powered by Innovatech PH</p>
-    </div>
-  </div>
+  <!-- ====================== CONFIG EMBEDDED IN PAGE ====================== -->
+  <script>
+  window.__CONFIG__ = <?= json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+  </script>
 
   <!-- A-Frame loaded lazily in openScene() to prevent blocking floor plan -->
   <script>
@@ -91,12 +195,11 @@
       mfp:    $('#mode-floor'),
     };
 
-    let config       = null;
-    let fpStack      = [];   // navigation stack of floor plan states [{image, markers, title}]
-    let currentMode  = null; // 'floor' | '360'
-    let sceneCount   = 0;    // number of scenes available for the carousel
+    let config       = window.__CONFIG__;
+    let fpStack      = [];
+    let currentMode  = null;
+    let sceneCount   = 0;
 
-    // Helper to convert yaw/pitch to XYZ on sphere of radius r
     function yawPitchToXYZ(yawDeg, pitchDeg, r = 8) {
       const y = (yawDeg  || 0) * Math.PI / 180;
       const p = (pitchDeg || 0) * Math.PI / 180;
@@ -106,15 +209,8 @@
       return `${x.toFixed(4)} ${vY.toFixed(4)} ${z.toFixed(4)}`;
     }
 
-    // ─── boot ────────────────────────────────────────────────────────────────
-    async function boot() {
-      let published = true;
-      try {
-        // Cache-bust config.json with timestamp to always fetch latest from server
-        const res = await fetch('config.json?v=' + Date.now(), { cache: 'no-store' });
-        config = await res.json();
-        published = config.published !== false;
-      } catch (e) {
+    function boot() {
+      if (!config) {
         config = {
           landing_mode: '360_rotation',
           require_landscape_mobile: true,
@@ -124,15 +220,6 @@
         };
       }
 
-      // Not-yet-published guard (admins preview via ?preview=1)
-      const isPreview = new URLSearchParams(location.search).get('preview') === '1';
-      if (!published && !isPreview) {
-        els.loader.classList.add('hidden');
-        $('#not-published') && $('#not-published').classList.remove('hidden');
-        return;
-      }
-
-      // Apply theme tokens
       if (config.theme) {
         const r = document.documentElement.style;
         if (config.theme.primary)   r.setProperty('--ia-primary', config.theme.primary);
@@ -140,19 +227,17 @@
         if (config.theme.secondary) r.setProperty('--ia-secondary', config.theme.secondary);
       }
 
-      // Render the 360 scene carousel from config
       renderSceneCarousel();
 
       if (config.landing_mode === 'floor_plan' && config.starting_floor_plan && config.starting_floor_plan.image_path) {
-        openFloorPlan(config.starting_floor_plan.image_path, config.floor_plan_markers || [], config.short_name || '{{SHORT}}', false);
+        openFloorPlan(config.starting_floor_plan.image_path, config.floor_plan_markers || [], config.short_name || 'ORG', false);
       } else if (config.starting_scene && config.starting_scene.equirect_path) {
         openScene(config.starting_scene);
       } else {
-        activate('floor'); // fallback
+        activate('floor');
       }
     }
 
-    // ─── activate mode ───────────────────────────────────────────────────────
     function activate(mode) {
       currentMode = mode;
       els.m360.classList.toggle('hidden', mode !== '360');
@@ -162,15 +247,13 @@
       $('#scene-carousel').classList.toggle('hidden', !showCarousel);
     }
 
-    // ─── floor plan ──────────────────────────────────────────────────────────
     function openFloorPlan(imagePath, markers, title, pushStack) {
       if (pushStack !== false) {
-        // save current state to stack for back navigation
         fpStack.push({ imagePath: $('#fp-image').src, markers: currentMarkers, title: $('#fp-title').textContent });
       }
       currentMarkers = markers;
       $('#fp-image').src = imagePath;
-      $('#fp-title').textContent = title || '{{SHORT}}';
+      $('#fp-title').textContent = title || 'ORG';
       renderMarkers(markers);
       activate('floor');
     }
@@ -190,7 +273,6 @@
         b.setAttribute('aria-label', m.label);
         b.title = m.label;
 
-        // Label chip under the dot
         const chip = document.createElement('span');
         chip.className = 'fp-marker-label';
         chip.textContent = m.label;
@@ -213,14 +295,11 @@
       } else if (m.target_type === 'floor_plan' && m.sub_fp_image) {
         openFloorPlan(m.sub_fp_image, m.sub_markers || [], m.sub_fp_title || m.label, true);
       } else {
-        // popup (or fallback for non-linked markers)
         openPopup(m);
       }
     }
 
-    // ─── 360 scene ───────────────────────────────────────────────────────────
     function openScene(scene) {
-      // Lazily load A-Frame before activating 360 mode
       loadAFrame(() => _doOpenScene(scene));
     }
     function _doOpenScene(scene) {
@@ -228,7 +307,6 @@
       const skyEl  = $('#sky');
       const hintEl = $('#scene-hint');
 
-      // Dismiss any open popup and highlight the active carousel card
       $('#info-panel').classList.add('hidden');
       setActiveScene(scene.id);
 
@@ -236,10 +314,8 @@
         skyEl.setAttribute('src', '#pano');
         skyEl.setAttribute('rotation', `0 ${scene.initial_yaw || 0} 0`);
         
-        // Remove old hotspots
         document.querySelectorAll('.scene-hs').forEach(e => e.remove());
 
-        // Render new hotspots from config
         const sceneData = config.scenes && config.scenes[scene.id];
         if (sceneData && sceneData.hotspots) {
           const aScene = $('#aframe-scene');
@@ -248,9 +324,9 @@
             entity.className = 'scene-hs';
             entity.setAttribute('position', yawPitchToXYZ(hs.yaw, hs.pitch, 8));
             
-            let color = '#38b2ac'; // info
+            let color = '#38b2ac';
             if (hs.hotspot_type === 'navigation') {
-              color = '#5b5bd6'; // nav
+              color = '#5b5bd6';
             } else if (hs.hotspot_type === 'facility') {
               color = '#ed8936';
             }
@@ -263,7 +339,6 @@
               <a-text value="${hs.label}" align="center" position="0 0.38 0" color="#fff" width="3" wrap-count="20"></a-text>
             `;
 
-            // Click behavior
             entity.querySelector('a-sphere').addEventListener('click', () => {
               if (hs.hotspot_type === 'navigation' && hs.to_scene_id) {
                 openScene({
@@ -292,13 +367,12 @@
       hintEl.textContent = scene.title ? `${scene.title} — drag to look around` : 'Drag to look around';
 
       if (!panoEl.complete) {
-        // trigger load; onload fires when img loads
+        // trigger load
       } else {
         activate('360');
       }
     }
 
-    // ─── 360 scene carousel ───────────────────────────────────────────────────
     function renderSceneCarousel() {
       const track = $('#scene-carousel-track');
       track.innerHTML = '';
@@ -365,7 +439,6 @@
       });
     }
 
-    // ─── info popup ──────────────────────────────────────────────────────────
     function openPopup(m) {
       $('#info-title').textContent = m.popup_title || m.label || 'Location';
       const body = $('#info-body');
@@ -373,19 +446,16 @@
       $('#info-panel').classList.remove('hidden');
     }
 
-    // ─── back navigation ─────────────────────────────────────────────────────
     $('#info-close') && $('#info-close').addEventListener('click', () => {
       $('#info-panel').classList.add('hidden');
     });
 
-    // Back from 360 → floor plan (or root)
     $('#btn-360-back') && $('#btn-360-back').addEventListener('click', () => {
       if (config.landing_mode === 'floor_plan') {
-        // return to the floor plan we came from
         openFloorPlan(
           config.starting_floor_plan.image_path,
           config.floor_plan_markers || [],
-          config.short_name || '{{SHORT}}',
+          config.short_name || 'ORG',
           false
         );
         fpStack = [];
@@ -394,7 +464,6 @@
       }
     });
 
-    // Back from floor plan → previous floor plan or homepage
     $('#btn-fp-back') && $('#btn-fp-back').addEventListener('click', () => {
       if (fpStack.length > 0) {
         const prev = fpStack.pop();
@@ -403,12 +472,10 @@
         $('#fp-title').textContent = prev.title;
         renderMarkers(prev.markers);
       } else {
-        // If we're at root floor plan, back goes to parent page if any
         window.history.back();
       }
     });
 
-    // ─── lazy A-Frame loader (only injects when 360 mode is needed) ──────────
     let aframeReady = false;
     let aframeCallbacks = [];
     function loadAFrame(cb) {
@@ -417,51 +484,12 @@
       if (document.getElementById('aframe-script')) return;
       const s = document.createElement('script');
       s.id = 'aframe-script';
-      s.src = 'assets/aframe.min.js';
+      s.src = '<?= htmlspecialchars($slug) ?>/assets/aframe.min.js';
       s.onload = () => { aframeReady = true; aframeCallbacks.forEach(fn => fn()); aframeCallbacks = []; };
       document.head.appendChild(s);
     }
 
-    // ─── config watcher: auto-refresh on publish/draft toggle ───────────────
-    let lastConfigHash = null;
-    function watchConfig() {
-      setInterval(async () => {
-        try {
-          const res = await fetch('config.json?v=' + Date.now(), { cache: 'no-store' });
-          const newConfig = await res.json();
-          const newHash = JSON.stringify({ 
-            published: newConfig.published,
-            landing_mode: newConfig.landing_mode,
-            scene_count: Object.keys(newConfig.scenes || {}).length
-          });
-          if (lastConfigHash && newHash !== lastConfigHash) {
-            // Config changed — reload page to reflect publish/draft toggle, mode switch, etc.
-            window.location.reload();
-          }
-          lastConfigHash = newHash;
-        } catch (e) {
-          // Silent fail on fetch error (offline, 404, etc)
-        }
-      }, 8000); // Check every 8 seconds
-    }
-
-    // Auto-refresh when page regains focus (user switches back to tab)
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) {
-        // Page just became visible
-        fetch('config.json?v=' + Date.now(), { cache: 'no-store' })
-          .then(r => r.json())
-          .then(newConfig => {
-            if (newConfig.published !== config.published) {
-              window.location.reload();
-            }
-          })
-          .catch(() => {});
-      }
-    });
-
     boot();
-    watchConfig();
   })();
   </script>
 </body>

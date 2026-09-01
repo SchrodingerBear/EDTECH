@@ -109,63 +109,202 @@ $rolesName = ['system_admin' => 'System Admin', 'system_staff' => 'System Staff'
   <div class="table-responsive">
     <table class="table table-ia">
       <thead><tr><th>Account</th><th>Role</th><th>Institution</th><th>Current access</th><th class="text-end">Configure</th></tr></thead>
-      <tbody>
-        <?php foreach ($accounts as $acc): $slug = $acc['role_slug']; $has = isset($accessMap[$acc['id']]) ? array_keys($accessMap[$acc['id']]) : []; ?>
-          <tr>
-            <td>
-              <div class="fw-bold"><?= h($acc['first_name'] . ' ' . $acc['last_name']) ?></div>
-              <div class="fs-125 text-ia-muted"><?= h($acc['email']) ?></div>
-            </td>
-            <td><span class="badge badge-surface"><?= h($rolesName[$slug] ?? ucfirst($slug)) ?></span></td>
-            <td class="text-ia-muted"><?= h($acc['inst_name'] ?? '—') ?></td>
-            <td>
-              <?php if (!$has): ?>
-                <span class="badge badge-live">All pages</span>
-              <?php else: ?>
-                <span class="badge badge-draft"><?= count($has) ?>/<?= count($pageCatalog[$slug]) ?> pages</span>
-              <?php endif; ?>
-            </td>
-            <td class="text-end">
-              <button class="btn btn-sm btn-outline-ia" data-bs-toggle="modal" data-bs-target="#access-modal-<?= (int) $acc['id'] ?>">
-                <?= ia_icon('shield', 13) ?> Access
-              </button>
-            </td>
-          </tr>
+   <tbody>
+  <?php foreach ($accounts as $acc): ?>
+    <?php
+      $slug = $acc['role_slug'];
+      $has = isset($accessMap[$acc['id']])
+        ? array_keys($accessMap[$acc['id']])
+        : [];
+    ?>
 
-          <div class="modal fade" id="access-modal-<?= (int) $acc['id'] ?>" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Page access — <?= h($acc['first_name'] . ' ' . $acc['last_name']) ?></h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
-              </div>
-              <form method="post">
-                <input type="hidden" name="access_action" value="save">
-                <input type="hidden" name="user_id" value="<?= (int) $acc['id'] ?>">
-                <div class="modal-body">
-                  <p class="fs-13 text-ia-muted"><?= h($acc['email']) ?> · <?= h($rolesName[$slug] ?? ucfirst($slug)) ?></p>
-                  <p class="fs-125 text-ia-muted">
-                    Tick the pages this account may open. Leave all unticked for <strong>full access</strong> (recommended default).
-                  </p>
-                  <div class="d-grid gap-2">
-                    <?php foreach ($pageCatalog[$slug] as [$key, $label]): ?>
-                      <label class="d-flex align-items-center gap-3 p-3 rounded-4 perm-option">
-                        <input class="form-check-input mt-0" type="checkbox" name="page_keys[]" value="<?= h($key) ?>" <?= (isset($accessMap[$acc['id']][$key]) || empty($has)) ? 'checked' : '' ?>>
-                        <span class="fw-semibold fs-14"><?= h($label) ?></span>
-                        <code class="ms-auto text-muted ia-micro"><?= h($key) ?></code>
-                      </label>
-                    <?php endforeach; ?>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button class="btn btn-outline-ia" type="button" data-bs-dismiss="modal">Cancel</button>
-                  <button class="btn btn-grad px-4" type="submit">Save access</button>
-                </div>
-              </form>
-            </div></div>
+    <tr>
+      <td>
+        <div class="fw-bold">
+          <?= h($acc['first_name'] . ' ' . $acc['last_name']) ?>
+        </div>
+
+        <div class="fs-125 text-ia-muted">
+          <?= h($acc['email']) ?>
+        </div>
+      </td>
+
+      <td>
+        <span class="badge badge-surface">
+          <?= h($rolesName[$slug] ?? ucfirst($slug)) ?>
+        </span>
+      </td>
+
+      <td class="text-ia-muted">
+        <?= h($acc['inst_name'] ?? '—') ?>
+      </td>
+
+      <td>
+        <?php if (!$has): ?>
+          <span class="badge badge-live">
+            All pages
+          </span>
+        <?php else: ?>
+          <span class="badge badge-draft">
+            <?= count($has) ?>/<?= count($pageCatalog[$slug]) ?> pages
+          </span>
+        <?php endif; ?>
+      </td>
+
+      <td class="text-end">
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-ia"
+          data-bs-toggle="modal"
+          data-bs-target="#access-modal-<?= (int) $acc['id'] ?>"
+          title="Manage page access"
+          aria-label="Manage page access">
+
+          <?= ia_icon('shield', 14) ?>
+
+        </button>
+      </td>
+    </tr>
+
+
+    <!-- Access Modal -->
+    <div
+      class="modal fade"
+      id="access-modal-<?= (int) $acc['id'] ?>"
+      tabindex="-1"
+      aria-hidden="true">
+
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+
+        <div class="modal-content">
+
+          <div class="modal-header">
+
+            <h5 class="modal-title">
+              Page access —
+              <?= h($acc['first_name'] . ' ' . $acc['last_name']) ?>
+            </h5>
+
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close">
+            </button>
+
           </div>
-        <?php endforeach; ?>
-        <?php if (!$accounts): ?><tr><td colspan="5"><div class="empty-state"><div class="empty-icon"><?= ia_icon('shield', 26) ?></div><h4>No accounts to manage</h4><p>Create accounts first under Accounts.</p></div></td></tr><?php endif; ?>
-      </tbody>
+
+          <form method="post">
+
+            <input
+              type="hidden"
+              name="access_action"
+              value="save">
+
+            <input
+              type="hidden"
+              name="user_id"
+              value="<?= (int) $acc['id'] ?>">
+
+            <div class="modal-body">
+
+              <p class="fs-13 text-ia-muted">
+                <?= h($acc['email']) ?>
+                ·
+                <?= h($rolesName[$slug] ?? ucfirst($slug)) ?>
+              </p>
+
+              <p class="fs-125 text-ia-muted">
+                Tick the pages this account may open.
+                Leave all unticked for
+                <strong>full access</strong>
+                (recommended default).
+              </p>
+
+              <div class="d-grid gap-2">
+
+                <?php foreach ($pageCatalog[$slug] as [$key, $label]): ?>
+
+                  <label
+                    class="d-flex align-items-center gap-3 p-3 rounded-4 perm-option">
+
+                    <input
+                      class="form-check-input mt-0"
+                      type="checkbox"
+                      name="page_keys[]"
+                      value="<?= h($key) ?>"
+                      <?= (
+                        isset($accessMap[$acc['id']][$key])
+                        || empty($has)
+                      ) ? 'checked' : '' ?>>
+
+                    <span class="fw-semibold fs-14">
+                      <?= h($label) ?>
+                    </span>
+
+                    <code class="ms-auto text-muted ia-micro">
+                      <?= h($key) ?>
+                    </code>
+
+                  </label>
+
+                <?php endforeach; ?>
+
+              </div>
+
+            </div>
+
+            <div class="modal-footer">
+
+              <button
+                class="btn btn-outline-ia"
+                type="button"
+                data-bs-dismiss="modal">
+                Cancel
+              </button>
+
+              <button
+                class="btn btn-grad px-4"
+                type="submit">
+                Save access
+              </button>
+
+            </div>
+
+          </form>
+
+        </div>
+      </div>
+    </div>
+
+  <?php endforeach; ?>
+
+
+  <?php if (!$accounts): ?>
+
+    <tr>
+      <td colspan="5">
+
+        <div class="empty-state">
+
+          <div class="empty-icon">
+            <?= ia_icon('shield', 26) ?>
+          </div>
+
+          <h4>No accounts to manage</h4>
+
+          <p>
+            Create accounts first under Accounts.
+          </p>
+
+        </div>
+
+      </td>
+    </tr>
+
+  <?php endif; ?>
+
+</tbody>
     </table>
   </div>
 </div>

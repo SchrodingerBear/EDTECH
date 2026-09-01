@@ -75,19 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             throw new RuntimeException('Failed to generate project folder.');
                         }
 
-                        // brand the brief into index.html + config.json
-                        $indexHtml = ORG_ROOT . '/' . $folder . '/index.html';
+                        // 4. update config.json with institution details (index.php loads this dynamically)
                         $configJson = ORG_ROOT . '/' . $folder . '/config.json';
-                        if (is_file($indexHtml)) {
-                            $html = file_get_contents($indexHtml);
-                            $html = str_replace('{{NAME}}', $name, $html);
-                            $html = str_replace('{{SHORT}}', $short !== '' ? $short : strtoupper(substr($slug, 0, 5)), $html);
-                            $html = str_replace('__EQUIRECT__', 'assets/panos/example.jpg', $html);
-                            $html = str_replace('__YAW__', '100', $html);
-                            $html = str_replace('__PITCH__', '10', $html);
-                            $html = str_replace('__FLOORPLAN__', 'assets/floorplans/example.jpg', $html);
-                            file_put_contents($indexHtml, $html);
-                        }
                         if (is_file($configJson)) {
                             $cfg = json_decode((string) file_get_contents($configJson), true);
                             if (is_array($cfg)) {
@@ -99,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                         }
 
-                        // 4. insert institution
+                        // 5. insert institution
                         $institutionId = crud()->insert('institutions', [
                             'slug' => $slug,
                             'name' => $name,
@@ -136,6 +125,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'ip_address' => $_SERVER['REMOTE_ADDR'] ?? null,
                         ]);
                     });
+                    
+                    // Sync config.json immediately after creation
+                    sync_institution_config($institutionId);
 
                     flash('success', "Institution created. Project folder generated at organizations/{$folder}.");
                 } catch (Throwable $e) {
@@ -164,6 +156,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         flash('success', 'Updated.');
+        redirect('admin/owner/institutions');
+    }
+
+    if ($action === 'resync') {
+        if (!$canManage) { flash('error', 'System staff can only view institutions.'); redirect('admin/owner/institutions'); }
+        $id = (int) ($_POST['id'] ?? 0);
+        sync_institution_config($id);
+        flash('success', 'Config synced. Refresh the org site to see changes.');
         redirect('admin/owner/institutions');
     }
 
@@ -284,6 +284,9 @@ $assignable = crud()->raw(
                   <button class="btn btn-sm btn-outline-ia" title="<?= (int) $inst['is_published'] ? 'Unpublish' : 'Publish' ?>">
                     <?= (int) $inst['is_published'] ? ia_icon('shield', 13) . ' unpublish' : ia_icon('rocket', 13) . ' publish' ?>
                   </button>
+                </form>
+                <form method="post" class="d-inline"><input type="hidden" name="inst_action" value="resync"><input type="hidden" name="id" value="<?= (int) $inst['id'] ?>">
+                  <button class="btn btn-sm btn-outline-ia" title="Force sync config"><?= ia_icon('refresh-cw', 13) ?></button>
                 </form>
                 <?php endif; ?>
                 <?php if ($canManage): ?>

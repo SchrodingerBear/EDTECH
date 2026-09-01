@@ -90,8 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               name="first_name" value="<?= h($u['first_name']) ?>" required></div>
           <div class="col-md-6"><label class="form-label">Last name</label><input class="form-control" name="last_name"
               value="<?= h($u['last_name']) ?>" required></div>
-          <div class="col-md-6"><label class="form-label">Phone</label><input class="form-control" name="phone"
-              value="<?= h($me['phone']) ?>"></div>
+          <div class="col-md-6"><label class="form-label">Phone</label>
+            <input class="form-control" required type="tel" value="<?= h($me['phone'] ?: '63') ?>" name="phone" pattern="639\d{9}" inputmode="numeric" oninput="let v = this.value.replace(/\D/g, ''); this.value = v.slice(0, 12); if (!this.value.startsWith('63')) this.value = '63' + this.value.slice(2); if (this.value.length < 2) this.value = '63';">
+          </div>
           <div class="col-md-6"><label class="form-label">Email</label>
             <input class="form-control" type="email" name="email" value="<?= h($u['email']) ?>" required>
           </div>
