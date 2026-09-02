@@ -15,11 +15,11 @@ const STATIC_ASSETS = [
   '/admin/institution/files',
   '/assets/css/landing.css',
   '/admin/assets/css/dashboard.css',
-  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
-  'https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
-  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
-  'https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/simple-datatables.min.js',
+  '/assets/css/bootstrap.min.css',
+  '/assets/css/simple-datatables.min.css',
+  '/assets/css/font-awesome.min.css',
+  '/assets/js/bootstrap.bundle.min.js',
+  '/assets/js/simple-datatables.min.js',
   '/public/icon.svg',
   '/manifest.json'
 ];
@@ -88,8 +88,7 @@ function isStaticAsset(request) {
   const url = new URL(request.url);
   return (
     url.pathname.match(/\.(css|js|png|jpg|jpeg|gif|svg|webp|woff2|woff|ttf|eot)$/i) ||
-    url.hostname.includes('cdn.jsdelivr.net') ||
-    url.hostname.includes('cdnjs.cloudflare.com')
+    url.pathname.includes('/assets/')
   );
 }
 

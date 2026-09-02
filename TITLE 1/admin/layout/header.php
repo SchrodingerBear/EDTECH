@@ -35,11 +35,10 @@ $brandLogoUrl = !empty($platform_settings['logo_path']) ? url($platform_settings
   <link rel="icon" href="<?= url('public/icon.svg') ?>" type="image/svg+xml">
   <link rel="manifest" href="<?= url('manifest.json') ?>">
   <meta name="theme-color" content="#4f46e5">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="<?= url('assets/css/inter-font.css') ?>" rel="stylesheet">
+  <link href="<?= url('assets/css/bootstrap.min.css') ?>" rel="stylesheet">
+  <link href="<?= url('assets/css/simple-datatables.min.css') ?>" rel="stylesheet">
+  <link rel="stylesheet" href="<?= url('assets/css/font-awesome.min.css') ?>">
   <link rel="stylesheet" href="<?= url('admin/assets/css/dashboard.css') ?>">
   <script>window.IA_BASE_URL = <?= json_encode(BASE_URL, JSON_UNESCAPED_SLASHES) ?>;</script>
 </head>

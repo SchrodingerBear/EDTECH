@@ -349,8 +349,8 @@ $templates = crud()->select('email_templates', '*', [], 'ORDER BY slug');
   </div>
 </div>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jodit/3.24.2/jodit.min.css" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jodit/3.24.2/jodit.min.js"></script>
+<link rel="stylesheet" href="<?= url('assets/css/jodit.min.css') ?>" />
+<script src="<?= url('assets/js/jodit.min.js') ?>"></script>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll('textarea[name="body_html"]').forEach(function (el) {

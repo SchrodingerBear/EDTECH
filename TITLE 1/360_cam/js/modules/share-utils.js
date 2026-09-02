@@ -129,7 +129,7 @@ export class PhotoSphereSharer {
         const shareData = {
             files: [file],
             title: '360° Panorama',
-            text: '360° panorama captured with Innovatech PH 360 Camera'
+            text: '360° panorama captured with Photosphere Camera'
         };
 
         // Verify that the browser can share this type of data
@@ -159,7 +159,7 @@ export class PhotoSphereSharer {
                 // Share as URL instead of file
                 await navigator.share({
                     title: '360° Panorama',
-                    text: '360° panorama captured with Innovatech PH 360 Camera',
+                    text: '360° panorama captured with Photosphere Camera',
                     url: dataUrl  // Some apps can handle data URLs
                 });
                 return true;
@@ -450,45 +450,6 @@ export class PhotoSphereSharer {
             u8arr[n] = bstr.charCodeAt(n);
         }
         return new Blob([u8arr], {type: mime});
-    }
-
-    /**
-     * Save panorama to Innovatech PH system
-     * Uploads the panorama to the database via API
-     * @param {Blob} blob - Image blob to save
-     * @param {string} filename - Filename for the image
-     * @param {Object} metadata - Metadata (title, description, capture data)
-     * @returns {Promise<Object>} Response from API
-     */
-    async saveToSystem(blob, filename = 'panorama.jpg', metadata = {}) {
-        try {
-            const formData = new FormData();
-            formData.append('panorama', blob, filename);
-            formData.append('title', metadata.title || 'Untitled Panorama');
-            formData.append('description', metadata.description || '');
-            if (metadata.captureData) {
-                formData.append('capture_data', JSON.stringify(metadata.captureData));
-            }
-
-            const response = await fetch('/api/save-panorama.php', {
-                method: 'POST',
-                body: formData,
-                credentials: 'same-origin'
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                console.log('Panorama saved to system:', result);
-                return result;
-            } else {
-                console.error('Failed to save panorama:', result.error);
-                throw new Error(result.error || 'Failed to save panorama');
-            }
-        } catch (error) {
-            console.error('Error saving panorama to system:', error);
-            throw error;
-        }
     }
 }
 

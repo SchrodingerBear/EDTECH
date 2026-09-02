@@ -85,44 +85,49 @@ export class CardUI {
         this.infoContent = {
             about: {
                 icon: './img/about.svg',
-                title: 'Innovatech PH 360 Camera',
+                title: 'VFT Photosphere Camera',
                 content: `
-                    <h3 style="color: white; margin-bottom: 10px;">360° Campus Panorama Capture</h3>
-                    <p style="margin-bottom: 15px;">Innovatech PH 360 Camera is part of the AI-Assisted AR 360° Virtual Campus Navigation and Information System for Educational Institutions.</p>
-
+                    <h3 style="color: white; margin-bottom: 10px;">360° Photosphere Capture</h3>
+                    <p style="margin-bottom: 15px;">VFTcam is a progressive web app that guides you through capturing immersive 360° photospheres using your device's orientation sensors.</p>
+                    
                     <h3 style="color: white; margin-bottom: 10px;">How It Works</h3>
-                    <p style="margin-bottom: 15px;">The app uses your device's gyroscope and compass to guide you through capturing 36 precisely positioned images. These images are then stitched together to create a seamless equirectangular panorama.</p>
-
+                    <p style="margin-bottom: 15px;">The app uses your device's gyroscope and compass to guide you through capturing 36 precisely positioned images. These images are then stitched together to create a seamless equirectangular photosphere.</p>
+                    
                     <h3 style="color: white; margin-bottom: 10px;">Features</h3>
                     <ul style="margin-left: 15px; margin-bottom: 15px;">
                         <li>Real-time 3D preview with hotspot guidance</li>
                         <li>Automatic image capture when aligned</li>
+                        <li>Local storage with no cloud uploads</li>
                         <li>High-resolution spherical projection</li>
-                        <li>Built-in panorama viewer</li>
-                        <li>Integrated with Innovatech PH campus navigation system</li>
+                        <li>Built-in photosphere viewer</li>
                     </ul>
 
                     <h3 style="color: white; margin-bottom: 10px;">Version</h3>
-                    <p style="margin-bottom: 15px;">Innovatech 360 Camera v1.0.0</p>
-
-                    <h3 style="color: white; margin-bottom: 10px;">Innovatech PH</h3>
+                    <p style="margin-bottom: 15px;">VFTcam v1.3.2</p>
+                    
+                    <h3 style="color: white; margin-bottom: 10px;">Stanford Accelerator for Learning</h3>
                     <p style="margin-bottom: 15px;">
-                        Innovatech PH 360 Camera is part of the AI-Assisted AR 360° Virtual Campus Navigation and Information System.
-                        Designed for educational institutions to create immersive campus tours and navigation experiences.
+                        VFT Photosphere Camera is proudly developed and maintained by the <em>Accelerator Studio</em> within the
+                        <a href="https://acceleratelearning.stanford.edu/" rel="noopener noreferrer" target="_blank" style="color: white;">Stanford Accelerator for Learning</a> 
+                        as part of its mission to accelerate solutions that transform learning and education.
                     </p>
-                    <p style="margin-bottom: 15px;text-align: center;">Innovatech PH 360 Camera<br/>&copy; 2025 Innovatech PH<br/>All Rights Reserved</p>
+                    <p style="margin-bottom: 15px;">
+                        Learn more about the 
+                        <a href="https://acceleratelearning.stanford.edu/how-we-work/accelerator-studio/" rel="noopener noreferrer" target="_blank" style="color: white;">Accelerator Studio</a>.
+                    </p>
+                    <p style="margin-bottom: 15px;text-align: center;">VFT Photosphere Camera<br/>&copy; 2025 Stanford Accelerator for Learning<br/>All Rights Reserved</p>
                 `
             },
             privacy: {
                 icon: './img/privacy.svg',
                 title: 'Privacy Policy',
                 content: `
-                    <p style="margin-bottom: 20px; color: rgba(255,255,255,0.9);">Your privacy is our priority. Innovatech PH 360 Camera is designed to keep your data secure and private.</p>
-
-                    <h3 style="color: white; margin-bottom: 10px;">Your Data Stays Local</h3>
-                    <p style="margin-bottom: 20px;">Innovatech PH 360 Camera operates entirely within your web browser. All captured images and generated panoramas remain on your device. We have no access to your photos or any data you create using the app.</p>
-
-                    <h3 style="color: white; margin-bottom: 10px;">No Cloud Uploads</h3>
+                    <p style="margin-bottom: 20px; color: rgba(255,255,255,0.9);">Your privacy is our priority. VFT Photosphere Camera is designed to keep your data secure and private.</p>
+                    
+                    <h3 style="color: white; margin-bottom: 10px;"><img src="./img/shield-lock.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Your Data Stays Local</h3>
+                    <p style="margin-bottom: 20px;">VFT Photosphere Camera operates entirely within your web browser. All captured images and generated photospheres remain on your device. We have no access to your photos or any data you create using the app.</p>
+                    
+                    <h3 style="color: white; margin-bottom: 10px;"><img src="./img/cloud-slash.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> No Cloud Uploads</h3>
                     <ul style="margin-left: 15px; margin-bottom: 10px; list-style-type: disc;">
                         <li>All image processing happens locally using your device's GPU through WebGL2</li>
                         <li>No photos are ever transmitted to external servers</li>
@@ -175,13 +180,13 @@ export class CardUI {
                         <li>No location data is transmitted to external servers</li>
                     </ul>
 
-                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;">Contact</h3>
+                    <h3 style="color: white; margin-bottom: 10px; margin-top: 20px;"><img src="./img/envelope.svg" style="width: 16px; height: 16px; filter: brightness(0) invert(1);" alt=""/> Contact</h3>
                     <p style="margin-bottom: 10px;">Questions about this app?<br/>Contact:</p>
-                    <p style="margin-bottom: 10px;">Innovatech PH<br>
-                    AI-Assisted AR 360° Virtual Campus Navigation</p>
-
-                    <p style="margin-top: 25px; font-size: 12px; color: rgba(255,255,255,0.6);">Last updated: August 2025<br>
-                    This policy applies to Innovatech PH 360 Camera</p>
+                    <p style="margin-bottom: 10px;">Reuben Thiessen<br>
+                    Stanford Accelerator for Learning</p>
+                    
+                    <p style="margin-top: 25px; font-size: 12px; color: rgba(255,255,255,0.6);">Last updated: September 2025<br>
+                    This policy applies to VFT Photosphere Camera at 360cam.stanford.edu</p>
                 `
             },
             fov: {
@@ -707,7 +712,7 @@ export class CardUI {
         // If this is the about section, replace the version placeholder
         if (section === 'about') {
             const version = await this.getServiceWorkerVersion();
-            content = content.replace(/Innovatech 360 v[\d.]+/, `Innovatech 360 v${version}`);
+            content = content.replace(/VFTcam v[\d.]+/, `VFTcam v${version}`);
         }
         
         contentElement.innerHTML = content;

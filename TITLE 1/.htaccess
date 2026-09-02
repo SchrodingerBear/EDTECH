@@ -48,6 +48,11 @@ ServerSignature Off
   RewriteRule ^(.+?)/?$ $1.php [L]
 </IfModule>
 
+# Fallback: MultiViews for extensionless PHP (works without mod_rewrite)
+<IfModule mod_negotiation.c>
+  Options -MultiViews
+</IfModule>
+
 # Case-insensitive matching of existing files/dirs (require mod_speling).
 <IfModule mod_speling.c>
   CheckSpelling On

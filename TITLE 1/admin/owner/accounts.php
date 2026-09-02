@@ -204,7 +204,7 @@ $roles = crud()->select('roles', 'id, slug, name', ['slug' => ['IN', $roleList]]
       title="Edit account"
       aria-label="Edit account">
 
-      <img src="<?= url('assets/icons/edit.svg') ?>" width="14" height="14" alt="Edit">
+      <i class="fas fa-edit"></i>
 
     </button>
 
@@ -230,12 +230,12 @@ $roles = crud()->select('roles', 'id, slug, name', ['slug' => ['IN', $roleList]]
         <?php if ((int) $acc['is_active'] === 1): ?>
 
           <!-- Shield -->
-          <img src="<?= url('assets/icons/shield.svg') ?>" width="14" height="14" alt="Deactivate">
+          <i class="fas fa-shield-alt"></i>
 
         <?php else: ?>
 
           <!-- Activate / Rocket -->
-          <img src="<?= url('assets/icons/rocket.svg') ?>" width="14" height="14" alt="Activate">
+          <i class="fas fa-rocket"></i>
 
         <?php endif; ?>
 
@@ -267,7 +267,7 @@ $roles = crud()->select('roles', 'id, slug, name', ['slug' => ['IN', $roleList]]
         aria-label="Archive account">
 
         <!-- Trash -->
-        <img src="<?= url('assets/icons/trash.svg') ?>" width="14" height="14" alt="Archive">
+        <i class="fas fa-trash"></i>
 
       </button>
 

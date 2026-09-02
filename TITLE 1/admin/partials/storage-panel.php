@@ -61,7 +61,7 @@ $diskTotal = $diskTotal ?? 0;
     </div>
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="<?= url('assets/js/chart.min.js') ?>"></script>
 <script>
 (function () {
   var el = document.getElementById(<?= json_encode($storageChartId) ?>);

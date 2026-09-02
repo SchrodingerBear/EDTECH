@@ -11,6 +11,9 @@
   <meta content="Innovatech PH - AI-Assisted AR 360° Virtual Campus Navigation - 360 Panorama Capture" name="description"/>
   <meta content="#8C1515" name="theme-color"/>
   <meta content="yes" name="mobile-web-app-capable"/>
+  <!-- Performance Meta Tags -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="format-detection" content="telephone=no">
   <!-- Apple Touch Icons -->
   <link href="./img/icon-180.png" rel="apple-touch-icon"/>
   <link href="./img/icon-120.png" rel="apple-touch-icon" sizes="120x120"/>
@@ -25,9 +28,14 @@
   <title>
    Innovatech PH 360 Camera
   </title>
+  <!-- Optimized CSS Loading -->
   <link href="./css/capture.css" rel="stylesheet"/>
   <link href="./css/cards.css" rel="stylesheet"/>
   <link href="./css/pannellum.css" rel="stylesheet"/>
+  <!-- Preload critical resources -->
+  <link rel="preload" href="./js/modules/app.js" as="script">
+  <link rel="preload" href="./js/ext/three.min.js" as="script">
+  <link rel="preload" href="./img/logo_150x150.png" as="image">
  </head>
  <body>
   <!-- Grid Background -->
@@ -96,8 +104,8 @@
    <div class="card-header">
     <h2 class="card-title" id="stitch-title">
      <svg fill="currentColor" viewbox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
-      <path d="m118.54 75.227.035156 37.855c-.003906 4.6758-3.7891 8.4648-8.4648 8.4805l-37.855.039062c-1.4805 0-2.6797-1.1992-2.6836-2.6797l-.011719-11.594c-4.6484-1.2148-7.8945-5.4141-7.8945-10.219-.003907-4.8047 3.2305-9.0039 7.875-10.23l-.011719-11.602c0-1.4805 1.1953-2.6797 2.6758-2.6836l11.602-.011719c1.2148-4.6484 5.4141-7.8906 10.219-7.8945 4.8008-.003906 9.0039 3.2305 10.23 7.875l11.594-.011719c.71484 0 1.3945.28125 1.8984.78125.50391.50391.78906 1.1836.78906 1.8984zm-100.66-62.66 37.855-.035156c1.4805 0 2.6797 1.1992 2.6836 2.6797l.011719 13.934h.003906c0 .71094-.28125 1.3945-.78516 1.8984-.5.50391-1.1836.78906-1.8945.78906-2.7969.10547-5.0039 2.4062-5.0039 5.2031s2.2148 5.0938 5.0117 5.1992c.71094 0 1.3945.28125 1.8984.78125.50391.50391.78516 1.1836.78516 1.8984l.023437 27.871.003906-.003906c0 1.4844-1.1992 2.6836-2.6797 2.6914-1.3945-.019531-2.7383.51953-3.7344 1.5-.98828.98047-1.5508 2.3164-1.5508 3.7109s.55859 2.7305 1.5547 3.7109 2.3438 1.5156 3.7383 1.4961c.71094-.003906 1.3945.27344 1.8945.78125.50391.5.78906 1.1836.78906 1.8945l.015625 13.934c0 1.4805-1.1992 2.6836-2.6797 2.6914l-37.863.023438c-4.6719-.003906-8.4609-3.7891-8.4766-8.4609l-.070313-75.711c.003907-4.6758 3.7891-8.4648 8.4648-8.4805zm35.18 5.3281-35.176.03125c-1.7148.015625-3.1016 1.3984-3.1094 3.1133l.03125 35.176 8.9141-.011719h.003906c1.2148-4.6445 5.4141-7.8906 10.219-7.8906 4.8047-.003906 9.0039 3.2305 10.23 7.875l8.9219-.011719-.011718-8.9219v.003906c-4.6484-1.2148-7.8906-5.4102-7.8945-10.215-.003906-4.8047 3.2305-9.0117 7.875-10.234l-.011718-8.9141zm.046875 52.559-.011719-8.9219-11.254.011719v.003906c-1.4805 0-2.6797-1.1953-2.6836-2.6797.039063-1.4062-.48828-2.7695-1.4688-3.7852-.98047-1.0117-2.3281-1.5781-3.7383-1.5781s-2.7539.57422-3.7344 1.5859c-.98047 1.0156-1.5117 2.3789-1.4648 3.7891 0 .71094-.28125 1.3945-.78125 1.8984-.50391.50391-1.1836.78906-1.8984.78906l-11.254.011719.03125 35.176h.003907c.011719 1.7109 1.3984 3.0938 3.1094 3.1055l35.176-.03125-.011719-8.9141.003906-.003906c-4.6484-1.2148-7.8945-5.4141-7.8945-10.215-.003906-4.8047 3.2305-9.0117 7.875-10.234zm18.824-64.016 37.855-.035156c4.6758.003906 8.4688 3.7891 8.4805 8.4648l.035157 37.855c0 1.4805-1.1953 2.6836-2.6758 2.6836l-13.934.015625c-.71484 0-1.3945-.28125-1.8984-.78125-.50391-.50391-.78906-1.1836-.78906-1.8984 0-2.875-2.3359-5.2031-5.2109-5.1992-2.875 0-5.2031 2.3359-5.2031 5.2109 0 1.4805-1.1953 2.6836-2.6758 2.6914l-13.934.011719c-.71484.003907-1.3945-.28125-1.8984-.78125-.50391-.50391-.78906-1.1836-.78906-1.8945l-.011719-11.602c-4.6484-1.2148-7.8906-5.4141-7.8945-10.219-.003906-4.8008 3.2305-9.0039 7.875-10.23l-.011719-11.594c0-.71484.28125-1.3945.78516-1.8984.5-.50391 1.1836-.78906 1.8945-.78906zm37.859 5.3281-35.172.03125.011718 11.254c0 1.4805-1.1992 2.6797-2.6797 2.6836-1.3945-.019531-2.7383.51953-3.7344 1.5-.98828.98047-1.5508 2.3203-1.5508 3.7148.003906 1.3945.56641 2.7305 1.5586 3.7109.99609.97656 2.3398 1.5156 3.7344 1.4883 1.4805 0 2.6836 1.1992 2.6914 2.6797l.011718 11.254 8.9219-.011719h-.003907c1.2148-4.6484 5.4141-7.8906 10.219-7.8945 4.8008-.003906 9.0039 3.2305 10.23 7.875l8.9219-.011719-.03125-35.176-.003906.003907c-.011719-1.7148-1.3984-3.1016-3.1133-3.1055zm3.4219 101.32-.03125-35.176-11.254.011719.003906.003906c-.71484 0-1.3984-.28125-1.8984-.78516-.50391-.5-.78906-1.1836-.78906-1.8945-.003906-2.875-2.3359-5.2031-5.2109-5.2031-2.8789.003907-5.2031 2.3398-5.2031 5.2148 0 1.4805-1.1953 2.6797-2.6797 2.6836l-11.254.011719.011718 11.254h.003906c0 .71484-.28125 1.3945-.78516 1.8984-.5.50391-1.1836.78906-1.8945.78906-2.875 0-5.2031 2.3359-5.1992 5.2109 0 2.875 2.3359 5.2031 5.2109 5.2031 1.4805 0 2.6797 1.1953 2.6836 2.6758l.011718 11.254 35.176-.03125c1.7188-.011719 3.1055-1.4062 3.1094-3.125z" fill-rule="evenodd">
-      </path>
+      <path d="m118.54 75.227.035156 37.855c-.003906 4.6758-3.7891 8.4648-8.4648 8.4805l-37.855.039062c-1.4805 0-2.6797-1.1992-2.6836-2.6797l-.011719-11.594c-4.6484-1.2148-7.8945-5.4141-7.8945-10.219-.003907-4.8047 3.2305-9.0039 7.875-10.23l-.011719-11.602c0-1.4805 1.1953-2.6797 2.6758-2.6836l11.602-.011719c1.2148-4.6484 5.4141-7.8906 10.219-7.8945 4.8008-.003906 9.0039 3.2305 10.23 7.875l11.594-.011719c.71484 0 1.3945.28125 1.8984.78125.50391.50391.78906 1.1836.78906 1.8984zm-100.66-62.66 37.855-.035156c1.4805 0 2.6797 1.1992 2.6836 2.6797l.011719 13.934h.003906c0 .71094-.28125 1.3945-.78516 1.8984-.5.00391.50391-1.1836.78906-1.8945.78906-2.7969.10547-5.0039 2.4062-5.0039 5.2031s2.2148 5.0938 5.0117 5.1992c.71094 0 1.3945.28125 1.8984.78125.50391.50391.78516 1.1836.78516 1.8984l.023437 27.871.003906-.003906c0 1.4844-1.1992 2.6836-2.6797 2.6914-1.3945-.019531-2.7383.51953-3.7344 1.5-.98828.98047-1.5508 2.3164-1.5508 3.7109s.55859 2.7305 1.5547 3.7109 2.3438 1.5156 3.7383 1.4961c.71094-.003906 1.3945.27344 1.8945.78125.50391.5.78906 1.1836.78906 1.8945l.015625 13.934c0 1.4805-1.1992 2.6836-2.6797 2.6914l-37.863.023438c-4.6719-.003906-8.4609-3.7891-8.4766-8.4609l-.070313-75.711c.003907-4.6758 3.7891-8.4648 8.4648-8.4805zm35.18 5.3281-35.176.03125c-1.7148.015625-3.1016 1.3984-3.1094 3.1133l.03125 35.176 8.9141-.011719h.003906c1.2148-4.6445 5.4141-7.8906 10.219-7.8906 4.8047-.003906 9.0039 3.2305 10.23 7.875l8.9219-.011719-.011718-8.9219v.003906c-4.6484-1.2148-7.8906-5.4102-7.8945-10.215-.003906-4.8047 3.2305-9.0117 7.875-10.234l-.011718-8.9141zm.046875 52.559-.011719-8.9219-11.254.011719v.003906c-1.4805 0-2.6797-1.1953-2.6836-2.6797.039063-1.4062-.48828-2.7695-1.4688-3.7852-.98047-1.0117-2.3281-1.5781-3.7383-1.5781s-2.7539.57422-3.7344 1.5859c-.98047 1.0156-1.5117 2.3789-1.4648 3.7891 0 .71094-.28125 1.3945-.78125 1.8984-.50391.50391-1.1836.78906-1.8984.78906l-11.254.011719.03125 35.176h.003907c.011719 1.7109 1.3984 3.0938 3.1094 3.1055l35.176-.03125-.011719-8.9141.003906-.0... [truncated 1759 chars]
+100|      </path>
      </svg>
      Processor
     </h2>
@@ -135,7 +143,7 @@
       View Camera Roll
      </button>
      <!-- Start button full width -->
-     <button aria-label="Start new capture" class="start-btn-styled" id="start-new-capture-btn" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.resetAndStartNewCapture()">
+     <button aria-label="Start new capture" class="start-btn-styled" id="start-new-capture-btn" onclick="window.sphereCapture && window.sphereCapture.resetAndStartNewCapture()">
       <img alt="Camera icon" class="camera-ico" src="./img/camera.svg"/>
       Start New Capture
      </button>
@@ -217,7 +225,7 @@
   </div>
   <!-- Settings Menu Card -->
   <div aria-hidden="true" aria-labelledby="settings-title" aria-modal="true" class="ui-card" id="settings-menu-card" role="dialog">
-   <button aria-label="Close settings menu" class="card-close-btn" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cardUI &amp;&amp; window.sphereCapture.cardUI.hideSettingsMenu()">
+   <button aria-label="Close settings menu" class="card-close-btn" onclick="window.sphereCapture && window.sphereCapture.cardUI && window.sphereCapture.cardUI.hideSettingsMenu()">
     <img alt="Close icon" src="./img/x.svg"/>
    </button>
    <div class="card-header">
@@ -228,7 +236,7 @@
    </div>
    <div class="card-content">
     <div class="settings-menu-list">
-     <button aria-label="About VFTCam" class="settings-menu-item" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cardUI &amp;&amp; window.sphereCapture.cardUI.openInfoCard('about')">
+     <button aria-label="About VFTCam" class="settings-menu-item" onclick="window.sphereCapture && window.sphereCapture.cardUI && window.sphereCapture.cardUI.openInfoCard('about')">
       <div class="menu-row">
        <img alt="" src="./img/about.svg"/>
        <span>
@@ -239,7 +247,7 @@
        ›
       </span>
      </button>
-     <button aria-label="Privacy policy" class="settings-menu-item" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cardUI &amp;&amp; window.sphereCapture.cardUI.openInfoCard('privacy')">
+     <button aria-label="Privacy policy" class="settings-menu-item" onclick="window.sphereCapture && window.sphereCapture.cardUI && window.sphereCapture.cardUI.openInfoCard('privacy')">
       <div class="menu-row">
        <img alt="" src="./img/privacy.svg"/>
        <span>
@@ -250,7 +258,7 @@
        ›
       </span>
      </button>
-     <button aria-label="App permissions" class="settings-menu-item" onclick="(async () =&gt; { try { console.log('Permissions clicked', window.sphereCapture?.permissions); if (window.sphereCapture?.permissions) { await window.sphereCapture.permissions.showPermissionsCard(); } else { console.error('Permissions manager not found'); } } catch(e) { console.error('Error showing permissions:', e); } })()">
+     <button aria-label="App permissions" class="settings-menu-item" onclick="(async () => { try { console.log('Permissions clicked', window.sphereCapture?.permissions); if (window.sphereCapture?.permissions) { await window.sphereCapture.permissions.showPermissionsCard(); } else { console.error('Permissions manager not found'); } } catch(e) { console.error('Error showing permissions:', e); } })()">
       <div class="menu-row">
        <svg fill="currentColor" viewbox="0 0 24 24">
         <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z">
@@ -264,7 +272,7 @@
        ›
       </span>
      </button>
-     <button aria-label="Field of view fine-tuning" class="settings-menu-item" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cardUI &amp;&amp; window.sphereCapture.cardUI.openInfoCard('fov')">
+     <button aria-label="Field of view fine-tuning" class="settings-menu-item" onclick="window.sphereCapture && window.sphereCapture.cardUI && window.sphereCapture.cardUI.openInfoCard('fov')">
       <div class="menu-row">
        <img alt="" src="./img/fov-calibration.svg"/>
        <span>
@@ -275,7 +283,7 @@
        ›
       </span>
      </button>
-     <button aria-label="Check for updates" class="settings-menu-item" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cardUI &amp;&amp; window.sphereCapture.cardUI.checkForUpdates()">
+     <button aria-label="Check for updates" class="settings-menu-item" onclick="window.sphereCapture && window.sphereCapture.cardUI && window.sphereCapture.cardUI.checkForUpdates()">
       <div class="menu-row">
        <svg fill="currentColor" viewbox="0 0 24 24">
         <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z">
@@ -289,7 +297,7 @@
        ›
       </span>
      </button>
-     <button aria-label="Clear camera roll" class="settings-menu-item" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cardUI &amp;&amp; window.sphereCapture.cardUI.openInfoCard('clear')">
+     <button aria-label="Clear camera roll" class="settings-menu-item" onclick="window.sphereCapture && window.sphereCapture.cardUI && window.sphereCapture.cardUI.openInfoCard('clear')">
       <div class="menu-row">
        <img alt="" class="danger-icon" src="./img/clear-camera-roll.svg"/>
        <span class="danger-text">
@@ -305,7 +313,7 @@
   </div>
   <!-- Info Card -->
   <div aria-hidden="true" class="ui-card" id="info-card">
-   <button aria-label="Close info card" class="card-close-btn" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cardUI &amp;&amp; window.sphereCapture.cardUI.closeInfoCard()">
+   <button aria-label="Close info card" class="card-close-btn" onclick="window.sphereCapture && window.sphereCapture.cardUI && window.sphereCapture.cardUI.closeInfoCard()">
     <img alt="Close icon" src="./img/x.svg"/>
    </button>
    <div class="card-header">
@@ -342,13 +350,13 @@
    </div>
   </div>
   <div aria-hidden="true" aria-labelledby="camera-roll-title" aria-modal="true" class="ui-card camera-roll-card" id="camera-roll-card" role="dialog">
-   <button aria-label="Close camera roll" class="card-close-btn" onclick="window.sphereCapture &amp;&amp; window.sphereCapture.cameraRoll &amp;&amp; window.sphereCapture.cameraRoll.hide()">
+   <button aria-label="Close camera roll" class="card-close-btn" onclick="window.sphereCapture && window.sphereCapture.cameraRoll && window.sphereCapture.cameraRoll.hide()">
     <img alt="Close icon" src="./img/x.svg"/>
    </button>
    <div class="card-header">
     <h1 class="card-title" id="camera-roll-title">
      <svg fill="currentColor" viewbox="20 20 88 88" xmlns="http://www.w3.org/2000/svg">
-      <path d="m99.609 44.758c-0.70703-1.3594-3-3.2969-4.4805-3.6523-0.042968-0.011719-0.085937-0.019531-0.12891-0.03125-7.0352-9.4961-18.27-15.703-31-15.703-12.77 0-24.031 6.2461-31.066 15.793-1.5859 0.57422-3.8164 2.2188-4.5 3.5117-3.0977 5.8984-4.7383 12.496-4.7383 19.324 0 6.6172 1.5469 13.02 4.4609 18.785 0.67578 1.3359 3.0039 3.3203 4.6797 4.0391 7.0312 9.582 18.371 15.801 31.164 15.801 12.766 0 24.09-6.1953 31.117-15.738 1.6328-0.55469 4.0547-2.7656 4.7812-4.2109 2.8828-5.7344 4.4062-12.098 4.4062-18.676 0-6.7969-1.625-13.363-4.6953-19.242zm-26.078 51.453c1.1172-1.707 2.1211-3.7148 3.0039-5.9727 3.4258-0.35547 6.7773-0.85938 10.207-1.5117-3.7617 3.457-8.2773 6.0312-13.211 7.4844zm-9.5312 1.375c-2.4258 0-4.8594-2.5625-6.8828-6.8984 2.2266 0.125 4.5078 0.18359 6.8828 0.18359 2.3789 0 4.6602-0.058594 6.8828-0.17969-2.0195 4.332-4.4531 6.8945-6.8828 6.8945zm-22.738-8.8633c3.418 0.65234 6.7773 1.1562 10.203 1.5156 0.88281 2.2578 1.8906 4.2656 3.0039 5.9727-4.9336-1.4531-9.4453-4.0234-13.207-7.4883zm10.188-50.898c-3.4102 0.35547-6.7773 0.8125-10.184 1.457 3.7656-3.4609 8.2734-6.0391 13.203-7.4922-1.1211 1.7188-2.1328 3.7539-3.0195 6.0352zm12.551-7.4141c2.4258 0 4.8516 2.5938 6.8672 6.918-2.2188-0.12109-4.4844-0.19531-6.8672-0.19531s-4.6406 0.089844-6.875 0.21094c2.0234-4.332 4.4492-6.9336 6.875-6.9336zm22.746 8.875c-3.4375-0.65625-6.793-1.1641-10.219-1.5195-0.88281-2.2578-1.8789-4.2695-2.9961-5.9805 4.9336 1.457 9.4492 4.0312 13.215 7.5zm8.6953 36.816c-1.6367 1.4492-3.75 2.1562-6.6719 2.1562-6.3359 0-17.066-12.98-17.066-12.98-0.59766-0.6875-1.5898-0.70312-2.207-0.007813l-4.9219 5.5273c-0.3125 0.35156-0.78906 0.33594-1.0664-0.03125l-8.3359-11c-0.57031-0.75-1.4844-0.73828-2.0508 0.007813 0 0-2.1094 2.7773-2.8477 3.6016-4.7305 5.2695-10.105 11.742-15.164 11.039-1.5547-0.21484-2.7656-1.0273-3.7188-2.1641-0.64453-2.668-0.97656-5.4336-0.97656-8.25 0-5.6133 1.3359-11.016 3.8203-15.871-0.035156 0.03125-0.09375 0.070313-0.125 0.097656 0.046875-0.042968 0.10547-0.10547 0.27344-0.42578-0.058593 0.10547-0.09375 0.21875-0.14844 0.32812 0.11328-0.09375 0.22266-0.1875 0.375-0.29688 0.27734-0.19922 0.59375-0.37891 0.35938-0.32031 10.039-2.4023 18.586-3.6641 29.031-3.6641 10.508 0 18.949 1.2539 29.117 3.6875-0.039063-0.035156-0.097657-0.082031-0.13281-0.10547 0.085937 0.0625 0.1875 0.10937 0.57031 0.20312-0.14844-0.035156-0.28906-0.066406-0.4375-0.097656 0.085937 0.0625 0.17187 0.12109 0.27344 0.21094 0.19531 0.16406 0.39453 0.37109 0.26562 0.125 2.5664 4.918 3.9297 10.422 3.9297 16.129 0 4.1953-0.73438 8.2773-2.1445 12.102zm-9.5234-25.266c-2.1523 0.87109-2.0781 4.332-0.59766 6.4336 2.0234 2.8828 3.875 2.7227 5.1602 2.4375 1.7852-0.39453 2.0391-3.4297 1.2344-5.4336-1.1211-2.7656-3.6484-4.3047-5.7969-3.4375z" fill-rule="evenodd">
+      <path d="m99.609 44.758c-0.70703-1.3594-3-3.2969-4.4805-3.6523-0.042968-0.011719-0.085937-0.019531-0.12891-0.03125-7.0352-9.4961-18.27-15.703-31-15.703-12.77 0-24.031 6.2461-31.066 15.793-1.5859 0.57422-3.8164 2.2188-4.5 3.5117-3.0977 5.8984-4.7383 12.496-4.7383 19.324 0 6.6172 1.5469 13.02 4.4609 18.785 0.67578 1.3359 3.0039 3.3203 4.6797 4.0391 7.0312 9.582 18.371 15.801 31.164 15.801 12.766 0 24.09-6.1953 31.117-15.738 1.6328-0.55469 4.0547-2.7656 4.7812-4.2109 2.8828-5.7344 4.4062-12.098 4.4062-18.676 0-6.7969-1.625-13.363-4.6953-19.242zm-26.078 51.453c1.1172-1.707 2.1211-3.7148 3.0039-5.9727 3.4258-0.35547 6.7773-0.85938 10.207-1.5117-3.7617 3.457-8.2773 6.0312-13.211 7.4844zm-9.5312 1.375c-2.4258 0-4.8594-2.5625-6.8828-6.8984 2.2266 0.125 4.5078 0.18359 6.8828 0.18359 2.3789 0 4.6602-0.058594 6.8828-0.17969-2.0195 4.332-4.4531 6.8945-6.8828 6.8945zm-22.738-8.8633c3.418 0.65234 6.7773 1.1562 10.203 1.5156 0.88281 2.2578 1.8906 4.2656 3.0039 5.9727-4.9336-1.4531-9.4453-4.0234-13.207-7.4883zm10.188-50.898c-3.4102 0.35547-6.7773 0.8125-10.184 1.457 3.7656-3.4609 8.2734-6.0391 13.203-7.4922-1.1211 1.7188-2.1328 3.7539-3.0195 6.0352zm12.551-7.4141c2.4258 0 4.8516 2.5938 6.8672 6.918-2.2188-0.12109-4.4844-0.19531-6.8672-0.19531s-4.6406 0.089844-6.875 0.21094c2.0234-4.332 4.4492-6.9336 6.875-6.9336zm22.746 8.875c-3.4375-0.65625-6.793-1.1641-10.219-1.5195-0.88281-2.2578-1.8789-4.2695-2.9961 4.9336 1.457 9.4492 4.0312 13.215 7.5zm8.6953 36.816c-1.6367 1.4492-3.75 2.1562-6.6719 2.1562-6.3359 0-17.066-12.98-17.066-12.98-0.59766-0.6875-1.5898-0.70312-2.207-0.007813l-4.9219 5.5273c-0.3125 0.35156-0.78906 0.33594-1.0664-0.03125l-8.3359-11c-0.57031-0.75-1.4844-0.73828-2.0508 0.007813 0 0-2.1094 2.7773-2.8477 3.6016-4.7305 5.2695-10.105 11.742-15.164 11.039-1.5547-0.21484-2.7656-1.0273-3.7188-2.1641-0.64453-2.668-0.97656-5.4336-0.97656-8.25 0-5.6133 1.3359-11.016 3.8203-15.871-0.035156 0.03125-0.09375 0.070313-0.125 0.097656 0.046875-0.042968 0.10547-0.10547 0.273... [truncated 762 chars]
       </path>
      </svg>
      Photospheres
@@ -370,7 +378,7 @@
    <!-- Clear/Reset button -->
    <button aria-label="Reset capture session" class="control-btn" id="clear-btn" title="Reset">
     <svg height="32" viewbox="0 0 128 128" width="32" xmlns="http://www.w3.org/2000/svg">
-     <path d="m30.691 37.332c7.7695-9.6914 19.684-15.922 33.055-15.996 0.18359-0.003907 0.36719-0.003907 0.55078 0 11.383 0.074218 21.707 4.6094 29.312 11.945 0.44141 0.42578 0.875 0.85938 1.2969 1.3047 7.1523 7.5117 11.594 17.629 11.754 28.781 0.007813 0.44141 0.007813 0.88281 0 1.3281-0.17578 11.059-4.5625 21.098-11.625 28.582-0.5625 0.59766-1.1445 1.1797-1.7422 1.7461-7.4961 7.082-17.559 11.473-28.645 11.637-0.41016 0.007813-0.82031 0.007813-1.2305 0.003906-21.5-0.28906-39.16-16.477-41.754-37.34-0.36719-2.9258-2.7188-5.3242-5.6641-5.3242s-5.3594 2.3945-5.0664 5.3242c0.17969 1.7969 0.44922 3.582 0.80859 5.3438 1.8906 9.2617 6.2266 17.918 12.641 25.035 8.8281 9.7969 20.973 15.977 34.09 17.344 13.117 1.3672 26.273-2.1758 36.934-9.9414s18.062-19.207 20.781-32.109c2.7188-12.906 0.55859-26.359-6.0586-37.766-6.6211-11.406-17.23-19.957-29.785-23.996-12.551-4.043-26.156-3.2891-38.188 2.1094-8.3008 3.7266-15.441 9.4844-20.824 16.656v-10.668c0-2.9453-2.3867-5.332-5.332-5.332s-5.332 2.3867-5.332 5.332v26.668h26.664c2.9453 0 5.3359-2.3867 5.3359-5.332 0-2.9453-2.3906-5.3359-5.3359-5.3359z" fill="white">
+     <path d="m30.691 37.332c7.7695-9.6914 19.684-15.922 33.055-15.996 0.18359-0.003907 0.36719-0.003907 0.55078 0 11.383 0.074218 21.707 4.6094 29.312 11.945 0.44141 0.42578 0.875 0.85938 1.2969 7.1523 7.5117 11.594 17.629 11.754 28.781 0.007813 0.44141 0.007813 0.88281 0 1.3281-0.17578 11.059-4.5625 21.098-11.625 28.582-0.5625 0.59766-1.1445 1.1797-1.7422 1.7461-7.4961 7.082-17.559 11.473-28.645 11.637-0.41016 0.007813-0.82031 0.007813-1.2305 0.003906-21.5-0.28906-39.16-16.477-41.754-37.34-0.36719-2.9258-2.7188-5.3242-5.6641-5.3242s-5.3594 2.3945-5.0664 5.3242c0.17969 1.7969 0.44922 3.582 0.80859 5.3438 1.8906 9.2617 6.2266 17.918 12.641 25.035 8.8281 9.7969 20.973 15.977 34.09 17.344 13.117 1.3672 26.273-2.1758 36.934-9.9414s18.062-19.207 20.781-32.109c2.7188-12.906 0.55859-26.359-6.0586-37.766-6.6211-11.406-17.23-19.957-29.785-23.996-12.551-4.043-26.156-3.2891-38.188 2.1094-8.3008 3.7266-15.441 9.4844-20.824 16.656v-10.668c0-2.9453-2.3867-5.332-5.332-5.332s-5.332 2.3867-5.332 5.332v26.668h26.664c2.9453 0 5.3359-2.3867 5.3359-5.332 0-2.9453-2.3906-5.3359-5.3359z" fill="white">
      </path>
     </svg>
    </button>
@@ -390,15 +398,12 @@
     <img alt="View Camera Roll" src="img/camera-roll.svg"/>
    </button>
   </div>
-  <script src="./js/ext/three.min.js">
-  </script>
-  <script src="./js/ext/pannellum.js">
-  </script>
-  <script src="./js/ext/piexif.min.js">
-  </script>
+  <!-- Optimized JavaScript Loading -->
+  <script src="./js/ext/three.min.js"></script>
+  <script src="./js/ext/pannellum.js"></script>
+  <script src="./js/ext/piexif.min.js"></script>
   <script>
-   // Initialize preview canvas with blank thumbnail
-        function initializePreviewCanvas() {
+   function initializePreviewCanvas() {
             const canvas = document.getElementById('preview-canvas');
             const ctx = canvas.getContext('2d');
             const thumbnailPath = canvas.getAttribute('data-thumbnail');
@@ -406,7 +411,6 @@
             if (thumbnailPath) {
                 const img = new Image();
                 img.onload = function() {
-                    // Clear canvas and draw the thumbnail
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 };
@@ -414,50 +418,9 @@
             }
         }
         
-        // Initialize canvas when DOM is loaded
         document.addEventListener('DOMContentLoaded', initializePreviewCanvas);
   </script>
-  <!-- Inline critical functions for iOS Safari offline compatibility -->
-  <script>
-   // Define critical functions inline so they work offline in iOS Safari
-        window.startApp = async () => {
-            // This will be overridden by the module version when it loads
-            // But provides a fallback for offline iOS Safari
-            console.log('Using inline startApp fallback');
-            
-            // Import the module dynamically
-            try {
-                const module = await import('./js/capture.js');
-                if (window.startApp !== arguments.callee) {
-                    // Module loaded successfully, use its version
-                    return window.startApp();
-                }
-            } catch (e) {
-                console.error('Failed to load capture module:', e);
-                alert('The app is having trouble loading. Please refresh the page.');
-            }
-        };
-        
-        window.openSettings = () => {
-            console.log('Using inline openSettings fallback');
-            if (window.sphereCapture && window.sphereCapture.cardUI) {
-                window.sphereCapture.cardUI.showSettingsMenu();
-            } else {
-                alert('Settings not available yet. Please wait for the app to load.');
-            }
-        };
-        
-        window.openGallery = async () => {
-            console.log('Using inline openGallery fallback');
-            if (window.sphereCapture && window.sphereCapture.cameraRoll) {
-                await window.sphereCapture.cameraRoll.show();
-            } else {
-                alert('Gallery not available yet. Please wait for the app to load.');
-            }
-        };
-  </script>
-  <!-- Main app module -->
-  <script src="./js/capture.js" type="module">
-  </script>
- </body>
+  <!-- Main app module - now loads locally -->
+  <script src="./js/capture.js" type="module"></script>
+</body>
 </html>

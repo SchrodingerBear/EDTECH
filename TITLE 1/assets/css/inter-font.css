@@ -1,0 +1,16 @@
+/* Inter Font - System font fallback for offline use */
+/* This uses system fonts that are available offline */
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* For headings that need different weights */
+h1, h2, h3, h4, h5, h6 {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-weight: 600;
+}
+
+strong, b {
+  font-weight: 600;
+}

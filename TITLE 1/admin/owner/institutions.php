@@ -480,8 +480,8 @@ $assignable = crud()->raw(
   </div></div>
 </div>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="<?= url('assets/css/leaflet.min.css') ?>">
+<script src="<?= url('assets/js/leaflet.min.js') ?>"></script>
 
 <script>
   /* ------------------------- institution type "Other…" ---------------------- */

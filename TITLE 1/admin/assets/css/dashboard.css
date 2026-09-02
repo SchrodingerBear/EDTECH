@@ -307,6 +307,86 @@ a:hover { color: var(--ia-primary-2); }
 .datatable-table {
   --bs-table-bg: transparent;
   margin: 0;
+}
+
+/* Fix datatable icon conflicts with custom SVG icons */
+.datatable-wrapper .datatable-selector,
+.datatable-wrapper .datatable-input {
+  font-family: inherit;
+  border: 1px solid var(--ia-border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  background: var(--ia-surface-1);
+  color: var(--ia-text);
+}
+
+.datatable-wrapper .datatable-info {
+  color: var(--ia-muted);
+  font-size: 0.875rem;
+}
+
+.datatable-wrapper .datatable-pagination ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  gap: 4px;
+}
+
+.datatable-wrapper .datatable-pagination li {
+  margin: 0;
+}
+
+.datatable-wrapper .datatable-pagination a,
+.datatable-wrapper .datatable-pagination button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--ia-border);
+  border-radius: 4px;
+  background: var(--ia-surface-1);
+  color: var(--ia-text);
+  text-decoration: none;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.datatable-wrapper .datatable-pagination a:hover,
+.datatable-wrapper .datatable-pagination button:hover {
+  background: var(--ia-surface-2);
+  border-color: var(--ia-primary);
+}
+
+.datatable-wrapper .datatable-pagination .active a,
+.datatable-wrapper .datatable-pagination .active button {
+  background: var(--ia-primary);
+  color: white;
+  border-color: var(--ia-primary);
+}
+
+.datatable-wrapper .datatable-pagination .disabled a,
+.datatable-wrapper .datatable-pagination .disabled button {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Ensure Font Awesome icons work alongside custom SVG icons */
+.datatable-wrapper .fa,
+.datatable-wrapper .fas,
+.datatable-wrapper .far,
+.datatable-wrapper .fab {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands", "Font Awesome 6 Solid";
+  font-weight: 900;
+}
+
+/* Custom SVG icon styling consistency */
+.ia-icon svg {
+  display: inline-block;
+  vertical-align: middle;
+}
   border-collapse: collapse;
   width: 100%;
 }
