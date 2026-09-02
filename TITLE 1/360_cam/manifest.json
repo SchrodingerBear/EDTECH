@@ -2,43 +2,43 @@
   "name": "Innovatech PH 360 Camera",
   "short_name": "Innovatech 360",
   "description": "AI-Assisted AR 360° Virtual Campus Navigation - 360 Panorama Capture",
-  "start_url": "/360_cam/index.html",
+  "start_url": "./index.php",
   "display": "standalone",
   "background_color": "#1a1a2e",
   "theme_color": "#8C1515",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/360_cam/img/icon-120.png",
+      "src": "./img/icon-120.png",
       "sizes": "120x120",
       "type": "image/png"
     },
     {
-      "src": "/360_cam/img/icon-152.png",
+      "src": "./img/icon-152.png",
       "sizes": "152x152",
       "type": "image/png"
     },
     {
-      "src": "/360_cam/img/icon-167.png",
+      "src": "./img/icon-167.png",
       "sizes": "167x167",
       "type": "image/png"
     },
     {
-      "src": "/360_cam/img/icon-180.png",
+      "src": "./img/icon-180.png",
       "sizes": "180x180",
       "type": "image/png"
     },
     {
-      "src": "/360_cam/img/favicon-32.png",
+      "src": "./img/favicon-32.png",
       "sizes": "32x32",
       "type": "image/png"
     },
     {
-      "src": "/360_cam/img/favicon-16.png",
+      "src": "./img/favicon-16.png",
       "sizes": "16x16",
       "type": "image/png"
     }
   ],
   "categories": ["photography", "utilities", "education"],
-  "scope": "/360_cam/"
+  "scope": "./"
 }

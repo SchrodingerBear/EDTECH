@@ -33,7 +33,7 @@ class OPFSStorage {
      */
     async init() {
         if (!this.isSupported) {
-            console.log('OPFS not supported in this browser');
+            console.log('OPFS not supported in this browser, will use IndexedDB fallback');
             return false;
         }
         
@@ -42,8 +42,10 @@ class OPFSStorage {
         }
         
         try {
-            // Create and initialize worker
-            this.worker = new Worker('/js/workers/opfs-worker.js');
+            // Create and initialize worker - use relative path
+            // From js/modules/ to js/workers/ is ../../workers/
+            const workerPath = './opfs-worker.js';
+            this.worker = new Worker(workerPath);
             
             // Set up message handler
             this.worker.addEventListener('message', (event) => {
@@ -60,17 +62,28 @@ class OPFSStorage {
                 }
             });
             
-            // Initialize OPFS in worker
-            const initialized = await this.sendMessage('init');
+            // Initialize OPFS in worker with timeout
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Worker operation timed out')), 5000)
+            );
+            
+            const initialized = await Promise.race([
+                this.sendMessage('init'),
+                timeoutPromise
+            ]);
+            
             this.initialized = initialized;
             
             if (initialized) {
                 console.log('OPFS storage initialized with worker (Safari-compatible)');
+            } else {
+                console.log('OPFS worker initialization failed, will use IndexedDB fallback');
             }
             
             return initialized;
         } catch (error) {
             console.error('Failed to initialize OPFS worker:', error);
+            console.log('Will use IndexedDB fallback for storage');
             return false;
         }
     }
