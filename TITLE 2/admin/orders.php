@@ -245,13 +245,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $receiptUrl = get_receipt_url($token);
             flash('success', 'Receipt link generated: <a href="' . h($receiptUrl) . '" target="_blank">' . h($receiptUrl) . '</a>');
+          } else {
+            flash('danger', 'Order not found.');
           }
         } else {
-          flash('danger', 'Receipt system not yet set up. Please run the database setup script.');
+          flash('warning', 'Receipt system not yet set up. The receipt link feature requires database setup. Contact your administrator.');
         }
       } catch (Throwable $e) {
         flash('danger', 'Error generating receipt: ' . $e->getMessage());
       }
+    } else {
+      flash('danger', 'Invalid order ID.');
     }
     redirect('admin/orders');
   }
@@ -421,6 +425,12 @@ require_once __DIR__ . '/layout/header.php';
           <?php endif; ?>
 
           <a class="btn btn-outline-ia" href="orders?edit=<?= (int) $vo['id'] ?>"><?= ia_icon('edit', 15) ?> Edit order</a>
+
+          <form method="post" class="d-grid gap-2">
+            <input type="hidden" name="form" value="send_receipt">
+            <input type="hidden" name="order_id" value="<?= (int) $vo['id'] ?>">
+            <button class="btn btn-outline-success" type="submit"><?= ia_icon('mail', 15) ?> Generate Receipt Link</button>
+          </form>
 
           <form method="post" onsubmit="return confirm('Delete this order permanently?');">
             <input type="hidden" name="form" value="delete">
@@ -652,13 +662,11 @@ require_once __DIR__ . '/layout/header.php';
             <td class="text-end text-nowrap">
               <a class="btn btn-sm btn-icon" href="orders?view=<?= (int) $o['id'] ?>" title="View"><?= ia_icon('eye', 15) ?></a>
               <a class="btn btn-sm btn-icon" href="orders?edit=<?= (int) $o['id'] ?>" title="Edit"><?= ia_icon('edit', 15) ?></a>
-              <?php if ($receiptSystemEnabled): ?>
               <form method="post" class="d-inline" onsubmit="return confirm('Generate receipt link for this order?');">
                 <input type="hidden" name="form" value="send_receipt">
                 <input type="hidden" name="order_id" value="<?= (int) $o['id'] ?>">
-                <button class="btn btn-sm btn-icon text-success" type="submit" title="Send Receipt"><?= ia_icon('mail', 15) ?></button>
+                <button class="btn btn-sm btn-icon text-success" type="submit" title="Generate Receipt Link"><?= ia_icon('mail', 15) ?></button>
               </form>
-              <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>

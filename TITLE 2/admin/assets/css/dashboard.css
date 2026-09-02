@@ -2071,4 +2071,14 @@ body.page-ar .ar-compass-none {
   .pos-stat { min-height: 106px; padding: 14px 16px; }
   .pos-stat-num { font-size: 26px; }
   .pos-stat-label { font-size: 11px; }
+  
+  /* Receipt modal mobile fixes */
+  .pos-receipt-modal .modal-dialog { margin: 10px; }
+  .pos-receipt-modal .modal-content { max-height: 85vh; overflow-y: auto; }
+  .pos-receipt { padding: 18px 16px 8px; font-size: 12px; }
+  .pos-receipt .r-shop { font-size: 14px; }
+  .pos-receipt .r-line, .pos-receipt .r-subhead { font-size: 12px; }
+  .pos-receipt .r-grand { font-size: 14px; }
+  .pos-receipt-modal .modal-footer { padding: 12px 16px; }
+  .pos-receipt-modal .btn { font-size: 13px; padding: 8px 12px; }
 }
