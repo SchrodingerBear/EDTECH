@@ -29,16 +29,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       // New customer inline
       if ($customerId === 0) {
         $fname = trim($_POST['c_first_name'] ?? '');
-        $lname = trim($_POST['c_last_name'] ?? '');
         $phone = trim($_POST['c_phone'] ?? '');
-        if ($fname === '' || $lname === '' || $phone === '') {
-          throw new RuntimeException('New customer requires first name, last name and phone.');
+        
+        if ($fname === '' || $phone === '') {
+          throw new RuntimeException('New customer requires name and phone.');
         }
-        $customerId = $c->insert('customers', [
-          'first_name' => $fname, 'last_name' => $lname, 'phone' => $phone,
+        
+        $customerData = [
+          'first_name' => $fname, 'phone' => $phone,
           'email' => trim($_POST['c_email'] ?? '') ?: null,
           'address' => trim($_POST['c_address'] ?? '') ?: null,
-        ]);
+        ];
+        
+        $customerId = $c->insert('customers', $customerData);
         audit('customer.create', 'customers', 'customer', $customerId);
       }
 
@@ -111,10 +114,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $crud->insert('order_items', $it + ['order_id' => $orderId]);
           }
         } else {
-          $orderId = $crud->insert('laundry_orders', array_merge([
-            'order_no' => next_order_number(null, $pdo),
+          $orderNo = next_order_number(null, $pdo);
+          $orderData = array_merge([
+            'order_no' => $orderNo,
             'created_by' => current_user()['id'] ?? null,
-          ], $base));
+          ], $base);
+          
+          // Only add receipt_token if the column exists
+          try {
+            $columns = $pdo->query("SHOW COLUMNS FROM laundry_orders")->fetchAll();
+            $columnNames = array_column($columns, 'Field');
+            if (in_array('receipt_token', $columnNames)) {
+              $tempToken = generate_receipt_token(0, $orderNo, date('Y-m-d H:i:s'));
+              $orderData['receipt_token'] = $tempToken;
+            }
+          } catch (Throwable $e) {
+            // If column check fails, proceed without receipt token
+          }
+          
+          $orderId = $crud->insert('laundry_orders', $orderData);
+          
+          // Update receipt token with actual order ID if column exists
+          try {
+            $columns = $pdo->query("SHOW COLUMNS FROM laundry_orders")->fetchAll();
+            $columnNames = array_column($columns, 'Field');
+            if (in_array('receipt_token', $columnNames)) {
+              $token = generate_receipt_token($orderId, $orderNo, date('Y-m-d H:i:s'));
+              $crud->update('laundry_orders', ['receipt_token' => $token], ['id' => $orderId]);
+            }
+          } catch (Throwable $e) {
+            // If update fails, proceed without receipt token
+          }
+          
           foreach ($orderItems as $it) {
             $crud->insert('order_items', $it + ['order_id' => $orderId]);
           }
@@ -129,10 +160,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         audit('order.create', 'orders', 'order', $orderId);
         flash('success', 'New order created.');
       }
-      redirect('orders');
+      redirect('admin/orders');
     } catch (Throwable $e) {
       flash('danger', 'Something went wrong: ' . $e->getMessage());
-      redirect('orders');
+      // redirect('admin/orders');
     }
   }
 
@@ -156,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       audit('order.status', 'orders', 'order', $orderId);
       flash('success', 'Order status updated to ' . order_statuses()[$status] . '.');
     }
-    redirect('orders');
+    redirect('admin/orders');
   }
 
   /* ---- RECORD PAYMENT ---- */
@@ -173,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('success', 'Payment of ' . peso($add) . ' recorded.');
       }
     }
-    redirect('orders');
+    redirect('admin/orders');
   }
 
   /* ---- DELETE ---- */
@@ -185,7 +216,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       audit('order.delete', 'orders', 'order', $orderId);
       flash('success', 'Order deleted.');
     }
-    redirect('orders');
+    redirect('admin/orders');
+  }
+
+  /* ---- SEND RECEIPT ---- */
+  if ($action === 'send_receipt') {
+    $orderId = (int) ($_POST['order_id'] ?? 0);
+    if ($orderId > 0) {
+      try {
+        // Check if receipt columns exist
+        $columns = db()->query("SHOW COLUMNS FROM laundry_orders")->fetchAll();
+        $columnNames = array_column($columns, 'Field');
+        
+        if (in_array('receipt_token', $columnNames)) {
+          $order = $c->get('laundry_orders', $orderId);
+          if ($order) {
+            // Generate receipt token if it doesn't exist
+            if (empty($order['receipt_token'])) {
+              $token = get_or_create_receipt_token($c, $orderId);
+            } else {
+              $token = $order['receipt_token'];
+            }
+            
+            // Mark receipt as sent if column exists
+            if (in_array('receipt_sent_at', $columnNames)) {
+              $c->update('laundry_orders', ['receipt_sent_at' => date('Y-m-d H:i:s')], ['id' => $orderId]);
+            }
+            
+            $receiptUrl = get_receipt_url($token);
+            flash('success', 'Receipt link generated: <a href="' . h($receiptUrl) . '" target="_blank">' . h($receiptUrl) . '</a>');
+          }
+        } else {
+          flash('danger', 'Receipt system not yet set up. Please run the database setup script.');
+        }
+      } catch (Throwable $e) {
+        flash('danger', 'Error generating receipt: ' . $e->getMessage());
+      }
+    }
+    redirect('admin/orders');
   }
 }
 
@@ -201,24 +269,34 @@ if ($statusFilter !== '' && array_key_exists($statusFilter, order_statuses())) {
   $params['status'] = $statusFilter;
 }
 if ($q !== '') {
-  $where .= " AND (o.order_no LIKE :q1 OR CONCAT(cu.first_name, ' ', cu.last_name) LIKE :q2 OR cu.phone LIKE :q3)";
+  $where .= " AND (o.order_no LIKE :q1 OR cu.first_name LIKE :q2 OR cu.phone LIKE :q3)";
   $params['q1'] = $params['q2'] = $params['q3'] = '%' . $q . '%';
 }
 
 $orders = $c->raw(
-  "SELECT o.*, CONCAT(cu.first_name, ' ', cu.last_name) AS customer_name, cu.phone AS customer_phone,
-          e.first_name AS emp_first, e.last_name AS emp_last,
-          (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) AS items
-   FROM laundry_orders o
-   JOIN customers cu ON cu.id = o.customer_id
-   LEFT JOIN employees e ON e.id = o.assigned_employee_id
-   $where
-   ORDER BY o.created_at DESC", $params
+  "SELECT o.*, cu.first_name AS customer_name, cu.phone AS customer_phone,
+          e.first_name AS emp_first,
+              (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) AS items
+       FROM laundry_orders o
+       JOIN customers cu ON cu.id = o.customer_id
+       LEFT JOIN employees e ON e.id = o.assigned_employee_id
+       $where
+       ORDER BY o.created_at DESC", $params
 )->fetchAll();
 
 $services = $c->select('services', '*', ['is_active' => 1], 'ORDER BY name');
 $employees = $c->select('employees', '*', ['is_active' => 1], 'ORDER BY first_name');
 $customers = $c->select('customers', '*', [], 'ORDER BY first_name');
+
+// Check if receipt system is set up
+$receiptSystemEnabled = false;
+try {
+  $columns = db()->query("SHOW COLUMNS FROM laundry_orders")->fetchAll();
+  $columnNames = array_column($columns, 'Field');
+  $receiptSystemEnabled = in_array('receipt_token', $columnNames);
+} catch (Throwable $e) {
+  $receiptSystemEnabled = false;
+}
 
 // Editing state
 $editOrder = null;
@@ -234,7 +312,7 @@ if (isset($_GET['view']) && (int) $_GET['view'] > 0) {
   if ($vo) {
     $cust = $c->get('customers', (int) $vo['customer_id']);
     $viewOrder = $vo;
-    $viewOrder['customer'] = $cust ? $cust['first_name'] . ' ' . $cust['last_name'] : '—';
+    $viewOrder['customer'] = $cust ? $cust['first_name'] : '—';
     $viewOrder['customer_phone'] = $cust['phone'] ?? '—';
     $viewOrder['customer_address'] = $cust['address'] ?? '—';
     $viewOrder['items'] = $c->raw(
@@ -384,7 +462,7 @@ require_once __DIR__ . '/layout/header.php';
               <option value="0">+ Add new customer (basic info)</option>
               <?php foreach ($customers as $cm): ?>
                 <option value="<?= (int) $cm['id'] ?>" <?= ($fields['customer_id'] ?? null) == $cm['id'] ? 'selected' : '' ?>>
-                  <?= h($cm['first_name'] . ' ' . $cm['last_name'] . ' (' . $cm['phone'] . ')') ?>
+                  <?= h($cm['first_name'] . ' (' . $cm['phone'] . ')') ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -408,9 +486,8 @@ require_once __DIR__ . '/layout/header.php';
             <div class="ia-card-light p-3">
               <div class="ia-micro mb-2 fw-semibold text-ia-primary">+ New customer — basic info only</div>
               <div class="row g-2">
-                <div class="col-md-4"><input class="form-control" name="c_first_name" placeholder="First name *"></div>
-                <div class="col-md-4"><input class="form-control" name="c_last_name" placeholder="Last name *"></div>
-                <div class="col-md-4"><input class="form-control" name="c_phone" placeholder="Phone *" inputmode="tel"></div>
+                <div class="col-md-6"><input class="form-control" name="c_first_name" placeholder="Name *"></div>
+                <div class="col-md-6"><input class="form-control" name="c_phone" placeholder="Phone *" inputmode="tel"></div>
               </div>
             </div>
           </div>
@@ -423,7 +500,7 @@ require_once __DIR__ . '/layout/header.php';
               <option value="">— None —</option>
               <?php foreach ($employees as $em): ?>
                 <option value="<?= (int) $em['id'] ?>" <?= ($fields['assigned_employee_id'] ?? null) == $em['id'] ? 'selected' : '' ?>>
-                  <?= h($em['first_name'] . ' ' . $em['last_name']) ?>
+                  <?= h($em['first_name']) ?>
                 </option>
               <?php endforeach; ?>
             </select>
@@ -450,7 +527,7 @@ require_once __DIR__ . '/layout/header.php';
             ?>
             <div class="row g-2 item-row mb-2">
               <div class="col-md-6">
-                <select class="form-select item-service">
+               <select class="form-select item-service" name="items[]">
                   <option value="">Select service</option>
                   <?php foreach ($services as $sv): ?>
                     <option value="<?= (int) $sv['id'] ?>" data-price="<?= h($sv['price']) ?>" <?= $svcId === (int) $sv['id'] ? 'selected' : '' ?>>
@@ -459,9 +536,7 @@ require_once __DIR__ . '/layout/header.php';
                   <?php endforeach; ?>
                 </select>
               </div>
-              <div class="col-md-2"><input class="form-control item-qty" type="number" step="0.01" min="0.01" value="<?= h($it['quantity'] ?? 1) ?>"></div>
-              <div class="col-md-2"><input class="form-control item-price" type="number" step="0.01" min="0" value="<?= h($it['unit_price'] ?? '') ?>"></div>
-              <div class="col-md-1 text-end"><span class="item-line form-control-plaintext"><?= peso($it['line_total'] ?? 0) ?></span></div>
+           <input class="form-control item-price" type="number" step="0.01" min="0" name="unit_price[]" value="<?= h($it['unit_price'] ?? '') ?>"><div class="col-md-1 text-end"><span class="item-line form-control-plaintext"><?= peso($it['line_total'] ?? 0) ?></span></div>
               <div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm btn-remove-item"><?= ia_icon('trash', 14) ?></button></div>
             </div>
           <?php endforeach; ?>
@@ -551,7 +626,7 @@ require_once __DIR__ . '/layout/header.php';
     <table class="table table-ia" data-force-datatable>
       <thead>
         <tr>
-          <th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Pay</th><th>Status</th><th>Staff</th><th>Date</th><th></th>
+          <th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Pay</th><th>Status</th><th>Staff</th><th>Date</th><th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -577,6 +652,13 @@ require_once __DIR__ . '/layout/header.php';
             <td class="text-end text-nowrap">
               <a class="btn btn-sm btn-icon" href="orders?view=<?= (int) $o['id'] ?>" title="View"><?= ia_icon('eye', 15) ?></a>
               <a class="btn btn-sm btn-icon" href="orders?edit=<?= (int) $o['id'] ?>" title="Edit"><?= ia_icon('edit', 15) ?></a>
+              <?php if ($receiptSystemEnabled): ?>
+              <form method="post" class="d-inline" onsubmit="return confirm('Generate receipt link for this order?');">
+                <input type="hidden" name="form" value="send_receipt">
+                <input type="hidden" name="order_id" value="<?= (int) $o['id'] ?>">
+                <button class="btn btn-sm btn-icon text-success" type="submit" title="Send Receipt"><?= ia_icon('mail', 15) ?></button>
+              </form>
+              <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>

@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['form'] ?? '') === 'login')
 $quickAccs = [];
 try {
   $quickAccs = crud()->raw(
-    "SELECT u.email, r.name AS role_name, r.slug AS role_slug, u.first_name, u.last_name
+    "SELECT u.email, r.name AS role_name, r.slug AS role_slug, u.first_name
          FROM users u JOIN roles r ON r.id = u.role_id
          WHERE u.deleted_at IS NULL AND u.is_active = 1
          ORDER BY r.id ASC"
@@ -126,7 +126,7 @@ $businessName = $settings['business_name'] ?? APP_NAME;
               <?php foreach ($quickAccs as $qa):
                 $qaEmail = (string) $qa['email'];
                 $qaRoleLabel = ucwords(str_replace('_', ' ', $qa['role_slug']));
-                $qaName = trim(($qa['first_name'] ?? '') . ' ' . ($qa['last_name'] ?? ''));
+                $qaName = trim($qa['first_name'] ?? '');
                 ?>
                 <button type="button" class="btn btn-sm btn-outline-ia quick-login" data-email="<?= h($qaEmail) ?>"
                   data-pass="password" title="<?= h($qaName) ?>">

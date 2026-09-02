@@ -9,7 +9,8 @@ declare(strict_types=1);
 ob_start();
 
 // Environment (.env) loader — no external library.
-foreach (array_filter(file_exists(dirname(__DIR__) . '/.env') ? file(dirname(__DIR__) . '/.env') : [], fn ($l) => trim($l) !== '' && $l[0] !== '#' && str_contains($l, '=')) as $__line) {
+$envPath = __DIR__ . '/../.env';
+foreach (array_filter(file_exists($envPath) ? file($envPath) : [], fn ($l) => trim($l) !== '' && $l[0] !== '#' && str_contains($l, '=')) as $__line) {
     [$__k, $__v] = explode('=', trim($__line), 2);
     $__k = trim($__k);
     $__v = trim($__v);
@@ -59,9 +60,9 @@ define('BASE_URL', (function () {
 /* ---------------------------------- database -------------------------------- */
 define('DB_HOST', env('DB_HOST', 'localhost'));
 define('DB_PORT', (int) (env('DB_PORT', '3306') ?: '3306'));
-define('DB_NAME', env('DB_NAME', 'u467106394_thesis2'));
-define('DB_USER', env('DB_USER', 'u467106394_thesis'));
-define('DB_PASS', env('DB_PASS', '@saaK66PXJG1'));
+define('DB_NAME', env('DB_NAME', 'lavadora_laundry'));
+define('DB_USER', env('DB_USER', 'root'));
+define('DB_PASS', env('DB_PASS', 'innovatech'));
 
 /* ---------------------------------- session --------------------------------- */
 const SESSION_NAME = 'lavadora_session';

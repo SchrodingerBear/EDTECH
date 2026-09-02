@@ -327,7 +327,8 @@ function slugify(string $value): string
 /** Current user's display name. */
 function display_name(array $user): string
 {
-    $name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+    $name = trim($user['first_name'] ?? '');
+    
     return $name !== '' ? $name : ($user['email'] ?? 'User');
 }
 
@@ -468,4 +469,47 @@ function deduct_inventory_for_order(DbCrud $crud, array $order): void
     } catch (Throwable $e) {
         // inventory tracking must never break the status change
     }
+}
+
+/* ------------------------------- receipt -------------------------------- */
+
+/** Generate a unique receipt token for an order. */
+function generate_receipt_token(int $orderId, string $orderNo, string $createdAt): string
+{
+    return substr(md5($orderId . $orderNo . $createdAt), 0, 16) . $orderId;
+}
+
+/** Get the public receipt URL for an order. */
+function get_receipt_url(string $token): string
+{
+    return url('receipt.php?token=' . $token);
+}
+
+/** Generate or get existing receipt token for an order. */
+function get_or_create_receipt_token(DbCrud $crud, int $orderId): string
+{
+    $order = $crud->get('laundry_orders', $orderId);
+    if (!$order) {
+        throw new RuntimeException('Order not found');
+    }
+    
+    // Check if receipt_token column exists
+    try {
+        $columns = db()->query("SHOW COLUMNS FROM laundry_orders")->fetchAll();
+        $columnNames = array_column($columns, 'Field');
+        if (!in_array('receipt_token', $columnNames)) {
+            throw new RuntimeException('Receipt system not set up');
+        }
+    } catch (Throwable $e) {
+        throw new RuntimeException('Receipt system not set up');
+    }
+    
+    if (!empty($order['receipt_token'])) {
+        return $order['receipt_token'];
+    }
+    
+    $token = generate_receipt_token($orderId, $order['order_no'], $order['created_at']);
+    $crud->update('laundry_orders', ['receipt_token' => $token], ['id' => $orderId]);
+    
+    return $token;
 }

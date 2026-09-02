@@ -51,37 +51,37 @@ function role_nav(string $role): array
     $nav = [
         'owner' => [
             ['title' => 'Overview', 'items' => [
-                ['Dashboard', '/admin/dashboard', 'home', 'dashboard'],
+                ['Dashboard', 'admin/dashboard', 'home', 'dashboard'],
             ]],
             ['title' => 'Laundry', 'items' => [
-                ['Orders', '/admin/orders', 'clipboard', 'orders'],
-                ['Customers', '/admin/customers', 'users', 'customers'],
-                ['Services & Pricing', '/admin/services', 'tag', 'services'],
-                ['Staff Roster', '/admin/employees', 'user', 'employees'],
+                ['Orders', 'admin/orders', 'clipboard', 'orders'],
+                ['Customers', 'admin/customers', 'users', 'customers'],
+                ['Services & Pricing', 'admin/services', 'tag', 'services'],
+                ['Staff Roster', 'admin/employees', 'user', 'employees'],
             ]],
             ['title' => 'Inventory', 'items' => [
-                ['Inventory', '/admin/inventory', 'layers', 'inventory'],
-                ['Inventory Config', '/admin/inventory-settings', 'settings', 'inventory_settings'],
+                ['Inventory', 'admin/inventory', 'layers', 'inventory'],
+                ['Inventory Config', 'admin/inventory-settings', 'settings', 'inventory_settings'],
             ]],
             ['title' => 'Insights', 'items' => [
-                ['Reports', '/admin/reports', 'chart', 'reports'],
-                ['Audit Logs', '/admin/logs', 'clock', 'logs'],
+                ['Reports', 'admin/reports', 'chart', 'reports'],
+                ['Audit Logs', 'admin/logs', 'clock', 'logs'],
             ]],
             ['title' => 'System', 'items' => [
-                ['Accounts', '/admin/accounts', 'shield', 'accounts'],
-                ['System Settings', '/admin/system-settings', 'settings', 'system_settings'],
+                ['Accounts', 'admin/accounts', 'shield', 'accounts'],
+                ['System Settings', 'admin/system-settings', 'settings', 'system_settings'],
             ]],
         ],
         'staff' => [
             ['title' => 'Overview', 'items' => [
-                ['Dashboard', '/admin/dashboard', 'home', 'dashboard'],
+                ['Dashboard', 'admin/dashboard', 'home', 'dashboard'],
             ]],
             ['title' => 'Laundry', 'items' => [
-                ['Orders', '/admin/orders', 'clipboard', 'orders'],
-                ['Customers', '/admin/customers', 'users', 'customers'],
+                ['Orders', 'admin/orders', 'clipboard', 'orders'],
+                ['Customers', 'admin/customers', 'users', 'customers'],
             ]],
             ['title' => 'Inventory', 'items' => [
-                ['Inventory', '/admin/inventory', 'layers', 'inventory'],
+                ['Inventory', 'admin/inventory', 'layers', 'inventory'],
             ]],
         ],
     ];

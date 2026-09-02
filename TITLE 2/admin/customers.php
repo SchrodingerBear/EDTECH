@@ -17,16 +17,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   if (in_array($action, ['create', 'update'], true)) {
     $id = $action === 'update' ? (int) ($_POST['id'] ?? 0) : 0;
+    
     $data = [
       'first_name' => trim($_POST['first_name'] ?? ''),
-      'last_name' => trim($_POST['last_name'] ?? ''),
       'phone' => trim($_POST['phone'] ?? ''),
       'email' => trim($_POST['email'] ?? '') ?: null,
       'address' => trim($_POST['address'] ?? '') ?: null,
       'notes' => trim($_POST['notes'] ?? '') ?: null,
     ];
-    if ($data['first_name'] === '' || $data['last_name'] === '' || $data['phone'] === '') {
-      flash('danger', 'First name, last name and phone are required.');
+    
+    if ($data['first_name'] === '' || $data['phone'] === '') {
+      flash('danger', 'Name and phone are required.');
     } else {
       if ($id > 0) {
         $c->update('customers', $data, ['id' => $id]);
@@ -59,12 +60,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $q = trim($_GET['q'] ?? '');
 $like = '%' . $q . '%';
+
 $customers = $c->raw(
   "SELECT cu.*,
           (SELECT COUNT(*) FROM laundry_orders o WHERE o.customer_id = cu.id) AS order_count,
           (SELECT COALESCE(SUM(total),0) FROM laundry_orders o WHERE o.customer_id = cu.id AND o.status='completed') AS total_spent
    FROM customers cu
-   WHERE ? = '' OR CONCAT(cu.first_name, ' ', cu.last_name) LIKE ? OR cu.phone LIKE ? OR cu.email LIKE ?
+   WHERE ? = '' OR cu.first_name LIKE ? OR cu.phone LIKE ? OR cu.email LIKE ?
    ORDER BY cu.created_at DESC", [$q, $like, $like, $like]
 )->fetchAll();
 
@@ -72,6 +74,8 @@ $edit = null;
 if (isset($_GET['edit']) && (int) $_GET['edit'] > 0) {
   $edit = $c->get('customers', (int) $_GET['edit']);
 }
+
+
 
 require_once __DIR__ . '/layout/header.php';
 ?>
@@ -83,11 +87,10 @@ require_once __DIR__ . '/layout/header.php';
       <form method="post" class="row g-3">
         <input type="hidden" name="form" value="<?= $isEdit ? 'update' : 'create' ?>">
         <?php if ($isEdit): ?><input type="hidden" name="id" value="<?= (int) $f['id'] ?>"><?php endif; ?>
-        <div class="col-md-4"><label class="form-label">First name</label><input class="form-control" name="first_name" required value="<?= h($f['first_name'] ?? '') ?>"></div>
-        <div class="col-md-4"><label class="form-label">Last name</label><input class="form-control" name="last_name" required value="<?= h($f['last_name'] ?? '') ?>"></div>
-        <div class="col-md-4"><label class="form-label">Phone</label><input class="form-control" name="phone" required value="<?= h($f['phone'] ?? '') ?>"></div>
-        <div class="col-md-4"><label class="form-label">Email</label><input class="form-control" name="email" value="<?= h($f['email'] ?? '') ?>"></div>
-        <div class="col-md-8"><label class="form-label">Address</label><input class="form-control" name="address" value="<?= h($f['address'] ?? '') ?>"></div>
+        <div class="col-md-6"><label class="form-label">Name</label><input class="form-control" name="first_name" required value="<?= h($f['first_name'] ?? '') ?>"></div>
+        <div class="col-md-6"><label class="form-label">Phone</label><input class="form-control" name="phone" required value="<?= h($f['phone'] ?? '') ?>"></div>
+        <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" name="email" value="<?= h($f['email'] ?? '') ?>"></div>
+        <div class="col-md-6"><label class="form-label">Address</label><input class="form-control" name="address" value="<?= h($f['address'] ?? '') ?>"></div>
         <div class="col-12"><label class="form-label">Notes</label><textarea class="form-control" name="notes" rows="2"><?= h($f['notes'] ?? '') ?></textarea></div>
         <div class="col-12"><button class="btn btn-grad" type="submit"><?= ia_icon('save', 15) ?> Save</button></div>
       </form>
@@ -119,8 +122,8 @@ require_once __DIR__ . '/layout/header.php';
           <tr>
             <td>
               <div class="d-flex align-items-center gap-2">
-                <div class="ia-avatar ia-avatar-sm"><?= h(strtoupper(mb_substr($cm['first_name'][0] ?? '', 0, 1) . mb_substr($cm['last_name'][0] ?? '', 0, 1))) ?></div>
-                <div class="fw-semibold"><?= h($cm['first_name'] . ' ' . $cm['last_name']) ?></div>
+                <div class="ia-avatar ia-avatar-sm"><?= h(strtoupper(mb_substr($cm['first_name'][0] ?? '', 0, 1))) ?></div>
+                <div class="fw-semibold"><?= h($cm['first_name']) ?></div>
               </div>
             </td>
             <td class="text-ia-muted"><?= h($cm['phone']) ?></td>

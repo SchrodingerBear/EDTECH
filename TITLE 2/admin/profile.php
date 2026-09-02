@@ -18,21 +18,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   if ($action === 'update') {
     $first = trim($_POST['first_name'] ?? '');
-    $last = trim($_POST['last_name'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
 
-    if ($first === '' || $last === '') {
-      $msg = ['danger', 'First and last name are required.'];
+    if ($first === '') {
+      $msg = ['danger', 'Name is required.'];
     } else {
       $c->update('users', [
         'first_name' => $first,
-        'last_name' => $last,
         'phone' => $phone,
       ], ['id' => (int) $u['id']]);
 
       // refresh session cache
       $u['first_name'] = $first;
-      $u['last_name'] = $last;
       $u['phone'] = $phone;
       $_SESSION['user'] = $u;
 
@@ -75,8 +72,8 @@ require_once __DIR__ . '/layout/header.php';
   <div class="col-lg-4">
     <div class="ia-card">
       <div class="card-body text-center card-body-px py-5">
-        <div class="ia-avatar ia-avatar-xl mx-auto"><?= h(strtoupper(mb_substr(trim(($user['first_name'][0] ?? '') . ($user['last_name'][0] ?? '')), 0, 2))) ?></div>
-        <h4 class="mt-3 mb-0"><?= h(display_name($user)) ?></h4>
+        <div class="ia-avatar ia-avatar-xl mx-auto"><?= h(strtoupper(mb_substr(trim($user['first_name'] ?? ''), 0, 1))) ?></div>
+        <h4 class="mt-3 mb-0"><?= h($user['first_name']) ?></h4>
         <p class="text-ia-muted mb-0"><?= h($user['email']) ?></p>
         <span class="badge badge-live mt-2"><?= h(ucwords(str_replace('_', ' ', $user['role_slug'] ?? ''))) ?></span>
       </div>
@@ -90,12 +87,8 @@ require_once __DIR__ . '/layout/header.php';
         <form method="post" class="row g-3">
           <input type="hidden" name="action" value="update">
           <div class="col-md-6">
-            <label class="form-label">First name</label>
+            <label class="form-label">Name</label>
             <input class="form-control" name="first_name" required value="<?= h($user['first_name']) ?>">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Last name</label>
-            <input class="form-control" name="last_name" required value="<?= h($user['last_name']) ?>">
           </div>
           <div class="col-md-6">
             <label class="form-label">Email</label>

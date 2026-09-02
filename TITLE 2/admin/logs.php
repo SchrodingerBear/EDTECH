@@ -22,7 +22,7 @@ if ($module !== '') {
 }
 
 $logs = $c->raw(
-  "SELECT a.*, u.email, CONCAT(u.first_name, ' ', u.last_name) AS user_name
+  "SELECT a.*, u.email, u.first_name AS user_name
    FROM audit_logs a LEFT JOIN users u ON u.id = a.actor_user_id
    $where ORDER BY a.created_at DESC LIMIT 300", $params
 )->fetchAll();

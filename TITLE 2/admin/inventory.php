@@ -120,7 +120,7 @@ $lowStock = array_values(array_filter($items, fn($i) => (float) $i['current_stoc
 
 // recent movements
 $movements = $c->raw(
-  "SELECT m.*, i.name AS item_name, CONCAT(u.first_name, ' ', u.last_name) AS actor
+  "SELECT m.*, i.name AS item_name, u.first_name AS actor
    FROM inventory_movements m
    JOIN inventory_items i ON i.id = m.inventory_item_id
    LEFT JOIN users u ON u.id = m.created_by

@@ -117,7 +117,6 @@ function do_login(PDO $pdo, int $userId): void
         'email' => $user['email'],
         'username' => $user['username'],
         'first_name' => $user['first_name'],
-        'last_name' => $user['last_name'],
         'avatar_path' => $user['avatar_path'],
         'permissions' => $perms,
         'page_access' => $pageAccess ?: null,

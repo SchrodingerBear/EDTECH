@@ -20,15 +20,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = $action === 'update' ? (int) ($_POST['id'] ?? 0) : 0;
     $data = [
       'first_name' => trim($_POST['first_name'] ?? ''),
-      'last_name' => trim($_POST['last_name'] ?? ''),
       'phone' => trim($_POST['phone'] ?? '') ?: null,
       'position' => trim($_POST['position'] ?? '') ?: null,
       'salary' => (float) ($_POST['salary'] ?? 0),
       'hire_date' => !empty($_POST['hire_date']) ? $_POST['hire_date'] : null,
       'is_active' => isset($_POST['is_active']) ? 1 : 0,
     ];
-    if ($data['first_name'] === '' || $data['last_name'] === '') {
-      flash('danger', 'First and last name are required.');
+    if ($data['first_name'] === '') {
+      flash('danger', 'Name is required.');
     } else {
       if ($id > 0) {
         $c->update('employees', $data, ['id' => $id]);
@@ -78,9 +77,8 @@ require_once __DIR__ . '/layout/header.php';
       <form method="post" class="row g-3">
         <input type="hidden" name="form" value="<?= $isEdit ? 'update' : 'create' ?>">
         <?php if ($isEdit): ?><input type="hidden" name="id" value="<?= (int) $f['id'] ?>"><?php endif; ?>
-        <div class="col-md-4"><label class="form-label">First name</label><input class="form-control" name="first_name" required value="<?= h($f['first_name'] ?? '') ?>"></div>
-        <div class="col-md-4"><label class="form-label">Last name</label><input class="form-control" name="last_name" required value="<?= h($f['last_name'] ?? '') ?>"></div>
-        <div class="col-md-4"><label class="form-label">Phone</label><input class="form-control" name="phone" value="<?= h($f['phone'] ?? '') ?>"></div>
+        <div class="col-md-6"><label class="form-label">Name</label><input class="form-control" name="first_name" required value="<?= h($f['first_name'] ?? '') ?>"></div>
+        <div class="col-md-6"><label class="form-label">Phone</label><input class="form-control" name="phone" value="<?= h($f['phone'] ?? '') ?>"></div>
         <div class="col-md-4"><label class="form-label">Position</label><input class="form-control" name="position" value="<?= h($f['position'] ?? '') ?>" placeholder="e.g. Laundry Operator"></div>
         <div class="col-md-4"><label class="form-label">Monthly salary (₱)</label><input class="form-control" type="number" step="0.01" min="0" name="salary" value="<?= h($f['salary'] ?? '') ?>"></div>
         <div class="col-md-4"><label class="form-label">Hire date</label><input class="form-control" type="date" name="hire_date" value="<?= h($f['hire_date'] ?? '') ?>"></div>
@@ -110,8 +108,8 @@ require_once __DIR__ . '/layout/header.php';
           <tr>
             <td>
               <div class="d-flex align-items-center gap-2">
-                <div class="ia-avatar ia-avatar-sm"><?= h(strtoupper(mb_substr($em['first_name'][0] ?? '', 0, 1) . mb_substr($em['last_name'][0] ?? '', 0, 1))) ?></div>
-                <div class="fw-semibold"><?= h($em['first_name'] . ' ' . $em['last_name']) ?></div>
+                <div class="ia-avatar ia-avatar-sm"><?= h(strtoupper(mb_substr($em['first_name'][0] ?? '', 0, 1))) ?></div>
+                <div class="fw-semibold"><?= h($em['first_name']) ?></div>
               </div>
             </td>
             <td class="text-ia-muted"><?= h($em['position'] ?? '—') ?></td>

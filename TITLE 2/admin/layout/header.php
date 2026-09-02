@@ -94,8 +94,10 @@ $brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : u
 
       <div class="dropdown">
         <button class="btn p-0 border-0" data-bs-toggle="dropdown" aria-expanded="false">
-          <span
-            class="ia-avatar"><?= h(strtoupper(mb_substr(trim(($u['first_name'][0] ?? '') . ($u['last_name'][0] ?? '')), 0, 2))) ?></span>
+          <?php 
+          $avatarText = h(strtoupper(mb_substr(trim($u['first_name'] ?? ''), 0, 1)));
+          ?>
+          <span class="ia-avatar"><?= $avatarText ?></span>
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
           <li><span class="dropdown-item-text fw-bold"><?= h(display_name($u)) ?></span></li>

@@ -37,13 +37,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'username' => trim($_POST['username'] ?? '') ?: null,
         'password_hash' => password_hash($password, PASSWORD_DEFAULT),
         'first_name' => trim($_POST['first_name'] ?? ''),
-        'last_name' => trim($_POST['last_name'] ?? ''),
         'phone' => trim($_POST['phone'] ?? '') ?: null,
         'is_active' => isset($_POST['is_active']) ? 1 : 1,
         'created_by' => current_user()['id'] ?? null,
       ];
-      if ($data['first_name'] === '' || $data['last_name'] === '') {
-        throw new RuntimeException('First and last name are required.');
+      if ($data['first_name'] === '') {
+        throw new RuntimeException('Name is required.');
       }
       $id = $c->insert('users', $data);
       audit('account.create', 'accounts', 'user', $id);
@@ -109,8 +108,8 @@ require_once __DIR__ . '/layout/header.php';
           <tr>
             <td>
               <div class="d-flex align-items-center gap-2">
-                <div class="ia-avatar ia-avatar-sm"><?= h(strtoupper(mb_substr($u['first_name'][0] ?? '', 0, 1) . mb_substr($u['last_name'][0] ?? '', 0, 1))) ?></div>
-                <div class="fw-semibold"><?= h($u['first_name'] . ' ' . $u['last_name']) ?></div>
+                <div class="ia-avatar ia-avatar-sm"><?= h(strtoupper(mb_substr($u['first_name'][0] ?? '', 0, 1))) ?></div>
+                <div class="fw-semibold"><?= h($u['first_name']) ?></div>
               </div>
             </td>
             <td class="text-ia-muted"><?= h($u['email']) ?></td>
@@ -159,8 +158,7 @@ require_once __DIR__ . '/layout/header.php';
         <div class="modal-header"><h5 class="modal-title">Add user account</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
         <div class="modal-body">
           <div class="row g-3">
-            <div class="col-md-6"><label class="form-label">First name</label><input class="form-control" name="first_name" required></div>
-            <div class="col-md-6"><label class="form-label">Last name</label><input class="form-control" name="last_name" required></div>
+            <div class="col-md-6"><label class="form-label">Name</label><input class="form-control" name="first_name" required></div>
             <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" name="email" required></div>
             <div class="col-md-6"><label class="form-label">Phone</label><input class="form-control" name="phone"></div>
             <div class="col-md-6"><label class="form-label">Role</label>

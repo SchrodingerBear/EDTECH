@@ -40,15 +40,15 @@ $serviceCount = $c->count('services', ['is_active' => 1]);
 
 // Today's orders
 $todayOrders = $c->raw(
-  "SELECT o.*, cu.first_name, cu.last_name, cu.phone AS customer_phone,
-          CONCAT(cu.first_name, ' ', cu.last_name) AS customer_name,
+  "SELECT o.*, cu.first_name, cu.phone AS customer_phone,
+          cu.first_name AS customer_name,
           (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) AS items
    FROM laundry_orders o
    JOIN customers cu ON cu.id = o.customer_id
-   WHERE o.created_at >= :ds
-   ORDER BY o.created_at DESC LIMIT 12",
-  ['ds' => date('Y-m-d 00:00:00')]
-)->fetchAll();
+       WHERE o.created_at >= :ds
+       ORDER BY o.created_at DESC LIMIT 12",
+      ['ds' => date('Y-m-d 00:00:00')]
+    )->fetchAll();
 
 // Receipt dataset for the popup modal: full items per today's order
 $receipts = [];
@@ -268,9 +268,9 @@ require_once __DIR__ . '/layout/header.php';
         <div class="card-body card-body-px">
           <?php foreach ($recentCustomers as $cm): ?>
             <a class="d-flex align-items-center gap-3 mb-3 text-reset text-decoration-none" href="customers?view=<?= (int) $cm['id'] ?>">
-              <div class="ia-avatar"><?= h(strtoupper(mb_substr($cm['first_name'][0] ?? '', 0, 1) . mb_substr($cm['last_name'][0] ?? '', 0, 1))) ?></div>
+              <div class="ia-avatar"><?= h(strtoupper(mb_substr($cm['first_name'][0] ?? '', 0, 1))) ?></div>
               <div class="flex-grow-1">
-                <div class="fw-semibold"><?= h($cm['first_name'] . ' ' . $cm['last_name']) ?></div>
+                <div class="fw-semibold"><?= h($cm['first_name']) ?></div>
                 <div class="ia-micro text-ia-muted"><?= h($cm['phone']) ?></div>
               </div>
             </a>

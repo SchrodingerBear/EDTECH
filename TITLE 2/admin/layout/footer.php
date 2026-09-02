@@ -39,7 +39,7 @@ $__can = fn($k) => $__acc === null || in_array($k, $__acc, true);
     foreach (($__grp['items'] ?? []) as $__it) {
       $__href = $__it[1] ?? '';
       $__label = $__it[0] ?? '';
-      if ($__href === '/admin/dashboard' || $__href === '/admin/orders' || $__href === '/admin/inventory') continue;
+      if ($__href === 'admin/dashboard' || $__href === 'admin/orders' || $__href === 'admin/inventory') continue;
       $__moreItems[] = ['label' => $__label, 'href' => $__href, 'icon' => $__it[2] ?? 'home', 'page' => $__it[3] ?? null];
     }
   }

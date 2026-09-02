@@ -115,11 +115,11 @@ $byService = $c->raw(
 
 // top customers
 $topCustomers = $c->raw(
-  "SELECT CONCAT(cu.first_name, ' ', cu.last_name) AS name, cu.phone,
+  "SELECT cu.first_name AS name, cu.phone,
           COUNT(o.id) AS n, COALESCE(SUM(o.total),0) AS total
    FROM laundry_orders o JOIN customers cu ON cu.id = o.customer_id
    WHERE o.status='completed' AND $whereCmd
-   GROUP BY cu.id, cu.first_name, cu.last_name, cu.phone
+   GROUP BY cu.id, cu.first_name, cu.phone
    ORDER BY total DESC LIMIT 6", $params
 )->fetchAll();
 

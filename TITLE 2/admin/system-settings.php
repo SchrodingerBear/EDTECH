@@ -40,6 +40,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     flash('success', 'System settings saved.');
     redirect('system-settings');
   }
+
+  if ($action === 'pickup_order') {
+    $receiptToken = trim($_POST['receipt_token'] ?? '');
+    
+    if (empty($receiptToken)) {
+      flash('danger', 'Please enter a receipt token or order ID.');
+    } else {
+      // Try to find order by receipt token or order ID
+      $order = null;
+      
+      // First try by receipt token
+      try {
+        $columns = db()->query("SHOW COLUMNS FROM laundry_orders")->fetchAll();
+        $columnNames = array_column($columns, 'Field');
+        
+        if (in_array('receipt_token', $columnNames)) {
+          $order = $c->raw(
+            "SELECT * FROM laundry_orders WHERE receipt_token = ?",
+            [$receiptToken]
+          )->fetch();
+        }
+      } catch (Throwable $e) {
+        // Continue to try by order ID
+      }
+      
+      // If not found by token, try by order ID
+      if (!$order && is_numeric($receiptToken)) {
+        $order = $c->get('laundry_orders', (int) $receiptToken);
+      }
+      
+      if (!$order) {
+        flash('danger', 'Order not found. Please check the receipt token or order ID.');
+      } else {
+        // Update order status to completed (picked up)
+        $c->update('laundry_orders', ['status' => 'completed'], ['id' => $order['id']]);
+        audit('order.status', 'orders', 'order', $order['id']);
+        flash('success', 'Order #' . h($order['order_no']) . ' marked as picked up/completed.');
+      }
+    }
+    redirect('system-settings');
+  }
 }
 
 $settings = $c->get('settings', 1);
@@ -96,6 +137,23 @@ require_once __DIR__ . '/layout/header.php';
 
   <div class="col-lg-6">
     <div class="ia-card">
+      <div class="card-head"><h3>Order Pickup</h3></div>
+      <div class="card-body card-body-px">
+        <form method="post" class="row g-3">
+          <input type="hidden" name="form" value="pickup_order">
+          <div class="col-12">
+            <label class="form-label">Receipt Token / Order ID</label>
+            <input class="form-control" name="receipt_token" placeholder="Enter receipt token or order ID" required>
+            <small class="text-muted">Enter the receipt token from the customer's receipt link or the order ID</small>
+          </div>
+          <div class="col-12">
+            <button class="btn btn-success" type="submit"><?= ia_icon('check', 15) ?> Mark as Picked Up</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <div class="ia-card mt-4">
       <div class="card-head"><h3>Quick links</h3></div>
       <div class="card-body d-grid gap-2 card-body-px">
         <a class="btn btn-outline-ia" href="services">Manage services &amp; pricing per kg</a>
