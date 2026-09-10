@@ -11,6 +11,10 @@ $active = 'AI Tools';
 $bodyClass = 'page-ai';
 require_once __DIR__ . '/../layout/header.php';
 
+// Check for flash messages from URL parameters
+$flashType = $_GET['flash_type'] ?? null;
+$flashMessage = $_GET['flash_message'] ?? null;
+
 $inst = resolve_active_institution();
 if (!$inst) {
   http_response_code(404);
@@ -206,6 +210,16 @@ $panoramas = is_array($panoramasResult) ? $panoramasResult : $panoramasResult->f
 $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued' => 'badge-draft', 'processing' => 'badge-live', 'completed' => 'badge-live', 'failed' => 'badge-dead'];
 ?>
 <div class="row g-4">
+  <!-- Flash Messages -->
+  <?php if ($flashType && $flashMessage): ?>
+  <div class="col-12">
+    <div class="alert alert-<?= $flashType === 'success' ? 'success' : 'danger' ?> alert-dismissible fade show" role="alert">
+      <?= h($flashMessage) ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  </div>
+  <?php endif; ?>
+  
   <!-- ============================ STITCH ============================ -->
   <div class="col-12">
 
@@ -306,15 +320,7 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
       </div>
     <?php endforeach; ?>
 
-    <?php if (count($jobs) === 0): ?>
-      <div class="ia-card">
-        <div class="empty-state">
-          <div class="empty-icon"><i class="fas fa-magic fa-2x"></i></div>
-          <h4>No stitch jobs</h4>
-          <p>Create a job, drop six cube faces (front/back/left/right/up/down) or capture in app, then hit Stitch.</p>
-        </div>
-      </div>
-    <?php endif; ?>
+
   </div>
 
   <!-- ============================ 360 CAMERA PANORAMAS ============================ -->

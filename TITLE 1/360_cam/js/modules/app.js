@@ -209,10 +209,10 @@ export class PhotosphereApp {
                 };
                 console.log('Using reduced resolution for iOS:', this.CAPTURE_RESOLUTION);
             } else {
-                // 1080p portrait for Android/Desktop - maximum quality
+                // 4K portrait for Android/Desktop - maximum quality
                 this.CAPTURE_RESOLUTION = {
-                    width: 1080,
-                    height: 1920
+                    width: 2160,
+                    height: 3840
                 };
             }
             console.log('Portrait capture resolution:', this.CAPTURE_RESOLUTION);
@@ -370,6 +370,8 @@ export class PhotosphereApp {
         // This allows users to continue a partial capture after reload
         
         console.log('Photosphere app initialized');
+        console.log('cardUI initialized:', !!this.cardUI);
+        console.log('cameraRoll initialized:', !!this.cameraRoll);
         
         // App initialization complete - progress will be finalized in capture.js
         // Now handle any pending stitch recovery after init is complete
@@ -417,12 +419,37 @@ export class PhotosphereApp {
             window.addEventListener('devicemotion', (e) => this.handleMotion(e));
         }
         
-        this.elements.stitchBtn?.addEventListener('click', () => this.startStitching());
-        this.elements.clearBtn?.addEventListener('click', async () => { 
-            if(this.cardUI && await this.cardUI.confirm('Clear all captured images and return to start?', 'Clear Session?')) {
-                await this.clearSession();
-            }
-        });
+        if (this.elements.stitchBtn) {
+            this.elements.stitchBtn.addEventListener('click', () => this.startStitching());
+        } else {
+            console.warn('stitchBtn element not found');
+        }
+        
+        if (this.elements.clearBtn) {
+            this.elements.clearBtn.addEventListener('click', async () => { 
+                console.log('Clear button clicked');
+                console.log('cardUI available:', !!this.cardUI);
+                
+                if(!this.cardUI) {
+                    console.error('cardUI not initialized, using fallback confirm');
+                    const confirmed = confirm('Clear all captured images and return to start?');
+                    if(confirmed) {
+                        console.log('User confirmed clear session (fallback)');
+                        await this.clearSession();
+                    }
+                    return;
+                }
+                
+                if(await this.cardUI.confirm('Clear all captured images and return to start?', 'Clear Session?')) {
+                    console.log('User confirmed clear session');
+                    await this.clearSession();
+                } else {
+                    console.log('User cancelled clear session');
+                }
+            });
+        } else {
+            console.warn('clearBtn element not found');
+        }
         // ============================================
         // CAPTURE BUTTON - DUAL PURPOSE
         // ============================================
@@ -434,32 +461,65 @@ export class PhotosphereApp {
         // The button shows a progress ring that fills as images are captured
         // At 36/36 it turns into a checkmark to indicate ready to stitch
         
-        this.elements.captureBtn.addEventListener('click', async () => {
-            const capturedCount = this.capturedHotspots.size;
-            
-            if (capturedCount > 0) {
-                // We have some images - button should start stitching
+        if (this.elements.captureBtn) {
+            this.elements.captureBtn.addEventListener('click', async () => {
+                console.log('Capture button clicked');
+                console.log('cardUI available:', !!this.cardUI);
+                const capturedCount = this.capturedHotspots.size;
+                console.log('Captured count:', capturedCount);
                 
-                if (capturedCount < 36) {
-                    // Incomplete capture - warn user
-                    const proceed = this.cardUI && await this.cardUI.confirm(
-                        `You have captured ${capturedCount} out of 36 images.\n\nThe panorama may be incomplete. Do you want to continue to stitching?`,
-                        'Incomplete Capture'
-                    );
-                    if (!proceed) {
-                        // User wants to continue capturing
-                        this.handleCapture();
-                        return;
+                if (capturedCount > 0) {
+                    // We have some images - button should start stitching
+                    
+                    if (capturedCount < 36) {
+                        // Incomplete capture - warn user
+                        let proceed = true;
+                        if(this.cardUI) {
+                            proceed = await this.cardUI.confirm(
+                                `You have captured ${capturedCount} out of 36 images.\n\nThe panorama may be incomplete. Do you want to continue to stitching?`,
+                                'Incomplete Capture'
+                            );
+                        } else {
+                            console.warn('cardUI not available, using fallback confirm');
+                            proceed = confirm(`You have captured ${capturedCount} out of 36 images.\n\nThe panorama may be incomplete. Do you want to continue to stitching?`);
+                        }
+                        
+                        if (!proceed) {
+                            // User wants to continue capturing
+                            console.log('User chose to continue capturing');
+                            this.handleCapture();
+                            return;
+                        }
                     }
+                    
+                    // Start the WebGL2 best-pixel stitching pipeline
+                    console.log('Starting best pixel stitching');
+                    this.startBestPixelStitching();
+                } else {
+                    // No images yet - try to capture at current position
+                    console.log('No images captured yet, attempting manual capture');
+                    this.handleCapture();
                 }
-                
-                // Start the WebGL2 best-pixel stitching pipeline
-                this.startBestPixelStitching();
-            } else {
-                // No images yet - try to capture at current position
-                this.handleCapture();
-            }
-        });
+            });
+        } else {
+            console.warn('captureBtn element not found');
+        }
+        
+        // Add gallery button event listener
+        const galleryBtn = document.getElementById('gallery-btn');
+        if (galleryBtn) {
+            galleryBtn.addEventListener('click', async (e) => {
+                console.log('Gallery button clicked');
+                e.preventDefault();
+                if (this.cameraRoll) {
+                    await this.cameraRoll.show();
+                } else {
+                    console.error('Camera roll not initialized');
+                }
+            });
+        } else {
+            console.warn('gallery-btn element not found');
+        }
         // start-btn already has onclick in HTML
         document.getElementById('close-stitch-overlay-btn').addEventListener('click', async () => { 
             // Check if this is a partial capture
@@ -1046,7 +1106,7 @@ export class PhotosphereApp {
     }
 
     setCapturingEnabled(enabled) {
-        this.isCapturing = !enabled;
+        // Note: isCapturing is managed by handleCapture() directly, not by this flag
         this.isCapturingEnabled = enabled;
         this.elements.captureBtn.disabled = !enabled;
     }
@@ -1054,6 +1114,7 @@ export class PhotosphereApp {
     async startStitching() {
         // OpenCV removed - proceeding with WebGL2 stitching
         
+        this.isCapturing = false; // Reset any in-progress capture
         this.setCapturingEnabled(false);
         // Show stitching overlay with lift in animation
         this.elements.stitchingOverlay.classList.remove('pressing-down');
@@ -1147,6 +1208,18 @@ export class PhotosphereApp {
                 
                 await this.database.savePanorama(panoramaData);
                 console.log('Panorama saved to database');
+                
+                // Upload to server so it appears in admin AI Tools page
+                const _uploadResult1 = await this.uploadPanoramaToServer(panoramaBlob, canvas.width, canvas.height, capturedData.length);
+                // Redirect to admin page with flash message after successful upload
+                if (_uploadResult1.success) {
+                    console.log('Panorama uploaded successfully - redirecting to admin page');
+                    setTimeout(() => {
+                        window.location.href = '../admin/institution/ai.php?flash_type=success&flash_message=' + encodeURIComponent('✅ Panorama saved to system! You can now download or attach it to a tour scene from the AI Tools page in the admin panel.');
+                    }, 1000);
+                } else {
+                    console.log('Upload failed:', _uploadResult1.error);
+                }
                 
                 // Mark stitch job as complete if we have one
                 if (this.stitchRecovery && this.currentStitchJobId) {
@@ -1477,6 +1550,76 @@ export class PhotosphereApp {
         await this.performBestPixelStitching(capturedData);
     }
     
+
+    /**
+     * Upload the stitched equirectangular panorama to the server.
+     * Saves it to the institution's assets/panos/ folder and the
+     * panoramas table so it appears on the AI Tools admin page.
+     *
+     * @param {Blob}   blob       - JPEG blob of the panorama
+     * @param {number} width      - canvas width
+     * @param {number} height     - canvas height
+     * @param {number} imageCount - number of source captures
+     */
+
+    /**
+     * Show a card-style success (or warning) modal after auto-syncing the
+     * stitched panorama to the server.
+     * @param {{ success: boolean, error?: string }} result
+     */
+    _showSyncSuccessModal(result) {
+        if (!this.cardUI) return;
+        if (!result) return;
+        if (result.success) {
+            this.cardUI.alert(
+                '✅ Panorama saved to system!\n\nYou can now download or attach it to a tour scene from the AI Tools page in the admin panel.',
+                'Synced to System'
+            );
+        } else {
+            // Non-fatal warning — tell user how to retry manually
+            this.cardUI.alert(
+                `⚠️ Auto-sync failed: ${result.error || 'Unknown error'}\n\nYour panorama is saved locally. Open the Camera Roll and tap the upload (cloud) icon to retry.`,
+                'Sync Skipped'
+            );
+        }
+    }
+
+    async uploadPanoramaToServer(blob, width, height, imageCount) {
+        try {
+            const apiUrl = '../api/save-panorama.php';
+            const formData = new FormData();
+            const filename = `panorama_${Date.now()}.jpg`;
+            formData.append('panorama', blob, filename);
+            formData.append('title', `360° Panorama – ${new Date().toLocaleString()}`);
+            formData.append('description', `Captured with 360 Camera App (${imageCount} images)`);
+            formData.append('capture_data', JSON.stringify({
+                imageCount,
+                width,
+                height,
+                capturedAt: new Date().toISOString()
+            }));
+
+            console.log('Uploading panorama to server…');
+            const res = await fetch(apiUrl, {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            });
+            const json = await res.json();
+            if (json.success) {
+                console.log('Panorama uploaded to server successfully:', json);
+                return { success: true, data: json };
+            } else {
+                console.warn('Server upload failed:', json.error);
+                return { success: false, error: json.error };
+            }
+        } catch (err) {
+            // Non-fatal — panorama is still saved locally in IndexedDB
+            console.warn('Could not upload panorama to server (non-fatal):', err.message);
+            return { success: false, error: err.message };
+        }
+    }
+
     async clearSession() {
         await this.database.clearAllImages();
         this.capturedHotspots.clear();
@@ -1506,6 +1649,7 @@ export class PhotosphereApp {
         if (this.camera) {
             this.camera.stop();
         }
+        this.isCapturing = false; // Reset any in-progress capture
         this.setCapturingEnabled(false);
         
         // Hide capture UI elements
@@ -1599,6 +1743,7 @@ export class PhotosphereApp {
     }
 
     async startBestPixelStitching() {
+        this.isCapturing = false; // Reset any in-progress capture
         this.setCapturingEnabled(false);
         
         // Announce to screen readers
@@ -1802,8 +1947,8 @@ export class PhotosphereApp {
                     const texture = gl.createTexture();
                     gl.bindTexture(gl.TEXTURE_2D, texture);
                     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, blendedCanvas);
-                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
                     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
                     
@@ -2035,7 +2180,7 @@ export class PhotosphereApp {
             try {
                 // First create a plain blob
                 const plainBlob = await new Promise(resolve => 
-                    finalCanvas.toBlob(resolve, 'image/jpeg', 0.9)
+                    finalCanvas.toBlob(resolve, 'image/jpeg', 1.0)
                 );
                 
                 // Then add metadata to it
@@ -2052,7 +2197,7 @@ export class PhotosphereApp {
                 console.error('Error adding metadata:', metadataError);
                 // Fall back to simple blob without metadata
                 panoramaBlob = await new Promise(resolve => 
-                    finalCanvas.toBlob(resolve, 'image/jpeg', 0.9)
+                    finalCanvas.toBlob(resolve, 'image/jpeg', 1.0)
                 );
             }
             
@@ -2071,6 +2216,23 @@ export class PhotosphereApp {
             try {
                 await this.database.savePanorama(panoramaData);
                 console.log('Panorama saved to database');
+                
+                // Upload to server so it appears in admin AI Tools page
+                const _uploadResult2 = await this.uploadPanoramaToServer(
+                    panoramaData.imageBlob,
+                    panoramaData.width,
+                    panoramaData.height,
+                    capturedData ? capturedData.length : (panoramaData.imageCount || 0)
+                );
+                // Redirect to admin page with flash message after successful upload
+                if (_uploadResult2.success) {
+                    console.log('Panorama uploaded successfully - redirecting to admin page');
+                    setTimeout(() => {
+                        window.location.href = '../admin/institution/ai.php?flash_type=success&flash_message=' + encodeURIComponent('✅ Panorama saved to system! You can now download or attach it to a tour scene from the AI Tools page in the admin panel.');
+                    }, 1000);
+                } else {
+                    console.log('Upload failed:', _uploadResult2.error);
+                }
                 
                 // Mark stitch job as complete if we have one
                 if (this.stitchRecovery && this.currentStitchJobId) {
@@ -2214,6 +2376,7 @@ export class PhotosphereApp {
     
     async startEnhancedStitching() {
         console.log('Starting enhanced stitching with OpenCV for equator band...');
+        this.isCapturing = false; // Reset any in-progress capture
         this.setCapturingEnabled(false);
         
         // Show stitching overlay
@@ -2671,8 +2834,8 @@ export class PhotosphereApp {
         const texture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sphericalCanvas);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         
@@ -2860,8 +3023,8 @@ export class PhotosphereApp {
         const equatorTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, equatorTexture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, erpCanvas.width, erpCanvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         
         // Now render the upper/lower bands with best-pixel
         await this.renderBestPixelPanorama(gl, erpCanvas, layers);
@@ -2910,8 +3073,8 @@ export class PhotosphereApp {
         const currentTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, currentTexture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, erpCanvas.width, erpCanvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, currentPixels);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         
         // Compile shaders
         const vertShader = gl.createShader(gl.VERTEX_SHADER);
@@ -2998,8 +3161,8 @@ export class PhotosphereApp {
         const equatorTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, equatorTexture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, equatorCanvas);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         
@@ -3909,8 +4072,8 @@ export class PhotosphereApp {
         const tex = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D_ARRAY, tex);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-        gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 1, gl.RGBA8, w, h, canvases.length);
@@ -4089,8 +4252,8 @@ export class PhotosphereApp {
       } catch(e) {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, erpCanvas);
       }
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       gl.generateMipmap(gl.TEXTURE_2D);
@@ -4218,8 +4381,8 @@ export class PhotosphereApp {
         const originalTex = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, originalTex);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, erpCanvas);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.generateMipmap(gl.TEXTURE_2D);

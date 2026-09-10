@@ -8,6 +8,9 @@ class OfflineDB {
     this.dbName = dbName;
     this.version = version;
     this.db = null;
+    this._ready = this.open().catch(err => {
+      console.error('[OfflineDB] Failed to open database:', err);
+    });
   }
 
   // Open database connection
@@ -69,6 +72,7 @@ class OfflineDB {
 
   // Generic add operation
   async add(storeName, data) {
+    await this._ready;
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], 'readwrite');
       const store = transaction.objectStore(storeName);
@@ -81,6 +85,7 @@ class OfflineDB {
 
   // Generic put operation (upsert)
   async put(storeName, data) {
+    await this._ready;
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], 'readwrite');
       const store = transaction.objectStore(storeName);
@@ -93,6 +98,7 @@ class OfflineDB {
 
   // Generic get operation
   async get(storeName, key) {
+    await this._ready;
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], 'readonly');
       const store = transaction.objectStore(storeName);
@@ -105,6 +111,7 @@ class OfflineDB {
 
   // Generic getAll operation
   async getAll(storeName) {
+    await this._ready;
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], 'readonly');
       const store = transaction.objectStore(storeName);
@@ -117,6 +124,7 @@ class OfflineDB {
 
   // Generic delete operation
   async delete(storeName, key) {
+    await this._ready;
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], 'readwrite');
       const store = transaction.objectStore(storeName);
@@ -129,6 +137,7 @@ class OfflineDB {
 
   // Generic clear operation
   async clear(storeName) {
+    await this._ready;
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], 'readwrite');
       const store = transaction.objectStore(storeName);
@@ -141,6 +150,7 @@ class OfflineDB {
 
   // Query by index
   async getByIndex(storeName, indexName, value) {
+    await this._ready;
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction([storeName], 'readonly');
       const store = transaction.objectStore(storeName);
@@ -171,6 +181,7 @@ class OfflineDB {
 
   // Get pending sync requests
   async getPendingSyncRequests() {
+    await this._ready;
     return new Promise((resolve, reject) => {
       const transaction = this.db.transaction(['syncQueue'], 'readonly');
       const store = transaction.objectStore('syncQueue');
@@ -297,8 +308,3 @@ class OfflineDB {
 
 // Global instance
 const offlineDB = new OfflineDB();
-
-// Auto-open on load
-offlineDB.open().catch(error => {
-  console.error('[OfflineDB] Failed to open database:', error);
-});

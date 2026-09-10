@@ -9,8 +9,14 @@
       btn.addEventListener('click', function () {
         var idEl = btn.dataset.aiIdEl ? document.getElementById(btn.dataset.aiIdEl) : null;
         var id = parseInt((idEl || {}).value || '0', 10) || parseInt(btn.dataset.aiId || '0', 10);
-        if (!id) { alert('Save this record first, then generate its description.'); return; }
+        if (!id) { 
+          // Use inline error instead of alert
+          showError(btn, 'Save this record first, then generate its description.');
+          return; 
+        }
         btn.disabled = true;
+        var originalText = btn.textContent;
+        btn.textContent = 'Generating...';
         var fd = new FormData();
         fd.append('type', btn.dataset.aiType);
         fd.append('id', id);
@@ -18,17 +24,68 @@
           .then(function (r) { return r.json(); })
           .then(function (d) {
             btn.disabled = false;
-            if (!d.ok) { alert(d.error || 'Generation failed.'); return; }
+            btn.textContent = originalText;
+            if (!d.ok) { 
+              showError(btn, d.error || 'Generation failed.'); 
+              return; 
+            }
             var ta = btn.dataset.aiTargetEl ? document.getElementById(btn.dataset.aiTargetEl) : btn.parentElement.querySelector('textarea');
             if (ta) ta.value = d.text;
             btn.classList.remove('btn-outline-ia');
             btn.classList.add('btn-grad');
             btn.textContent = '\u2713 Generated';
+            showSuccess(btn, 'Description generated successfully!');
           })
-          .catch(function () { btn.disabled = false; alert('Generation failed.'); });
+          .catch(function () { 
+            btn.disabled = false; 
+            btn.textContent = originalText;
+            showError(btn, 'Generation failed.'); 
+          });
       });
     });
   }
+  
+  function showError(btn, message) {
+    // Remove existing alerts
+    removeAlerts(btn);
+    // Create error alert
+    var alert = document.createElement('div');
+    alert.className = 'alert alert-danger alert-dismissible fade show mt-2';
+    alert.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    btn.parentElement.appendChild(alert);
+    // Auto-dismiss after 3 seconds
+    setTimeout(function() {
+      if (alert.parentElement) {
+        alert.classList.remove('show');
+        setTimeout(function() { if (alert.parentElement) alert.remove(); }, 150);
+      }
+    }, 3000);
+  }
+  
+  function showSuccess(btn, message) {
+    // Remove existing alerts
+    removeAlerts(btn);
+    // Create success alert
+    var alert = document.createElement('div');
+    alert.className = 'alert alert-success alert-dismissible fade show mt-2';
+    alert.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    btn.parentElement.appendChild(alert);
+    // Auto-dismiss after 2 seconds
+    setTimeout(function() {
+      if (alert.parentElement) {
+        alert.classList.remove('show');
+        setTimeout(function() { if (alert.parentElement) alert.remove(); }, 150);
+      }
+    }, 2000);
+  }
+  
+  function removeAlerts(btn) {
+    var existingAlerts = btn.parentElement.querySelectorAll('.alert');
+    existingAlerts.forEach(function(alert) {
+      alert.remove();
+    });
+  }
+  
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindIaAiGen);
   else bindIaAiGen();
 })();

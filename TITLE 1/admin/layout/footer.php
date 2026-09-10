@@ -11,39 +11,31 @@
 <script src="<?= url('admin/assets/js/dashboard.js') ?>"></script>
 <script src="<?= url('admin/assets/js/ia-ai-gen.js') ?>"></script>
 
-<!-- PWA Offline Support -->
-<script src="<?= url('assets/js/offline-db.js') ?>"></script>
-<script src="<?= url('assets/js/sync-manager.js') ?>"></script>
 <script>
-// Register Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('[PWA] Service Worker registered:', registration.scope);
-      })
-      .catch((error) => {
-        console.log('[PWA] Service Worker registration failed:', error);
-      });
-  });
-}
-
-// Add offline indicator to page
-function addOfflineIndicator() {
-  const indicator = document.createElement('div');
-  indicator.id = 'offline-indicator';
-  indicator.className = 'd-none position-fixed top-0 left-0 right-0 bg-warning text-dark text-center py-2 fw-bold';
-  indicator.style.zIndex = '9999';
-  indicator.innerHTML = '<i class="fas fa-wifi me-2"></i>You\'re offline - changes will sync when reconnected';
-  document.body.appendChild(indicator);
-}
-
-// Add offline indicator on load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', addOfflineIndicator);
-} else {
-  addOfflineIndicator();
-}
+// Handle flash message dismissal and URL cleanup
+document.addEventListener('DOMContentLoaded', function() {
+    // Check for flash messages in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('flash_type') || urlParams.has('flash_message')) {
+        // Clean up URL after a short delay
+        setTimeout(() => {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }, 3000);
+    }
+    
+    // Handle alert dismissals
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        const closeBtn = alert.querySelector('.btn-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                alert.classList.remove('show');
+                setTimeout(() => alert.remove(), 150);
+            });
+        }
+    });
+});
 </script>
+
 </body>
 </html>

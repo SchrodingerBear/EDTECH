@@ -1179,7 +1179,13 @@ export class CardUI {
             const buttonsContainer = document.getElementById('dialog-buttons');
             
             if (titleElement) titleElement.innerHTML = title; // Use textContent for safety
-            if (messageElement) messageElement.textContent = message;
+            if (messageElement) {
+                messageElement.innerHTML = message; // Allow HTML for styling
+                // Add basic styling for message content
+                messageElement.style.color = 'rgba(255, 255, 255, 0.9)';
+                messageElement.style.lineHeight = '1.5';
+                messageElement.style.fontSize = '14px';
+            }
             
             // Clear existing buttons and remove all event listeners
             if (buttonsContainer) {

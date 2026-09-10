@@ -140,6 +140,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('success', 'Compass north saved.');
         }
 
+        if ($action === 'studio-save-all') {
+            $planId = (int) ($_POST['plan_id'] ?? 0);
+            $na = max(0, min(360, (float) ($_POST['north_angle'] ?? 0)));
+            crud()->update('floor_plans', ['north_angle' => $na], ['id' => $planId, 'institution_id' => $iid]);
+            foreach (($_POST['markers'] ?? []) as $m) {
+                $mid = (int) ($m['id'] ?? 0);
+                if (!$mid) continue;
+                $mtype = in_array($m['marker_type'] ?? '', ['scene', 'entrance', 'exit'], true) ? $m['marker_type'] : 'scene';
+                crud()->update('floor_plan_markers', [
+                    'x_percent' => max(0, min(100, (float) ($m['x'] ?? 0))),
+                    'y_percent' => max(0, min(100, (float) ($m['y'] ?? 0))),
+                    'popup_title' => trim($m['popup_title'] ?? '') ?: null,
+                    'popup_html' => trim($m['popup_html'] ?? '') ?: null,
+                    'label' => trim($m['label'] ?? '') ?: 'Marker',
+                    'marker_type' => $mtype,
+                    'facing_angle' => max(0, min(360, (float) ($m['facing_angle'] ?? 0))),
+                    'target_scene_id'  => (int) ($m['target_scene_id'] ?? 0) ?: null,
+                    'target_floor_plan_id' => (int) ($m['target_floor_plan_id'] ?? 0) ?: null,
+                    'target_building_id' => (int) ($m['target_building_id'] ?? 0) ?: null,
+                    'target_room_id'   => (int) ($m['target_room_id'] ?? 0) ?: null,
+                ], ['id' => $mid, 'institution_id' => $iid]);
+            }
+            $routes = json_decode($_POST['routes'] ?? '[]', true) ?: [];
+            $existingWpIds = array_column(crud()->raw("SELECT id FROM fp_waypoints WHERE floor_plan_id=? AND institution_id=?", [$planId, $iid])->fetchAll() ?: [], 'id');
+            foreach ($routes as $ri => $route) {
+                $routeName = trim($route['name'] ?? '') ?: ('Route ' . ($ri + 1));
+                $routeNodes = $route['nodes'] ?? [];
+                $nodeIds = [];
+                foreach ($routeNodes as $node) {
+                    $wpId = (int) ($node['id'] ?? 0);
+                    $x = max(0, min(100, (float) ($node['x'] ?? 50)));
+                    $y = max(0, min(100, (float) ($node['y'] ?? 50)));
+                    $isCorner = !empty($node['corner']);
+                    $type = $isCorner ? 'corner' : 'normal';
+                    if ($wpId && in_array($wpId, $existingWpIds)) {
+                        crud()->update('fp_waypoints', ['x_percent' => $x, 'y_percent' => $y, 'type' => $type], ['id' => $wpId, 'institution_id' => $iid]);
+                        $nodeIds[] = $wpId;
+                    } else {
+                        $label = trim($node['label'] ?? '') ?: ($routeName . ' #' . count($nodeIds));
+                        $newId = crud()->insert('fp_waypoints', [
+                            'institution_id' => $iid, 'floor_plan_id' => $planId,
+                            'label' => $label, 'x_percent' => $x, 'y_percent' => $y, 'type' => $type,
+                        ]);
+                        $nodeIds[] = $newId;
+                        $existingWpIds[] = $newId;
+                    }
+                }
+                $nodesJson = json_encode(array_values(array_filter(array_map('intval', $nodeIds))));
+                $existingPathId = (int) ($route['id'] ?? 0);
+                if ($existingPathId) {
+                    crud()->update('fp_navigation_paths', ['name' => $routeName, 'nodes_json' => $nodesJson], ['id' => $existingPathId, 'institution_id' => $iid]);
+                } else {
+                    crud()->insert('fp_navigation_paths', [
+                        'institution_id' => $iid, 'floor_plan_id' => $planId,
+                        'name' => $routeName, 'nodes_json' => $nodesJson,
+                        'created_by' => (int) current_user()['id'],
+                    ]);
+                }
+            }
+            $deleteIds = array_filter(array_map('intval', explode(',', $_POST['routes_delete'] ?? '')));
+            foreach ($deleteIds as $delId) crud()->delete('fp_navigation_paths', ['id' => $delId, 'institution_id' => $iid]);
+            $wpDeleteIds = array_filter(array_map('intval', explode(',', $_POST['waypoints_delete'] ?? '')));
+            foreach ($wpDeleteIds as $delWpId) crud()->delete('fp_waypoints', ['id' => $delWpId, 'institution_id' => $iid]);
+            sync_institution_config($iid);
+            flash('success', 'Studio saved.');
+        }
+
         if ($action === 'waypoint-add') {
             $planId = (int) ($_POST['plan_id'] ?? 0);
             $label = trim($_POST['label'] ?? '');
@@ -235,6 +302,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             sync_institution_config($iid);
             flash('success', 'Exit connection removed.');
         }
+
+        if ($action === 'routes-save') {
+            $planId = (int) ($_POST['plan_id'] ?? 0);
+            $routes  = json_decode($_POST['routes'] ?? '[]', true) ?: [];
+            $existingWpIds = array_column($waypoints ?? [], 'id');
+
+            foreach ($routes as $ri => $route) {
+                $routeName = trim($route['name'] ?? '') ?: ('Route ' . ($ri + 1));
+                $routeNodes = $route['nodes'] ?? [];
+                $nodeIds = [];
+
+                foreach ($routeNodes as $node) {
+                    $wpId = (int) ($node['id'] ?? 0);
+                    $x = max(0, min(100, (float) ($node['x'] ?? 50)));
+                    $y = max(0, min(100, (float) ($node['y'] ?? 50)));
+                    $isCorner = !empty($node['corner']);
+                    $type = $isCorner ? 'corner' : 'normal';
+
+                    if ($wpId && in_array($wpId, $existingWpIds)) {
+                        crud()->update('fp_waypoints', [
+                            'x_percent' => $x, 'y_percent' => $y, 'type' => $type,
+                        ], ['id' => $wpId, 'institution_id' => $iid]);
+                        $nodeIds[] = $wpId;
+                    } else {
+                        $label = trim($node['label'] ?? '') ?: ($routeName . ' #' . ($ri + 1) . '-' . count($nodeIds));
+                        $newId = crud()->insert('fp_waypoints', [
+                            'institution_id' => $iid, 'floor_plan_id' => $planId,
+                            'label' => $label, 'x_percent' => $x, 'y_percent' => $y,
+                            'type' => $type,
+                        ]);
+                        $nodeIds[] = $newId;
+                        $existingWpIds[] = $newId;
+                    }
+                }
+
+                $nodesJson = json_encode(array_values(array_filter(array_map('intval', $nodeIds))), JSON_UNESCAPED_UNICODE);
+                $existingPathId = (int) ($route['id'] ?? 0);
+                if ($existingPathId) {
+                    crud()->update('fp_navigation_paths', ['name' => $routeName, 'nodes_json' => $nodesJson], ['id' => $existingPathId, 'institution_id' => $iid]);
+                } else {
+                    crud()->insert('fp_navigation_paths', [
+                        'institution_id' => $iid, 'floor_plan_id' => $planId,
+                        'name' => $routeName, 'nodes_json' => $nodesJson,
+                        'created_by' => (int) current_user()['id'],
+                    ]);
+                }
+            }
+
+            $deleteIds = array_filter(array_map('intval', explode(',', $_POST['routes_delete'] ?? '')));
+            foreach ($deleteIds as $delId) {
+                crud()->delete('fp_navigation_paths', ['id' => $delId, 'institution_id' => $iid]);
+            }
+
+            $wpDeleteIds = array_filter(array_map('intval', explode(',', $_POST['waypoints_delete'] ?? '')));
+            foreach ($wpDeleteIds as $delWpId) {
+                crud()->delete('fp_waypoints', ['id' => $delWpId, 'institution_id' => $iid]);
+            }
+
+            sync_institution_config($iid);
+            flash('success', 'Routes saved.');
+        }
     } catch (Throwable $e) {
         flash('error', $e->getMessage());
     }
@@ -279,7 +407,7 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
     <div>
       <a class="back-link" href="floor-plans">← All floor plans</a>
       <div class="d-flex align-items-center gap-2 mt-1">
-        <h3 class="mb-0 fw-800"><?= h($studio['title']) ?> — marker studio</h3>
+        <h3 class="mb-0 fw-800"><?= h($studio['title']) ?> — interactive studio</h3>
         <?php if ($studio['is_campus_landing']): ?><span class="badge badge-live">landing</span><?php endif; ?>
       </div>
     </div>
@@ -289,26 +417,19 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
     </div>
   </div>
 
-  <!-- AR studio mode toolbar -->
+  <!-- Unified mode toolbar -->
   <div class="ia-card p-2 mb-3">
     <div class="d-flex align-items-center gap-2 flex-wrap">
-      <span class="ia-meta-md fw-semibold me-1"><?= ia_icon('cube', 14) ?> AR Studio mode:</span>
       <div class="btn-group flex-wrap" id="ar-mode-tabs" role="group">
-        <button type="button" class="btn btn-sm btn-grad" data-ar-mode="markers"><?= ia_icon('geo', 13) ?> AR Markers</button>
-        <button type="button" class="btn btn-sm btn-outline-ia" data-ar-mode="waypoints"><?= ia_icon('route', 13) ?> Waypoints</button>
-        <button type="button" class="btn btn-sm btn-outline-ia" data-ar-mode="paths"><?= ia_icon('signpost', 13) ?> Paths</button>
-        <button type="button" class="btn btn-sm btn-outline-ia" data-ar-mode="connections"><?= ia_icon('door', 13) ?> Exit Links</button>
+        <button type="button" class="btn btn-sm btn-grad" data-ar-mode="move"><?= ia_icon('move3d', 13) ?> Move</button>
+        <button type="button" class="btn btn-sm btn-outline-ia" data-ar-mode="face"><?= ia_icon('refresh', 13) ?> Face</button>
+        <button type="button" class="btn btn-sm btn-outline-ia" data-ar-mode="route"><?= ia_icon('map', 13) ?> Route</button>
         <button type="button" class="btn btn-sm btn-outline-ia" data-ar-mode="compass"><?= ia_icon('compass', 13) ?> Compass</button>
+        <button type="button" class="btn btn-sm btn-outline-ia" data-ar-mode="connections"><?= ia_icon('link', 13) ?> Exit Links</button>
       </div>
-      <div class="ms-auto d-none" id="compass-readout">
-        <form method="post" class="d-flex align-items-center gap-2">
-          <input type="hidden" name="fp_action" value="compass-save">
-          <input type="hidden" name="id" value="<?= (int) $studio['id'] ?>">
-          <input type="hidden" name="north_angle" id="north-angle-input" value="<?= (float) ($studio['north_angle'] ?? 0) ?>">
-          <span class="ia-meta-md">North angle:</span>
-          <strong id="compass-value"><?= (float) ($studio['north_angle'] ?? 0) ?>°</strong>
-          <button class="btn btn-grad btn-sm px-3" type="submit">Save compass</button>
-        </form>
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <span class="ia-meta-md" id="mode-hint">Drag any element to reposition it. Click to edit.</span>
+        <button class="btn btn-grad btn-sm px-3" id="studio-save-btn" type="button">Save all</button>
       </div>
     </div>
   </div>
@@ -334,174 +455,93 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
     </div></div>
   </div>
 
-  <!-- MARKERS FORM -->
-  <form method="post" id="fp-markers-form">
-    <input type="hidden" name="fp_action" value="markers-save">
-    <input type="hidden" name="plan_id" value="<?= (int) $studio['id'] ?>">
-    <div class="ia-card p-3">
-      <div id="map-stage" class="map-stage"
-           style="--fp-ar: <?= $studio['aspect_ratio'] ?>">
-        <img src="<?= h(media_url($studio['image_path'])) ?>" alt="floor plan"
-             class="map-stage-img">
-        <div id="fp-path-layer"></div>
-        <input type="hidden" name="markers-hash" id="markers-hash">
+  <!-- Map stage -->
+  <div class="ia-card p-3">
+    <div id="map-stage" class="map-stage" style="--fp-ar: <?= $studio['aspect_ratio'] ?>">
+      <img src="<?= h(media_url($studio['image_path'])) ?>" alt="floor plan" class="map-stage-img">
+      <div id="fp-path-layer"></div>
 
-        <?php foreach ($markers as $mkIdx => $mk): ?>
-          <?php $mtype = in_array($mk['marker_type'] ?? '', ['scene', 'entrance', 'exit'], true) ? $mk['marker_type'] : 'scene'; ?>
-          <div class="fp-marker-dot" data-id="<?= (int) $mk['id'] ?>"
-               data-mktype="<?= $mtype ?>"
-               data-name="<?= h($mk['label'], ENT_QUOTES) ?>"
-               style="left:<?= (float) $mk['x_percent'] ?>%;top:<?= (float) $mk['y_percent'] ?>%">
-            <span class="fp-facing-arrow" style="--facing: <?= (float) ($mk['facing_angle'] ?? 0) ?>deg"></span>
-            <span class="fp-mktype-badge"><?= $mtype === 'entrance' ? 'IN' : ($mtype === 'exit' ? 'OUT' : 'SC') ?></span>
-            <input type="hidden" name="markers[<?= $mkIdx ?>][id]" value="<?= (int) $mk['id'] ?>">
-            <input type="hidden" name="markers[<?= $mkIdx ?>][x]" value="<?= (float) $mk['x_percent'] ?>" class="mk-x">
-            <input type="hidden" name="markers[<?= $mkIdx ?>][y]" value="<?= (float) $mk['y_percent'] ?>" class="mk-y">
-            <input type="hidden" name="markers[<?= $mkIdx ?>][label]" value="<?= h($mk['label']) ?>">
-            <input type="hidden" name="markers[<?= $mkIdx ?>][marker_type]" value="<?= $mtype ?>">
-            <input type="hidden" name="markers[<?= $mkIdx ?>][facing_angle]" value="<?= (float) ($mk['facing_angle'] ?? 0) ?>" class="mk-facing">
-            <input type="hidden" name="markers[<?= $mkIdx ?>][target_building_id]" value="<?= h($mk['target_building_id']) ?>">
-            <input type="hidden" name="markers[<?= $mkIdx ?>][target_room_id]" value="<?= h($mk['target_room_id']) ?>">
-            <input type="hidden" name="markers[<?= $mkIdx ?>][target_scene_id]" value="<?= h($mk['target_scene_id']) ?>">
-            <input type="hidden" name="markers[<?= $mkIdx ?>][target_floor_plan_id]" value="<?= h($mk['target_floor_plan_id']) ?>">
-            <input type="hidden" name="markers[<?= $mkIdx ?>][popup_title]" value="<?= h($mk['popup_title']) ?>">
-            <input type="hidden" name="markers[<?= $mkIdx ?>][popup_html]" value="<?= h($mk['popup_html']) ?>">
-          </div>
-        <?php endforeach; ?>
-
-        <?php foreach ($waypoints as $wpIdx => $wp): ?>
-          <div class="fp-wp-dot<?= $wp['type'] === 'corner' ? ' is-corner' : '' ?>"
-               data-wp-id="<?= (int) $wp['id'] ?>"
-               data-name="<?= h($wp['label'], ENT_QUOTES) ?>"
-               style="left:<?= (float) $wp['x_percent'] ?>%;top:<?= (float) $wp['y_percent'] ?>%">
-            <input type="hidden" name="waypoints[<?= $wpIdx ?>][id]" value="<?= (int) $wp['id'] ?>">
-            <input type="hidden" name="waypoints[<?= $wpIdx ?>][x]" value="<?= (float) $wp['x_percent'] ?>" class="wp-x">
-            <input type="hidden" name="waypoints[<?= $wpIdx ?>][y]" value="<?= (float) $wp['y_percent'] ?>" class="wp-y">
-            <input type="hidden" name="waypoints[<?= $wpIdx ?>][label]" value="<?= h($wp['label']) ?>">
-            <input type="hidden" name="waypoints[<?= $wpIdx ?>][type]" value="<?= $wp['type'] ?>" class="wp-type">
-          </div>
-        <?php endforeach; ?>
-
-        <div id="fp-compass" class="fp-compass" style="--north: <?= (float) ($studio['north_angle'] ?? 0) ?>deg">
-          <div class="fp-compass-dial"></div>
-          <div class="fp-compass-needle"></div>
-          <div class="fp-compass-n">N</div>
+      <?php foreach ($markers as $mk): ?>
+        <?php $mtype = in_array($mk['marker_type'] ?? '', ['scene', 'entrance', 'exit'], true) ? $mk['marker_type'] : 'scene'; ?>
+        <div class="fp-marker-dot" data-id="<?= (int) $mk['id'] ?>"
+             data-mktype="<?= $mtype ?>"
+             data-name="<?= h($mk['label'], ENT_QUOTES) ?>"
+             style="left:<?= (float) $mk['x_percent'] ?>%;top:<?= (float) $mk['y_percent'] ?>%">
+          <span class="fp-facing-arrow" style="--facing: <?= (float) ($mk['facing_angle'] ?? 0) ?>deg"></span>
+          <span class="fp-mktype-badge"><?= $mtype === 'entrance' ? 'IN' : ($mtype === 'exit' ? 'OUT' : 'SC') ?></span>
+          <input type="hidden" class="mk-x" value="<?= (float) $mk['x_percent'] ?>">
+          <input type="hidden" class="mk-y" value="<?= (float) $mk['y_percent'] ?>">
+          <input type="hidden" class="mk-label" value="<?= h($mk['label']) ?>">
+          <input type="hidden" class="mk-type" value="<?= $mtype ?>">
+          <input type="hidden" class="mk-facing" value="<?= (float) ($mk['facing_angle'] ?? 0) ?>">
+          <input type="hidden" class="mk-building" value="<?= h($mk['target_building_id']) ?>">
+          <input type="hidden" class="mk-room" value="<?= h($mk['target_room_id']) ?>">
+          <input type="hidden" class="mk-scene" value="<?= h($mk['target_scene_id']) ?>">
+          <input type="hidden" class="mk-fp" value="<?= h($mk['target_floor_plan_id']) ?>">
+          <input type="hidden" class="mk-popup-title" value="<?= h($mk['popup_title']) ?>">
+          <input type="hidden" class="mk-popup-html" value="<?= h($mk['popup_html']) ?>">
         </div>
+      <?php endforeach; ?>
 
-        <div class="fp-hint" id="fp-hint">Drag dots to position them. Click a marker to edit its link, type &amp; facing. Use the AR Studio toolbar to switch layers.</div>
-      </div>
-
-      <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-        <div class="d-flex gap-2 flex-wrap" id="marker-list">
-          <?php foreach ($markers as $mk): ?>
-            <button type="button" class="btn btn-sm btn-outline-ia" data-select-dot="<?= (int) $mk['id'] ?>">
-              <span class="chip-dot"></span><?= h($mk['label']) ?>
-            </button>
-          <?php endforeach; ?>
+      <?php foreach ($waypoints as $wp): ?>
+        <div class="fp-wp-dot<?= $wp['type'] === 'corner' ? ' is-corner' : '' ?>"
+             data-wp-id="<?= (int) $wp['id'] ?>"
+             data-name="<?= h($wp['label'], ENT_QUOTES) ?>"
+             style="left:<?= (float) $wp['x_percent'] ?>%;top:<?= (float) $wp['y_percent'] ?>%">
+          <input type="hidden" class="wp-x" value="<?= (float) $wp['x_percent'] ?>">
+          <input type="hidden" class="wp-y" value="<?= (float) $wp['y_percent'] ?>">
+          <input type="hidden" class="wp-label" value="<?= h($wp['label']) ?>">
+          <input type="hidden" class="wp-type" value="<?= $wp['type'] ?>">
         </div>
-        <button class="btn btn-grad px-4" type="submit">Save marker positions</button>
-      </div>
-    </div>
-  </form>
+      <?php endforeach; ?>
 
-  <!-- WAYPOINTS FORM -->
-  <form method="post" id="fp-waypoints-form" class="d-none">
-    <input type="hidden" name="fp_action" value="waypoints-save">
-    <input type="hidden" name="plan_id" value="<?= (int) $studio['id'] ?>">
-    <div class="ia-card p-3">
-      <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-        <div>
-          <h5 class="mb-1">Waypoints</h5>
-          <p class="ia-meta-md mb-0">Waypoints form the walking graph the AR guide follows. Corners (⤺) are curve points on turns.</p>
-        </div>
-        <button type="submit" class="btn btn-grad px-4">Save waypoints</button>
+      <div id="fp-compass" class="fp-compass-rose" style="--north: <?= (float) ($studio['north_angle'] ?? 0) ?>deg; left:85%; top:15%">
+        <div class="compass-center" id="compass-center"></div>
+        <div class="compass-dir" data-dir="N">N</div>
+        <div class="compass-dir" data-dir="NE">NE</div>
+        <div class="compass-dir" data-dir="E">E</div>
+        <div class="compass-dir" data-dir="SE">SE</div>
+        <div class="compass-dir" data-dir="S">S</div>
+        <div class="compass-dir" data-dir="SW">SW</div>
+        <div class="compass-dir" data-dir="W">W</div>
+        <div class="compass-dir" data-dir="NW">NW</div>
+        <svg class="compass-ring" viewBox="-60 -60 120 120"><circle cx="0" cy="0" r="56" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="1.5"/><circle cx="0" cy="0" r="30" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1"/></svg>
       </div>
-      <div id="wp-list" class="d-grid gap-2"></div>
-      <input type="hidden" name="waypoint_delete" id="waypoint_delete" value="">
-    </div>
-  </form>
 
-  <!-- PATHS FORM -->
-  <form method="post" id="fp-paths-form" class="d-none">
-    <input type="hidden" name="fp_action" value="path-save">
-    <input type="hidden" name="plan_id" value="<?= (int) $studio['id'] ?>">
-    <div class="ia-card p-3">
-      <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-        <div>
-          <h5 class="mb-1">Navigation Paths</h5>
-          <p class="ia-meta-md mb-0">Chain waypoints in order. Click a waypoint on the map to append it to the current path.</p>
-        </div>
-        <button type="submit" class="btn btn-grad px-4">Save path</button>
-      </div>
-      <div class="d-flex gap-2 mb-3 flex-wrap">
-        <input type="hidden" name="path_id" id="path-id" value="">
-        <input class="form-control" name="name" id="path-name" placeholder="e.g. Main Gate → Library" style="max-width:280px">
-        <select class="form-select" id="path-picker" style="max-width:220px">
-          <option value="">+ New path</option>
-          <?php foreach ($paths as $p): ?><option value="<?= (int) $p['id'] ?>"><?= h($p['name']) ?></option><?php endforeach; ?>
-        </select>
-        <button type="button" class="btn btn-outline-ia" id="path-clear">Clear route</button>
-        <button type="button" class="btn btn-outline-ia text-danger" id="path-delete-btn">Delete path</button>
-      </div>
-      <div id="path-nodes" class="d-flex gap-2 flex-wrap align-items-center"></div>
-      <input type="hidden" name="nodes" id="path-nodes-input">
-    </div>
-  </form>
-
-  <!-- CONNECTIONS FORM -->
-  <form method="post" id="fp-connections-form" class="d-none">
-    <input type="hidden" name="fp_action" value="connection-save">
-    <input type="hidden" name="plan_id" value="<?= (int) $studio['id'] ?>">
-    <div class="ia-card p-3">
-      <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-        <div>
-          <h5 class="mb-1">Exit Connections</h5>
-          <p class="ia-meta-md mb-0">Link an <strong>exit</strong> marker to a destination (another floor plan, building or 360 scene). This is optional — not all exits need a link.</p>
-        </div>
-        <button type="submit" class="btn btn-grad px-4">Save connection</button>
-      </div>
-      <div class="d-flex gap-2 mb-3 flex-wrap">
-        <input type="hidden" name="connection_id" id="con-id" value="">
-        <select class="form-select" id="con-marker-picker" style="max-width:240px" required>
-          <option value="">Choose an exit marker…</option>
-          <?php foreach ($markers as $mk): if (($mk['marker_type'] ?? '') === 'exit'): ?>
-            <option value="<?= (int) $mk['id'] ?>"><?= h($mk['label']) ?></option>
-          <?php endif; endforeach; ?>
-        </select>
-        <select class="form-select" name="to_floor_plan_id" id="con-fp" style="max-width:220px">
-          <option value="">→ Sub-floor plan…</option>
-          <?php foreach ($floorPlansList as $fp): ?><option value="<?= (int) $fp['id'] ?>"><?= h($fp['name']) ?></option><?php endforeach; ?>
-        </select>
-        <select class="form-select" name="to_scene_id" id="con-scene" style="max-width:220px">
-          <option value="">→ 360 scene…</option>
-          <?php foreach ($scenes as $s): ?><option value="<?= (int) $s['id'] ?>"><?= h($s['name']) ?></option><?php endforeach; ?>
-        </select>
-        <select class="form-select" name="to_marker_id" id="con-marker-to" style="max-width:220px">
-          <option value="">→ entrance marker…</option>
-          <?php foreach ($markers as $mk): if (($mk['marker_type'] ?? '') === 'entrance'): ?>
-            <option value="<?= (int) $mk['id'] ?>"><?= h($mk['label']) ?></option>
-          <?php endif; endforeach; ?>
-        </select>
-        <select class="form-select" name="to_building_id" id="con-building" style="max-width:200px">
-          <option value="">→ building…</option>
-          <?php foreach ($buildings as $b): ?><option value="<?= (int) $b['id'] ?>"><?= h($b['name']) ?></option><?php endforeach; ?>
-        </select>
-      </div>
-      <div class="d-flex gap-2 mb-3">
-        <input class="form-control" name="note" id="con-note" placeholder="Note (optional)" style="max-width:340px">
-        <button type="button" class="btn btn-outline-ia text-danger" id="con-delete-btn">Delete connection</button>
-      </div>
-      <div id="con-list" class="d-flex gap-2 flex-wrap"></div>
-    </div>
-  </form>
-
-  <!-- marker fields panel -->
-  <div class="ia-card mt-3">
-    <div class="card-head"><h3>Selected marker</h3></div>
-    <div class="card-body" id="marker-fields">
-      <p class="ia-meta-md mb-0">Select a marker dot or a chip above to edit its label and popup.</p>
+      <div class="fp-hint" id="fp-hint">Drag dots to reposition them. Click a marker to edit its properties.</div>
     </div>
   </div>
+
+  <!-- Properties panel -->
+  <div class="ia-card mt-3" id="props-panel" style="display:none">
+    <div class="d-flex align-items-center justify-content-between">
+      <h3 id="props-title" class="mb-0">Properties</h3>
+      <button type="button" class="btn-close" id="props-close" aria-label="Close"></button>
+    </div>
+    <div class="mt-2" id="props-body"></div>
+  </div>
+
+  <!-- Hidden forms for server submission -->
+  <form method="post" id="fp-markers-form" style="display:none">
+    <input type="hidden" name="fp_action" value="markers-save">
+    <input type="hidden" name="plan_id" value="<?= (int) $studio['id'] ?>">
+  </form>
+  <form method="post" id="fp-routes-form" style="display:none">
+    <input type="hidden" name="fp_action" value="routes-save">
+    <input type="hidden" name="plan_id" value="<?= (int) $studio['id'] ?>">
+    <input type="hidden" name="routes" id="routes-json">
+    <input type="hidden" name="routes_delete" id="routes-delete-ids" value="">
+    <input type="hidden" name="waypoints_delete" id="waypoints-delete-ids" value="">
+  </form>
+  <form method="post" id="fp-compass-form" style="display:none">
+    <input type="hidden" name="fp_action" value="compass-save">
+    <input type="hidden" name="id" value="<?= (int) $studio['id'] ?>">
+    <input type="hidden" name="north_angle" id="north-angle-input" value="<?= (float) ($studio['north_angle'] ?? 0) ?>">
+  </form>
+  <form method="post" id="fp-connections-form" style="display:none">
+    <input type="hidden" name="fp_action" value="connection-save">
+    <input type="hidden" name="plan_id" value="<?= (int) $studio['id'] ?>">
+  </form>
 
   <!-- add marker modal -->
   <div class="modal fade" id="marker-modal" tabindex="-1">
@@ -555,230 +595,158 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
   <script>
   window._fpScenes = <?= json_encode(array_map(fn($s) => ['id' => $s['id'], 'name' => $s['name']], $scenes), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
   window._fpPlans  = <?= json_encode(array_map(fn($p) => ['id' => $p['id'], 'name' => $p['name']], $floorPlansList), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
-  window._fpWaypoints = <?= json_encode($waypoints, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
-  window._fpPaths      = <?= json_encode(array_map(fn($p) => ['id' => $p['id'], 'name' => $p['name'], 'nodes' => json_decode($p['nodes_json'] ?? '[]', true) ?: []], $paths), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
-  window._fpConnections = <?= json_encode($connections, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
   window._fpBuildings = <?= json_encode(array_map(fn($b) => ['id' => $b['id'], 'name' => $b['name']], $buildings), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
   window._fpRooms     = <?= json_encode(array_map(fn($r) => ['id' => $r['id'], 'name' => $r['name']], $rooms), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
-  window._fpNorth     = <?= (float) ($studio['north_angle'] ?? 0) ?>;
+  window._fpConnections = <?= json_encode($connections, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+  window._fpPaths = <?= json_encode(array_map(fn($p) => ['id' => $p['id'], 'name' => $p['name'], 'nodes' => json_decode($p['nodes_json'] ?? '[]', true) ?: []], $paths), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
   </script>
   <script>
   (() => {
+    const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
     const stage = document.getElementById('map-stage')
-    const fields = document.getElementById('marker-fields')
+    const qsa = (sel) => Array.from(stage.querySelectorAll(sel))
+    const propsBody = document.getElementById('props-body')
+    const propsTitle = document.getElementById('props-title')
+    const propsPanel = document.getElementById('props-panel')
     const pathLayer = document.getElementById('fp-path-layer')
     const compassEl = document.getElementById('fp-compass')
-    let current = null
+    const stageRect = () => stage.getBoundingClientRect()
 
-    const escapeHtml = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-    const escapeAttr = (s) => Array.from(String(s ?? '')).map((c) => escapeHtml(c)).join('').replace(/'/g,'&#39;')
-    const qsa = (s) => Array.from(stage.querySelectorAll(s))
+    let mode = 'move', selectedEl = null, selectedType = null, northAngle = <?= (float) ($studio['north_angle'] ?? 0) ?>
+    let routeCounter = <?= count($waypoints) + count($paths) + 1 ?>
 
-    // ── AR Studio mode switching ──────────────────────────────
-    let mode = 'markers'
+    const markerData = {}
+    qsa('.fp-marker-dot').forEach(d => {
+      markerData[d.dataset.id] = {
+        label: d.querySelector('.mk-label')?.value || d.dataset.name,
+        type: d.dataset.mktype,
+        facing: parseFloat(d.querySelector('.mk-facing')?.value) || 0,
+        building: d.querySelector('.mk-building')?.value || '',
+        room: d.querySelector('.mk-room')?.value || '',
+        scene: d.querySelector('.mk-scene')?.value || '',
+        fp: d.querySelector('.mk-fp')?.value || '',
+        popupTitle: d.querySelector('.mk-popup-title')?.value || '',
+        popupHtml: d.querySelector('.mk-popup-html')?.value || ''
+      }
+    })
+
+    const routes = <?= json_encode(array_map(fn($p) => ['id' => (int)$p['id'], 'name' => $p['name'], 'nodes' => array_map(fn($nid) => ['id' => (int)$nid], json_decode($p['nodes_json'] ?? '[]', true) ?: [])], $paths), JSON_HEX_TAG | JSON_UNESCAPED_UNICODE) ?>;
+    const wpDotById = {}
+    qsa('.fp-wp-dot').forEach(d => { wpDotById[d.dataset.wpId] = d })
+
+    routes.forEach(r => {
+      const resolvedNodes = []
+      r.nodes.forEach(n => {
+        if (n.id && wpDotById[String(n.id)]) {
+          const dot = wpDotById[String(n.id)]
+          resolvedNodes.push({ id: n.id, x: parseFloat(dot.querySelector('.wp-x').value), y: parseFloat(dot.querySelector('.wp-y').value), corner: dot.querySelector('.wp-type')?.value === 'corner' })
+        }
+      })
+      r.nodes = resolvedNodes
+    })
+
+    let deletedRouteIds = [], deletedWpIds = []
+
+    /* ── Utilities ─────────────────────────────────────── */
+    function pct(ev) {
+      const r = stageRect()
+      return { x: Math.max(0, Math.min(100, ((ev.clientX - r.left) / r.width) * 100)), y: Math.max(0, Math.min(100, ((ev.clientY - r.top) / r.height) * 100)) }
+    }
+    function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y) }
+    function pointToSegDist(p, a, b) {
+      const dx = b.x - a.x, dy = b.y - a.y, lenSq = dx * dx + dy * dy
+      if (lenSq === 0) return dist(p, a)
+      let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq
+      t = Math.max(0, Math.min(1, t))
+      return dist(p, { x: a.x + t * dx, y: a.y + t * dy })
+    }
+
+    /* ── Mode switching ────────────────────────────────── */
+    const hints = { move: 'Drag any element to reposition. Click to edit properties.', face: 'Click a marker to show facing handle. Drag the arrow to rotate.', route: 'Click on the map to place route points. Click a line to bend it.', compass: 'Drag the compass rose to set North direction.', connections: 'Click an exit marker to create a link to another floor or scene.' }
+
     function setMode(m) {
       mode = m
-      Array.from(document.querySelectorAll('[data-ar-mode]')).forEach(b => {
+      deselect()
+      document.querySelectorAll('[data-ar-mode]').forEach(b => {
         b.classList.toggle('btn-grad', b.dataset.arMode === m)
         b.classList.toggle('btn-outline-ia', b.dataset.arMode !== m)
       })
-      document.getElementById('fp-markers-form').classList.toggle('d-none', m !== 'markers')
-      document.getElementById('fp-waypoints-form').classList.toggle('d-none', m !== 'waypoints')
-      document.getElementById('fp-paths-form').classList.toggle('d-none', m !== 'paths')
-      document.getElementById('fp-connections-form').classList.toggle('d-none', m !== 'connections')
-      document.getElementById('compass-readout').classList.toggle('d-none', m !== 'compass')
-      qsa('.fp-wp-dot').forEach(d => d.classList.toggle('mode-visible', m === 'waypoints' || m === 'paths'))
-      qsa('.fp-marker-dot').forEach(d => d.classList.toggle('mode-visible', m === 'markers' || m === 'connections'))
+      document.getElementById('mode-hint').textContent = hints[m] || ''
+      qsa('.fp-marker-dot').forEach(d => {
+        d.style.pointerEvents = 'all'
+        d.style.opacity = ''
+        const arrow = d.querySelector('.fp-facing-arrow')
+        if (arrow) arrow.style.opacity = m === 'face' ? '0.6' : ''
+      })
+      qsa('.fp-wp-dot').forEach(d => { d.style.pointerEvents = 'all'; d.style.opacity = '' })
       compassEl.classList.toggle('mode-visible', m === 'compass')
-      if (m === 'paths') drawPaths()
-      if (m === 'markers') clearMkSvg()
-      if (m === 'waypoints') { renderWpList(); clearMkSvg(); drawPaths() }
+      stage.style.cursor = m === 'route' ? 'crosshair' : ''
+      renderRoutes()
     }
-    document.getElementById('ar-mode-tabs').addEventListener('click', (e) => {
+
+    document.getElementById('ar-mode-tabs').addEventListener('click', e => {
       const b = e.target.closest('[data-ar-mode]')
       if (b) setMode(b.dataset.arMode)
     })
 
-    const setFacing = (dot, deg) => {
-      deg = ((parseFloat(deg) || 0) + 360) % 360
-      const h = dot.querySelector('.mk-facing')
-      if (h) h.value = deg.toFixed(1)
-      const arrow = dot.querySelector('.fp-facing-arrow')
-      if (arrow) arrow.style.setProperty('--facing', deg + 'deg')
+    /* ── Selection ─────────────────────────────────────── */
+    function deselect() {
+      if (selectedEl) selectedEl.classList.remove('fp-selected')
+      selectedEl = null; selectedType = null
+      propsPanel.style.display = 'none'
+    }
+    function selectElement(el, type) {
+      if (!el) return
+      deselect()
+      selectedEl = el; selectedType = type
+      el.classList.add('fp-selected')
     }
 
-    // ── Marker fields panel ───────────────────────────────────
-    const renderFields = (dot) => {
-      const hv = (sel) => dot.querySelector(sel)?.value || ''
-      const popT = hv('input[name$="[popup_title]"]')
-      const popH = hv('input[name$="[popup_html]"]')
-      const sceneId = hv('input[name$="[target_scene_id]"]')
-      const fpId = hv('input[name$="[target_floor_plan_id]"]')
-      const bldId = hv('input[name$="[target_building_id]"]')
-      const roomId = hv('input[name$="[target_room_id]"]')
-      const mtype = dot.dataset.mktype || 'scene'
-      const facing = hv('.mk-facing')
-
-      let amode = 'popup'
-      if (sceneId && sceneId !== '0') amode = 'scene'
-      else if (fpId && fpId !== '0') amode = 'floorplan'
-
-      fields.innerHTML = `
-        <div class="row g-3 mb-3">
-          <div class="col-md-3"><label class="form-label fw-semibold">Label</label>
-            <input class="form-control" value="${escapeAttr(dot.dataset.name)}" oninput="syncField(this,'label')"></div>
-          <div class="col-md-3"><label class="form-label fw-semibold">AR type</label>
-            <select class="form-select" onchange="this.setAttribute('data-newtype',this.value); syncField(this,'marker_type'); applyMkType(this.value)">
-              <option value="scene" ${mtype==='scene'?'selected':''}>Scene</option>
-              <option value="entrance" ${mtype==='entrance'?'selected':''}>Entrance</option>
-              <option value="exit" ${mtype==='exit'?'selected':''}>Exit</option>
-            </select></div>
-          <div class="col-md-3"><label class="form-label fw-semibold">Facing (°)</label>
-            <input class="form-control" value="${escapeAttr(facing)}" oninput="syncFacing(this)"></div>
-          <div class="col-md-3"><label class="form-label fw-semibold">Position</label>
-            <div class="d-flex gap-2">
-              <input class="form-control mk-in-x" placeholder="X%" value="${hv('.mk-x')}" oninput="syncPos(this,'x')">
-              <input class="form-control mk-in-y" placeholder="Y%" value="${hv('.mk-y')}" oninput="syncPos(this,'y')">
-            </div>
-          </div>
-        </div>
-        <div class="row g-3 mb-3">
-          <div class="col-md-4"><label class="form-label fw-semibold">Building</label>
-            <select class="form-select" onchange="syncField(this,'target_building_id')">
-              <option value="">— none —</option>
-              ${window._fpBuildings.map(b=>`<option value="${b.id}" ${bldId==b.id?'selected':''}>${escapeHtml(b.name)}</option>`).join('')}
-            </select></div>
-          <div class="col-md-4"><label class="form-label fw-semibold">Room</label>
-            <select class="form-select" onchange="syncField(this,'target_room_id')">
-              <option value="">— none —</option>
-              ${window._fpRooms.map(r=>`<option value="${r.id}" ${roomId==r.id?'selected':''}>${escapeHtml(r.name)}</option>`).join('')}
-            </select></div>
-          <div class="col-md-4"><label class="form-label fw-semibold">Popup title</label>
-            <input class="form-control" value="${escapeAttr(popT)}" oninput="syncField(this,'popup_title')"></div>
-        </div>
-        <p class="form-label form-label-sm fw-semibold mb-2">Click action — what happens when visitor taps this marker?</p>
-        <div class="d-flex gap-2 flex-wrap mb-3">
-          ${['popup','scene','floorplan'].map(mk => `<button type="button" class="btn btn-sm ${amode===mk?'btn-grad':'btn-outline-ia'}" data-mk-mode="${mk}">${mk==='popup'?'💬 Popup':mk==='scene'?'🎥 360 Tour':'🗺 Sub-Floor Plan'}</button>`).join('')}
-        </div>
-        <div id="mk-panel-popup" class="mk-panel ${amode==='popup'?'':'d-none'}">
-          <label class="form-label form-label-sm">Popup content (HTML or plain text)</label>
-          <textarea class="form-control" rows="2" oninput="syncField(this,'popup_html')">${escapeHtml(popH)}</textarea>
-        </div>
-        <div id="mk-panel-scene" class="mk-panel ${amode==='scene'?'':'d-none'}">
-          <label class="form-label form-label-sm">Link to 360 Tour scene</label>
-          <select class="form-select" onchange="syncField(this,'target_scene_id')">
-            <option value="">— none —</option>
-            ${window._fpScenes.map(s=>`<option value="${s.id}" ${sceneId==s.id?'selected':''}>${escapeHtml(s.name)}</option>`).join('')}
-          </select>
-        </div>
-        <div id="mk-panel-floorplan" class="mk-panel ${amode==='floorplan'?'':'d-none'}">
-          <label class="form-label form-label-sm">Link to Sub-Floor Plan</label>
-          <select class="form-select" onchange="syncField(this,'target_floor_plan_id')">
-            <option value="">— none —</option>
-            ${window._fpPlans.map(p=>`<option value="${p.id}" ${fpId==p.id?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
-          </select>
-        </div>
-        <div class="mt-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <span class="ia-micro">${mtype==='entrance'?'Entrance = where visitors enter this floor. ':mtype==='exit'?'Exit = where visitors leave — link it in Exit Links mode. ':''}Drag the arrow to set the facing direction the scene/feature eyes.</span>
-          <button type="button" class="btn btn-outline-ia btn-sm text-danger" onclick="deleteMarker()">Delete this marker</button>
-        </div>`
-
-      fields.querySelectorAll('[data-mk-mode]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const m = btn.dataset.mkMode
-          fields.querySelectorAll('[data-mk-mode]').forEach(b => b.className = b.className.replace('btn-grad','btn-outline-ia'))
-          btn.className = btn.className.replace('btn-outline-ia','btn-grad')
-          fields.querySelectorAll('[id^="mk-panel-"]').forEach(p => p.classList.add('d-none'))
-          fields.querySelector(`#mk-panel-${m}`).classList.remove('d-none')
-          if (m !== 'scene') syncField({value:''}, 'target_scene_id')
-          if (m !== 'floorplan') syncField({value:''}, 'target_floor_plan_id')
-        })
-      })
-      current = dot
-    }
-
-    window.syncField = (el, key) => {
-      if (!current) return
-      const box = current
-      if (key === 'label') {
-        const hiddenEl = box.querySelector('input[name$="][label]"]')
-        if (hiddenEl) hiddenEl.value = el.value
-        box.dataset.name = el.value
-        const chip = document.querySelector(`[data-select-dot="${box.dataset.id}"]`)
-        if (chip) chip.lastChild.textContent = el.value
-      } else {
-        const hiddenEl = box.querySelector(`input[name$="[${key}]"]`) || box.querySelector(`input[name$="${key}"]`)
-        if (hiddenEl) hiddenEl.value = el.value
-      }
-    }
-    window.applyMkType = (t) => {
-      const dot = current
-      if (!dot) return
-      dot.dataset.mktype = t
-      const badge = dot.querySelector('.fp-mktype-badge')
-      if (badge) badge.textContent = t === 'entrance' ? 'IN' : (t === 'exit' ? 'OUT' : 'SC')
-    }
-    window.syncFacing = (el) => { if (current) setFacing(current, el.value) }
-    window.syncPos = (el, axis) => {
-      if (!current) return
-      const v = Math.max(0, Math.min(100, parseFloat(el.value) || 0))
-      const hiddenEl = current.querySelector(`.mk-${axis}`)
-      if (hiddenEl) hiddenEl.value = v
-      current.style[axis === 'x' ? 'left' : 'top'] = v + '%'
-      if (axis === 'x') current.querySelector('.mk-in-x') && (current.querySelector('.mk-in-x').value = v)
-      else current.querySelector('.mk-in-y') && (current.querySelector('.mk-in-y').value = v)
-    }
-    window.deleteMarker = async () => {
-      if (!current) return
-      const ok = await window.iaConfirm(`Delete marker "${current.dataset.name}"?`, 'Delete marker')
-      if (!ok) return
-      const id = current.dataset.id
-      const del = document.querySelector('input[name="marker_delete"]') || (() => { const el = document.createElement('input'); el.type='hidden'; el.name='marker_delete'; el.value=''; stage.appendChild(el); return el })()
-      del.value = id
-      current.remove()
-      const chip = document.querySelector(`[data-select-dot="${id}"]`)
-      if (chip) chip.remove()
-      current = null
-      fields.innerHTML = '<div class="ia-meta-md mb-0">Marker deleted. Save to commit.</div>'
-    }
-
-    // ── dragging ──────────────────────────────────────────────
-    function makeDraggable(dot, xEl, yEl, onUp) {
-      dot.addEventListener('pointerdown', (e) => {
-        e.preventDefault()
+    /* ── Draggable ─────────────────────────────────────── */
+    function makeDraggable(dot, xEl, yEl, onDrag) {
+      dot.addEventListener('pointerdown', e => {
+        if (e.target.closest('.fp-facing-arrow')) return
+        e.preventDefault(); e.stopPropagation()
         let dragging = false
         const downX = e.clientX, downY = e.clientY
-        const move = (ev) => {
+        const onMove = ev => {
           const dx = ev.clientX - downX, dy = ev.clientY - downY
           if (!dragging && Math.hypot(dx, dy) < 5) return
           dragging = true
-          const rect = stage.getBoundingClientRect()
-          const x = Math.max(0, Math.min(100, ((ev.clientX - rect.left) / rect.width) * 100))
-          const y = Math.max(0, Math.min(100, ((ev.clientY - rect.top) / rect.height) * 100))
-          xEl.value = x.toFixed(4); yEl.value = y.toFixed(4)
-          dot.style.left = x + '%'; dot.style.top = y + '%'
+          const p = pct(ev)
+          xEl.value = p.x.toFixed(4); yEl.value = p.y.toFixed(4)
+          dot.style.left = p.x + '%'; dot.style.top = p.y + '%'
+          if (onDrag) onDrag()
         }
-        const up = () => {
-          dot.removeEventListener('pointermove', move)
-          dot.removeEventListener('pointerup', up)
-          onUp && onUp(dragging)
-        }
-        dot.addEventListener('pointermove', move)
-        dot.addEventListener('pointerup', up)
+        const onUp = () => { document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onUp) }
+        document.addEventListener('pointermove', onMove)
+        document.addEventListener('pointerup', onUp)
       })
     }
 
-    qsa('.fp-marker-dot').forEach((dot) => {
-      makeDraggable(dot, dot.querySelector('.mk-x'), dot.querySelector('.mk-y'), (dragging) => { if (dragging && current === dot) renderFields(dot) })
-      dot.addEventListener('pointerup', () => { if (current !== dot) renderFields(dot) })
+    /* ── Marker interactions ───────────────────────────── */
+    qsa('.fp-marker-dot').forEach(dot => {
+      const xEl = dot.querySelector('.mk-x'), yEl = dot.querySelector('.mk-y')
+      makeDraggable(dot, xEl, yEl, () => {
+        if (selectedEl === dot && selectedType === 'marker') renderMarkerProps(dot)
+      })
+      dot.addEventListener('click', e => {
+        e.stopPropagation()
+        if (mode === 'move' || mode === 'face') {
+          selectElement(dot, 'marker')
+          renderMarkerProps(dot)
+        } else if (mode === 'connections') {
+          const md = markerData[dot.dataset.id]
+          if (md && md.type === 'exit') { selectElement(dot, 'marker'); renderExitLinkProps(dot) }
+        }
+      })
       const arrow = dot.querySelector('.fp-facing-arrow')
       if (arrow) {
-        arrow.addEventListener('pointerdown', (e) => {
+        arrow.addEventListener('pointerdown', e => {
           e.preventDefault(); e.stopPropagation()
-          const rotate = (ev) => {
-            const r = stage.getBoundingClientRect()
-            const cx = r.left + r.width / 2, cy = r.top + r.height / 2
-            const ang = (Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180 / Math.PI + 90 + 360) % 360
+          const rotate = ev => {
+            const r = stageRect()
+            const ang = (Math.atan2(ev.clientY - (r.top + r.height / 2), ev.clientX - (r.left + r.width / 2)) * 180 / Math.PI + 90 + 360) % 360
             setFacing(dot, ang)
           }
           const up = () => { document.removeEventListener('pointermove', rotate); document.removeEventListener('pointerup', up) }
@@ -787,256 +755,398 @@ $floorPlansList = crud()->raw("SELECT id,title as name FROM floor_plans WHERE in
         })
       }
     })
-    document.querySelectorAll('[data-select-dot]').forEach((chip) => {
-      chip.addEventListener('click', () => {
-        const dot = stage.querySelector(`.fp-marker-dot[data-id="${chip.dataset.selectDot}"]`)
-        if (dot) renderFields(dot)
-      })
-    })
 
-    // ── Waypoints ─────────────────────────────────────────────
-    const wpName = (d) => {
-      const l = d.querySelector('input[name$="][label]"]')
-      return (l ? l.value : '') || d.dataset.name || 'Waypoint'
-    }
-    function renderWpList() {
-      const wrap = document.getElementById('wp-list')
-      wrap.innerHTML = ''
-      qsa('.fp-wp-dot').forEach(d => {
-        const id = d.dataset.wpId
-        const row = document.createElement('div')
-        row.className = 'd-flex align-items-center gap-2 p-2 border rounded'
-        const isCorner = d.classList.contains('is-corner')
-        row.innerHTML = `
-          <span class="badge rounded-pill ${isCorner?'text-bg-warning':'text-bg-secondary'}">${isCorner?'⤺ corner':'· node'}</span>
-          <input class="form-control form-control-sm wp-name" data-wp="${id}" value="${escapeAttr(wpName(d))}" style="max-width:220px">
-          <span class="ia-micro">${Math.round(parseFloat(d.querySelector('.wp-x').value))}%, ${Math.round(parseFloat(d.querySelector('.wp-y').value))}%</span>
-          <label class="form-check ms-auto mb-0 d-flex align-items-center gap-1">
-            <input class="form-check-input m-0 wp-corner" data-wp="${id}" type="checkbox" ${isCorner?'checked':''}> Corner
-          </label>
-          <button type="button" class="btn btn-sm btn-outline-ia text-danger wp-del" data-wp="${id}">Remove</button>`
-        wrap.appendChild(row)
-      })
-      const addRow = document.createElement('div')
-      addRow.className = 'd-flex align-items-center gap-2'
-      addRow.innerHTML = `
-        <input class="form-control wp-new-name" placeholder="New waypoint label (auto)" style="max-width:240px">
-        <button type="button" class="btn btn-sm btn-outline-ia" id="wp-add-btn">+ Add waypoint</button>`
-      wrap.appendChild(addRow)
-      addRow.querySelector('#wp-add-btn').addEventListener('click', () => addWaypoint())
-    }
-    // waypoint name/corner edits sync hidden inputs
-    document.getElementById('wp-list').addEventListener('input', (e) => {
-      const d = stage.querySelector(`.fp-wp-dot[data-wp-id="${e.target.dataset.wp}"]`)
-      if (!d) return
-      if (e.target.classList.contains('wp-name')) {
-        const l = d.querySelector('input[name$="][label]"]')
-        if (l) l.value = e.target.value
-        d.dataset.name = e.target.value
-      }
-    })
-    document.getElementById('wp-list').addEventListener('change', (e) => {
-      const d = stage.querySelector(`.fp-wp-dot[data-wp-id="${e.target.dataset.wp}"]`)
-      if (!d) return
-      if (e.target.classList.contains('wp-corner')) {
-        d.classList.toggle('is-corner', e.target.checked)
-        const t = d.querySelector('input[name$="][type]"]'); if (t) t.value = e.target.checked ? 'corner' : 'normal'
-      }
-    })
-    document.getElementById('wp-list').addEventListener('click', (e) => {
-      const btn = e.target.closest('.wp-del')
-      if (!btn) return
-      const d = stage.querySelector(`.fp-wp-dot[data-wp-id="${btn.dataset.wp}"]`)
-      if (!d) return
-      ;(async () => {
-        const ok = await window.iaConfirm(`Remove waypoint "${d.dataset.name}"?`, 'Remove waypoint')
-        if (!ok) return
-        const del = document.getElementById('waypoint_delete')
-        if (del) del.value = btn.dataset.wp
-        d.remove()
-        renderWpList()
-      })()
-    })
-    function addWaypoint() {
-      const nameInput = document.querySelector('.wp-new-name')
-      const name = nameInput ? nameInput.value.trim() : ''
-      const f = document.createElement('form')
-      f.method = 'post'
-      f.innerHTML = `
-        <input type="hidden" name="fp_action" value="waypoint-add">
-        <input type="hidden" name="plan_id" value="${document.querySelector('#fp-waypoints-form input[name="plan_id"]').value}">
-        <input type="hidden" name="x" value="50"><input type="hidden" name="y" value="50">
-        <input type="hidden" name="type" value="normal">
-        <input type="hidden" name="label" value="${escapeAttr(name || 'Waypoint')}">`
-      document.body.appendChild(f); f.submit()
+    function setFacing(dot, deg) {
+      deg = ((deg % 360) + 360) % 360
+      dot.querySelector('.mk-facing').value = deg.toFixed(1)
+      dot.querySelector('.fp-facing-arrow').style.setProperty('--facing', deg + 'deg')
+      if (markerData[dot.dataset.id]) markerData[dot.dataset.id].facing = deg
+      if (selectedEl === dot) { const inp = document.getElementById('mk-facing-input'); if (inp) inp.value = Math.round(deg) }
     }
 
-    // waypoint dragging + path-mode append
-    bindWaypointDrag()
-    function bindWaypointDrag() {
-      qsa('.fp-wp-dot').forEach((d) => {
-        if (d.dataset.dragBound) return
-        d.dataset.dragBound = '1'
-        makeDraggable(d, d.querySelector('.wp-x'), d.querySelector('.wp-y'), () => { if (mode === 'paths') drawPaths() })
-        d.addEventListener('click', () => {
-          if (mode !== 'paths') return
-          const id = d.dataset.wpId
-          if (id === currentPathNodes[currentPathNodes.length - 1]) return
-          currentPathNodes.push(id)
-          drawPaths()
+    function renderMarkerProps(dot) {
+      const md = markerData[dot.dataset.id]
+      propsTitle.textContent = 'Marker — ' + (md.label || dot.dataset.name)
+      propsPanel.style.display = ''
+      let amode = 'popup'
+      if (md.scene && md.scene !== '0') amode = 'scene'
+      else if (md.fp && md.fp !== '0') amode = 'floorplan'
+      propsBody.innerHTML = `
+        <div class="row g-2 mb-2">
+          <div class="col-md-3"><label class="form-label fw-semibold mb-1">Label</label>
+            <input class="form-control form-control-sm" id="mk-label-input" value="${esc(md.label)}"></div>
+          <div class="col-md-3"><label class="form-label fw-semibold mb-1">AR type</label>
+            <select class="form-select form-select-sm" id="mk-type-input">
+              <option value="scene" ${md.type==='scene'?'selected':''}>Scene</option>
+              <option value="entrance" ${md.type==='entrance'?'selected':''}>Entrance</option>
+              <option value="exit" ${md.type==='exit'?'selected':''}>Exit</option>
+            </select></div>
+          <div class="col-md-3"><label class="form-label fw-semibold mb-1">Facing (°)</label>
+            <input class="form-control form-control-sm" id="mk-facing-input" type="number" min="0" max="360" step="1" value="${Math.round(md.facing)}"></div>
+          <div class="col-md-3"><label class="form-label fw-semibold mb-1">Position</label>
+            <div class="form-control form-control-sm" style="cursor:default;opacity:.7">${parseFloat(dot.querySelector('.mk-x').value).toFixed(1)}%, ${parseFloat(dot.querySelector('.mk-y').value).toFixed(1)}%</div>
+          </div>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-md-3"><label class="form-label fw-semibold mb-1">Building</label>
+            <select class="form-select form-select-sm" id="mk-bld-input"><option value="">— none —</option>
+            ${window._fpBuildings.map(b=>`<option value="${b.id}" ${md.building==b.id?'selected':''}>${esc(b.name)}</option>`).join('')}</select></div>
+          <div class="col-md-3"><label class="form-label fw-semibold mb-1">Room</label>
+            <select class="form-select form-select-sm" id="mk-room-input"><option value="">— none —</option>
+            ${window._fpRooms.map(r=>`<option value="${r.id}" ${md.room==r.id?'selected':''}>${esc(r.name)}</option>`).join('')}</select></div>
+          <div class="col-md-6"><label class="form-label fw-semibold mb-1">Popup title</label>
+            <input class="form-control form-control-sm" id="mk-ptitle-input" value="${esc(md.popupTitle)}"></div>
+        </div>
+        <p class="form-label form-label-sm fw-semibold mb-1">Click action</p>
+        <div class="d-flex gap-1 flex-wrap mb-2">
+          ${['popup','scene','floorplan'].map(m=>`<button type="button" class="btn btn-xs ${amode===m?'btn-grad':'btn-outline-ia'}" data-mk-act="${m}">${m==='popup'?'Popup':m==='scene'?'360 Tour':'Sub-Floor Plan'}</button>`).join('')}
+        </div>
+        <div id="mk-act-popup" class="${amode!=='popup'?'d-none':''}">
+          <textarea class="form-control form-control-sm" id="mk-popup-input" rows="2">${esc(md.popupHtml)}</textarea>
+        </div>
+        <div id="mk-act-scene" class="${amode!=='scene'?'d-none':''}">
+          <select class="form-select form-select-sm" id="mk-scene-input"><option value="">— none —</option>
+          ${window._fpScenes.map(s=>`<option value="${s.id}" ${md.scene==s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select>
+        </div>
+        <div id="mk-act-fp" class="${amode!=='floorplan'?'d-none':''}">
+          <select class="form-select form-select-sm" id="mk-fp-input"><option value="">— none —</option>
+          ${window._fpPlans.map(p=>`<option value="${p.id}" ${md.fp==p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
+        </div>
+        <div class="mt-2 d-flex justify-content-between align-items-center">
+          <span class="ia-micro">${md.type==='entrance'?'Entrance — where visitors enter.':md.type==='exit'?'Exit — link it in Exit Links mode.':'Drag the arrow on the map to set facing.'}</span>
+          <button type="button" class="btn btn-outline-ia btn-sm text-danger" id="mk-delete-btn">Delete marker</button>
+        </div>`
+
+      propsBody.querySelectorAll('[data-mk-act]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const m = btn.dataset.mkAct
+          propsBody.querySelectorAll('[data-mk-act]').forEach(b => { b.classList.remove('btn-grad'); b.classList.add('btn-outline-ia') })
+          btn.classList.remove('btn-outline-ia'); btn.classList.add('btn-grad')
+          ;['popup','scene','floorplan'].forEach(k => {
+            const el = document.getElementById('mk-act-' + k)
+            if (el) el.classList.toggle('d-none', k !== m)
+          })
+          if (m !== 'scene') { md.scene = ''; const si = document.getElementById('mk-scene-input'); if (si) si.value = '' }
+          if (m !== 'floorplan') { md.fp = ''; const fi = document.getElementById('mk-fp-input'); if (fi) fi.value = '' }
+          if (m !== 'popup') { md.popupHtml = ''; const pi = document.getElementById('mk-popup-input'); if (pi) pi.value = '' }
         })
       })
+
+      const sync = (key, val) => { md[key] = val; dot.querySelector('.mk-' + (key === 'popupTitle' ? 'popup-title' : key === 'popupHtml' ? 'popup-html' : key)) && (dot.querySelector('.mk-' + (key === 'popupTitle' ? 'popup-title' : key === 'popupHtml' ? 'popup-html' : key)).value = val) }
+      document.getElementById('mk-label-input').addEventListener('input', e => { sync('label', e.target.value); dot.dataset.name = e.target.value; propsTitle.textContent = 'Marker — ' + e.target.value })
+      document.getElementById('mk-type-input').addEventListener('change', e => { sync('type', e.target.value); dot.dataset.mktype = e.target.value; const b = dot.querySelector('.fp-mktype-badge'); if (b) b.textContent = e.target.value === 'entrance' ? 'IN' : e.target.value === 'exit' ? 'OUT' : 'SC' })
+      document.getElementById('mk-facing-input').addEventListener('input', e => { const v = ((parseFloat(e.target.value) || 0) + 360) % 360; setFacing(dot, v) })
+      document.getElementById('mk-bld-input').addEventListener('change', e => sync('building', e.target.value))
+      document.getElementById('mk-room-input').addEventListener('change', e => sync('room', e.target.value))
+      document.getElementById('mk-ptitle-input').addEventListener('input', e => sync('popupTitle', e.target.value))
+      document.getElementById('mk-popup-input')?.addEventListener('input', e => sync('popupHtml', e.target.value))
+      document.getElementById('mk-scene-input')?.addEventListener('change', e => sync('scene', e.target.value))
+      document.getElementById('mk-fp-input')?.addEventListener('change', e => sync('fp', e.target.value))
+      document.getElementById('mk-delete-btn').addEventListener('click', async () => {
+        if (!confirm('Delete marker "' + md.label + '"?')) return
+        dot.remove(); delete markerData[dot.dataset.id]; deselect()
+      })
     }
 
-    // ── Paths ─────────────────────────────────────────────────
-    let currentPathNodes = []
-    const wpById = () => { const o = {}; qsa('.fp-wp-dot').forEach(d => o[d.dataset.wpId] = { x: parseFloat(d.querySelector('.wp-x').value), y: parseFloat(d.querySelector('.wp-y').value), label: wpName(d) }); return o }
-    function clearMkSvg() { const s = document.getElementById('mk-path-svg'); if (s) s.remove() }
-    function drawPaths() {
-      clearMkSvg()
-      const wp = wpById()
-      const pts = currentPathNodes.map(id => wp[id]).filter(Boolean)
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-      svg.setAttribute('id', 'mk-path-svg')
-      svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;overflow:visible'
-      svg.setAttribute('viewBox', '0 0 100 100')
-      svg.setAttribute('preserveAspectRatio', 'none')
-      if (pts.length > 1) {
-        const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline')
-        poly.setAttribute('points', pts.map(p => `${p.x},${p.y}`).join(' '))
+    /* ── Waypoint interactions ─────────────────────────── */
+    qsa('.fp-wp-dot').forEach(dot => {
+      const xEl = dot.querySelector('.wp-x'), yEl = dot.querySelector('.wp-y')
+      makeDraggable(dot, xEl, yEl)
+      dot.addEventListener('click', e => {
+        e.stopPropagation()
+        if (mode === 'move') { selectElement(dot, 'waypoint'); renderWaypointProps(dot) }
+      })
+    })
+    function renderWaypointProps(dot) {
+      const lbl = dot.querySelector('.wp-label')?.value || dot.dataset.name
+      const isCorner = dot.querySelector('.wp-type')?.value === 'corner'
+      propsTitle.textContent = 'Waypoint — ' + lbl
+      propsPanel.style.display = ''
+      propsBody.innerHTML = `
+        <div class="d-flex gap-2 align-items-end flex-wrap">
+          <div><label class="form-label fw-semibold mb-1">Label</label>
+            <input class="form-control form-control-sm" id="wp-label-input" value="${esc(lbl)}" style="max-width:220px"></div>
+          <div class="form-check ms-2 mb-1"><input class="form-check-input" type="checkbox" id="wp-corner-input" ${isCorner?'checked':''}><label class="form-check-label" for="wp-corner-input">Corner (elbow)</label></div>
+          <span class="ia-micro mb-1">${parseFloat(dot.querySelector('.wp-x').value).toFixed(1)}%, ${parseFloat(dot.querySelector('.wp-y').value).toFixed(1)}%</span>
+          <button type="button" class="btn btn-outline-ia btn-sm text-danger ms-auto" id="wp-delete-btn">Remove</button>
+        </div>`
+      document.getElementById('wp-label-input').addEventListener('input', e => { dot.querySelector('.wp-label').value = e.target.value; dot.dataset.name = e.target.value })
+      document.getElementById('wp-corner-input').addEventListener('change', e => { dot.classList.toggle('is-corner', e.target.checked); dot.querySelector('.wp-type').value = e.target.checked ? 'corner' : 'normal'; renderRoutes() })
+      document.getElementById('wp-delete-btn').addEventListener('click', async () => {
+        if (!confirm('Remove waypoint "' + lbl + '"?')) return
+        deletedWpIds.push(dot.dataset.wpId); dot.remove(); delete wpDotById[dot.dataset.wpId]; deselect()
+      })
+    }
+
+    /* ── Route drawing ─────────────────────────────────── */
+    stage.addEventListener('click', e => {
+      if (mode !== 'route') return
+      if (e.target.closest('.fp-marker-dot') || e.target.closest('.fp-wp-dot') || e.target.closest('.fp-compass-rose') || e.target.closest('.fp-route-node')) return
+      const p = pct(e)
+      const existing = hitTestRouteNode(p)
+      if (existing) { selectElement(existing.route.nodes[existing.idx] ? stage.querySelector(`[data-route-node="${existing.route.nodes[existing.idx].id || ''}"]`) : null, 'route'); return }
+      let route = routes.find(r => r.nodes.length < 2)
+      if (!route) route = createRoute()
+      route.nodes.push({ x: p.x, y: p.y, corner: false, id: 0, label: route.name + ' #' + route.nodes.length })
+      renderRoutes(); renderRouteProps(route)
+    })
+
+    function hitTestRouteNode(p) {
+      for (const r of routes) for (let i = 0; i < r.nodes.length; i++) if (dist(p, r.nodes[i]) < 3.5) return { route: r, idx: i }
+      return null
+    }
+
+    stage.addEventListener('dblclick', e => {
+      if (mode !== 'route') return
+      if (e.target.closest('.fp-marker-dot') || e.target.closest('.fp-wp-dot') || e.target.closest('.fp-compass-rose')) return
+      const p = pct(e)
+      for (const r of routes) {
+        for (let i = 0; i < r.nodes.length - 1; i++) {
+          if (pointToSegDist(p, r.nodes[i], r.nodes[i + 1]) < 3) {
+            r.nodes.splice(i + 1, 0, { ...p, corner: true, id: 0, label: 'bend' })
+            renderRoutes(); return
+          }
+        }
+      }
+    })
+
+    function createRoute() {
+      routeCounter++
+      const r = { id: 0, name: 'Route ' + routeCounter, nodes: [] }
+      routes.push(r)
+      return r
+    }
+
+    function renderRoutes() {
+      pathLayer.querySelectorAll('.fp-route-group').forEach(g => g.remove())
+      routes.forEach(r => {
+        if (r.nodes.length < 2) return
+        const g = document.createElement('div')
+        g.className = 'fp-route-group'
+        g.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:3;overflow:visible'
+        const ns = 'http://www.w3.org/2000/svg'
+        const svg = document.createElementNS(ns, 'svg')
+        svg.setAttribute('viewBox', '0 0 100 100')
+        svg.setAttribute('preserveAspectRatio', 'none')
+        svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible'
+        const poly = document.createElementNS(ns, 'polyline')
+        poly.setAttribute('points', r.nodes.map(n => n.x + ',' + n.y).join(' '))
         poly.setAttribute('fill', 'none')
-        poly.setAttribute('stroke', 'rgba(33,150,243,.9)')
-        poly.setAttribute('stroke-width', '0.55')
+        poly.setAttribute('stroke', 'rgba(33,150,243,.85)')
+        poly.setAttribute('stroke-width', '0.4')
         poly.setAttribute('stroke-linejoin', 'round')
+        poly.setAttribute('stroke-linecap', 'round')
         svg.appendChild(poly)
-        // node markers
-        pts.forEach(p => {
-          const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
-          c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', '1.2')
-          c.setAttribute('fill', '#2196f3')
-          svg.appendChild(c)
+        g.appendChild(svg)
+        r.nodes.forEach((n, i) => {
+          const nd = document.createElement('div')
+          nd.className = 'fp-route-node' + (n.corner ? ' is-corner' : '')
+          nd.style.cssText = `position:absolute;left:${n.x}%;top:${n.y}%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:${n.corner?'#f7c948':'#2196f3'};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4);cursor:grab;touch-action:none;z-index:4;pointer-events:all`
+          nd.dataset.routeNode = n.id || ('new-' + i)
+          g.appendChild(nd)
+          nd.addEventListener('pointerdown', ev => {
+            ev.preventDefault(); ev.stopPropagation()
+            const onMove = mev => { const pp = pct(mev); n.x = pp.x; n.y = pp.y; nd.style.left = pp.x + '%'; nd.style.top = pp.y + '%'; renderRoutes() }
+            const onUp = () => { document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onUp) }
+            document.addEventListener('pointermove', onMove)
+            document.addEventListener('pointerup', onUp)
+          })
+          nd.addEventListener('click', ev => { ev.stopPropagation(); if (mode === 'route') { selectElement(nd, 'route'); renderRouteProps(r, i) } })
         })
-      }
-      pathLayer.appendChild(svg)
-      const wrap = document.getElementById('path-nodes')
-      wrap.innerHTML = ''
-      currentPathNodes.forEach(id => {
-        const p = wp[id]
-        if (!p) return
+        pathLayer.appendChild(g)
+      })
+    }
+
+    function renderRouteProps(route, nodeIdx) {
+      propsTitle.textContent = route.name
+      propsPanel.style.display = ''
+      propsBody.innerHTML = `
+        <div class="d-flex gap-2 align-items-end flex-wrap mb-2">
+          <div><label class="form-label fw-semibold mb-1">Route name</label>
+            <input class="form-control form-control-sm" id="rt-name-input" value="${esc(route.name)}" style="max-width:260px"></div>
+          <span class="ia-micro mb-1">${route.nodes.length} point${route.nodes.length !== 1 ? 's' : ''}</span>
+          <button type="button" class="btn btn-outline-ia btn-sm text-danger ms-auto" id="rt-delete-btn">Delete route</button>
+        </div>
+        <div id="rt-nodes" class="d-flex gap-1 flex-wrap mb-1"></div>
+        <div class="ia-micro">Click on map to add points. Double-click a line to create a bend. Drag points to reposition.</div>`
+      document.getElementById('rt-name-input').addEventListener('input', e => { route.name = e.target.value; propsTitle.textContent = e.target.value })
+      document.getElementById('rt-delete-btn').addEventListener('click', async () => {
+        if (!confirm('Delete "' + route.name + '"?')) return
+        if (route.id) deletedRouteIds.push(route.id)
+        routes.splice(routes.indexOf(route), 1); deselect(); renderRoutes()
+      })
+      const wrap = document.getElementById('rt-nodes')
+      route.nodes.forEach((n, i) => {
         const chip = document.createElement('span')
-        chip.className = 'badge rounded-pill text-bg-primary'
-        chip.textContent = `${p.label} (${id})`
+        chip.className = 'badge rounded-pill ' + (n.corner ? 'text-bg-warning' : 'text-bg-primary')
+        chip.style.cursor = 'pointer'
+        chip.textContent = (n.corner ? '⤺ ' : '') + (i + 1)
+        chip.title = `Point ${i + 1} — ${n.x.toFixed(1)}%, ${n.y.toFixed(1)}%` + (n.corner ? ' (corner)' : '')
+        chip.addEventListener('click', () => { n.corner = !n.corner; renderRoutes(); renderRouteProps(route, i) })
         wrap.appendChild(chip)
+        if (i < route.nodes.length - 1) {
+          const arrow = document.createElement('span')
+          arrow.style.cssText = 'color:var(--ia-muted,#999);font-size:11px'
+          arrow.textContent = '→'
+          wrap.appendChild(arrow)
+        }
       })
-      document.getElementById('path-nodes-input').value = JSON.stringify(currentPathNodes)
     }
-    function loadPathIntoEditor(p) {
-      currentPathNodes = p ? (p.nodes || []).slice() : []
-      document.getElementById('path-name').value = p ? p.name : ''
-      document.getElementById('path-id').value = p ? p.id : ''
-      drawPaths()
-    }
-    document.getElementById('path-picker').addEventListener('change', (e) => {
-      const p = window._fpPaths.find(x => String(x.id) === e.target.value)
-      loadPathIntoEditor(p)
-    })
-    document.getElementById('path-clear').addEventListener('click', () => loadPathIntoEditor(null))
-    document.getElementById('path-delete-btn').addEventListener('click', async () => {
-      const pid = document.getElementById('path-id').value
-      if (!pid) { await window.iaConfirm('Select a path first.', 'Delete path'); return }
-      const ok = await window.iaConfirm('Delete this path?', 'Delete path')
-      if (!ok) return
-      const f = document.createElement('form')
-      f.method = 'post'
-      f.innerHTML = `<input type="hidden" name="fp_action" value="path-delete"><input type="hidden" name="plan_id" value="${document.querySelector('#fp-paths-form input[name="plan_id"]').value}"><input type="hidden" name="id" value="${pid}">`
-      document.body.appendChild(f); f.submit()
-    })
-    // path editor: clicking waypoint appends (handled in bindWaypointDrag)
 
-    // ── Connections ───────────────────────────────────────────
-    function renderConList() {
-      const wrap = document.getElementById('con-list')
-      wrap.innerHTML = ''
-      window._fpConnections.forEach(c => {
-        const btn = document.createElement('button')
-        btn.type = 'button'
-        btn.className = 'btn btn-sm btn-outline-ia'
-        btn.dataset.con = c.id
-        const dest = c.to_floor_plan_id ? 'floor ' + c.to_floor_plan_id : (c.to_scene_id ? 'scene ' + c.to_scene_id : (c.to_building_id ? 'building ' + c.to_building_id : (c.to_marker_id ? 'entrance ' + c.to_marker_id : '…')))
-        btn.textContent = `exit #${c.from_marker_id} → ${dest}`
-        btn.addEventListener('click', () => loadConnection(c))
-        wrap.appendChild(btn)
+    /* ── Compass rose (directional markers) ─────────────── */
+    const compassRose = document.getElementById('fp-compass')
+    const compassDirs = compassRose.querySelectorAll('.compass-dir')
+    const compassCenter = document.getElementById('compass-center')
+    const roseRadiusPct = 36.67
+    const DIR_ANGLES = { N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315 }
+
+    function positionRose() {
+      const rad = northAngle * Math.PI / 180
+      compassDirs.forEach(d => {
+        const dar = (DIR_ANGLES[d.dataset.dir] || 0) * Math.PI / 180
+        const total = dar + rad
+        d.style.left = (50 + Math.sin(total) * roseRadiusPct) + '%'
+        d.style.top = (50 - Math.cos(total) * roseRadiusPct) + '%'
       })
-      window._fpConnections.forEach(c => {
-        const del = document.createElement('button')
-        del.type = 'button'
-        del.className = 'btn btn-sm btn-outline-ia text-danger'
-        del.dataset.con = c.id
-        del.textContent = '— #' + c.id
-        del.addEventListener('click', async () => {
-          const ok = await window.iaConfirm('Delete this connection?', 'Delete connection')
-          if (!ok) return
-          const f = document.createElement('form')
-          f.method = 'post'
-          f.innerHTML = `<input type="hidden" name="fp_action" value="connection-delete"><input type="hidden" name="plan_id" value="${document.querySelector('#fp-connections-form input[name="plan_id"]').value}"><input type="hidden" name="id" value="${c.id}">`
-          document.body.appendChild(f); f.submit()
+    }
+    function applyNorth(deg) {
+      northAngle = ((parseFloat(deg) || 0) % 360 + 360) % 360
+      compassRose.style.setProperty('--north', northAngle + 'deg')
+      document.getElementById('north-angle-input').value = northAngle.toFixed(1)
+      positionRose()
+    }
+
+    compassDirs.forEach(dir => {
+      dir.addEventListener('pointerdown', e => {
+        e.preventDefault(); e.stopPropagation()
+        const startAng = northAngle
+        const onMove = ev => {
+          const r = compassRose.getBoundingClientRect()
+          const cx = r.left + r.width / 2, cy = r.top + r.height / 2
+          const ang = (Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180 / Math.PI + 90 + 360) % 360
+          const dirBase = DIR_ANGLES[dir.dataset.dir] || 0
+          applyNorth((ang - dirBase + 360) % 360)
+        }
+        const onUp = () => { document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onUp) }
+        document.addEventListener('pointermove', onMove)
+        document.addEventListener('pointerup', onUp)
+      })
+    })
+
+    compassCenter.addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation()
+      let dragging = false
+      const downX = e.clientX, downY = e.clientY
+      const startLeft = parseFloat(compassRose.style.left) || 85
+      const startTop = parseFloat(compassRose.style.top) || 15
+      const onMove = ev => {
+        const dx = ev.clientX - downX, dy = ev.clientY - downY
+        if (!dragging && Math.hypot(dx, dy) < 3) return
+        dragging = true
+        const r = stageRect()
+        const newLeft = startLeft + (dx / r.width) * 100
+        const newTop = startTop + (dy / r.height) * 100
+        compassRose.style.left = Math.max(5, Math.min(95, newLeft)) + '%'
+        compassRose.style.top = Math.max(5, Math.min(95, newTop)) + '%'
+      }
+      const onUp = () => { document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onUp) }
+      document.addEventListener('pointermove', onMove)
+      document.addEventListener('pointerup', onUp)
+    })
+    positionRose()
+
+    /* ── Exit links ────────────────────────────────────── */
+    function renderExitLinkProps(dot) {
+      const md = markerData[dot.dataset.id]
+      const existing = window._fpConnections.find(c => c.from_marker_id == dot.dataset.id)
+      propsTitle.textContent = 'Exit Link — ' + md.label
+      propsPanel.style.display = ''
+      propsBody.innerHTML = `
+        <div class="d-flex gap-2 flex-wrap mb-2">
+          <div><label class="form-label fw-semibold mb-1">Sub-floor plan</label>
+            <select class="form-select form-select-sm" id="el-fp"><option value="">— none —</option>
+            ${window._fpPlans.map(p=>`<option value="${p.id}" ${existing?.to_floor_plan_id==p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
+          <div><label class="form-label fw-semibold mb-1">360 scene</label>
+            <select class="form-select form-select-sm" id="el-scene"><option value="">— none —</option>
+            ${window._fpScenes.map(s=>`<option value="${s.id}" ${existing?.to_scene_id==s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
+          <div><label class="form-label fw-semibold mb-1">Entrance marker</label>
+            <select class="form-select form-select-sm" id="el-ent"><option value="">— none —</option>
+            ${qsa('.fp-marker-dot[data-mktype="entrance"]').map(d=>`<option value="${d.dataset.id}" ${existing?.to_marker_id==d.dataset.id?'selected':''}>${esc(markerData[d.dataset.id]?.label||d.dataset.name)}</option>`).join('')}</select></div>
+          <div><label class="form-label fw-semibold mb-1">Building</label>
+            <select class="form-select form-select-sm" id="el-bld"><option value="">— none —</option>
+            ${window._fpBuildings.map(b=>`<option value="${b.id}" ${existing?.to_building_id==b.id?'selected':''}>${esc(b.name)}</option>`).join('')}</select></div>
+        </div>
+        <div class="d-flex gap-2 align-items-end">
+          <div class="flex-grow-1"><label class="form-label fw-semibold mb-1">Note</label>
+            <input class="form-control form-control-sm" id="el-note" value="${esc(existing?.note||'')}" placeholder="Optional note"></div>
+          <button type="button" class="btn btn-grad btn-sm px-3" id="el-save">Save link</button>
+          ${existing ? '<button type="button" class="btn btn-outline-ia btn-sm text-danger" id="el-del">Delete</button>' : ''}
+        </div>`
+      document.getElementById('el-save').addEventListener('click', () => {
+        const f = document.getElementById('fp-connections-form')
+        let html = `<input type="hidden" name="fp_action" value="connection-save">
+          <input type="hidden" name="plan_id" value="<?= (int) $studio['id'] ?>">
+          <input type="hidden" name="from_marker_id" value="${dot.dataset.id}">`
+        if (existing) html += `<input type="hidden" name="connection_id" value="${existing.id}">`
+        html += `<input type="hidden" name="to_floor_plan_id" value="${document.getElementById('el-fp').value}">
+          <input type="hidden" name="to_scene_id" value="${document.getElementById('el-scene').value}">
+          <input type="hidden" name="to_marker_id" value="${document.getElementById('el-ent').value}">
+          <input type="hidden" name="to_building_id" value="${document.getElementById('el-bld').value}">
+          <input type="hidden" name="note" value="${document.getElementById('el-note').value}">`
+        f.innerHTML = html; f.submit()
+      })
+      if (existing) {
+        document.getElementById('el-del').addEventListener('click', async () => {
+          if (!confirm('Delete this exit link?')) return
+          const f = document.getElementById('fp-connections-form')
+          f.innerHTML = `<input type="hidden" name="fp_action" value="connection-delete"><input type="hidden" name="plan_id" value="<?= (int) $studio['id'] ?>"><input type="hidden" name="id" value="${existing.id}">`
+          f.submit()
         })
-        wrap.appendChild(del)
-      })
+      }
     }
-    function loadConnection(c) {
-      document.getElementById('con-id').value = c.id
-      document.getElementById('con-marker-picker').value = c.from_marker_id || ''
-      document.getElementById('con-fp').value = c.to_floor_plan_id || ''
-      document.getElementById('con-scene').value = c.to_scene_id || ''
-      document.getElementById('con-marker-to').value = c.to_marker_id || ''
-      document.getElementById('con-building').value = c.to_building_id || ''
-      document.getElementById('con-note').value = c.note || ''
-    }
-    document.getElementById('con-delete-btn').addEventListener('click', async () => {
-      const cid = document.getElementById('con-id').value
-      if (!cid) { await window.iaConfirm('Load a connection first.', 'Delete connection'); return }
-      const ok = await window.iaConfirm('Delete this exit connection?', 'Delete connection')
-      if (!ok) return
+
+    /* ── Close props panel ─────────────────────────────── */
+    document.getElementById('props-close').addEventListener('click', deselect)
+
+    /* ── Stage click deselect ──────────────────────────── */
+    stage.addEventListener('click', e => { if (mode !== 'route' && !e.target.closest('.fp-marker-dot') && !e.target.closest('.fp-wp-dot') && !e.target.closest('.fp-compass-rose') && !e.target.closest('.fp-route-node')) deselect() })
+
+    /* ── Save all ──────────────────────────────────────── */
+    document.getElementById('studio-save-btn').addEventListener('click', () => {
+      const planId = <?= (int) $studio['id'] ?>
       const f = document.createElement('form')
       f.method = 'post'
-      f.innerHTML = `<input type="hidden" name="fp_action" value="connection-delete"><input type="hidden" name="plan_id" value="${document.querySelector('#fp-connections-form input[name="plan_id"]').value}"><input type="hidden" name="id" value="${cid}">`
-      document.body.appendChild(f); f.submit()
+      let html = `<input type="hidden" name="fp_action" value="studio-save-all"><input type="hidden" name="plan_id" value="${planId}">`
+      html += `<input type="hidden" name="north_angle" value="${northAngle.toFixed(1)}">`
+      let mi = 0
+      qsa('.fp-marker-dot').forEach(d => {
+        const md = markerData[d.dataset.id]
+        if (!md) return
+        html += `<input type="hidden" name="markers[${mi}][id]" value="${d.dataset.id}">
+          <input type="hidden" name="markers[${mi}][x]" value="${d.querySelector('.mk-x').value}">
+          <input type="hidden" name="markers[${mi}][y]" value="${d.querySelector('.mk-y').value}">
+          <input type="hidden" name="markers[${mi}][label]" value="${esc(md.label)}">
+          <input type="hidden" name="markers[${mi}][marker_type]" value="${md.type}">
+          <input type="hidden" name="markers[${mi}][facing_angle]" value="${md.facing}">
+          <input type="hidden" name="markers[${mi}][target_building_id]" value="${md.building}">
+          <input type="hidden" name="markers[${mi}][target_room_id]" value="${md.room}">
+          <input type="hidden" name="markers[${mi}][target_scene_id]" value="${md.scene}">
+          <input type="hidden" name="markers[${mi}][target_floor_plan_id]" value="${md.fp}">
+          <input type="hidden" name="markers[${mi}][popup_title]" value="${esc(md.popupTitle)}">
+          <input type="hidden" name="markers[${mi}][popup_html]" value="${esc(md.popupHtml)}">`
+        mi++
+      })
+      html += `<input type="hidden" name="routes" value="${esc(JSON.stringify(routes.map(r => ({ id: r.id || 0, name: r.name, nodes: r.nodes.map(n => ({ id: n.id || 0, x: n.x, y: n.y, corner: n.corner, label: n.label || '' })) }))))}">`
+      html += `<input type="hidden" name="routes_delete" value="${deletedRouteIds.join(',')}">`
+      html += `<input type="hidden" name="waypoints_delete" value="${deletedWpIds.join(',')}">`
+      f.innerHTML = html
+      document.body.appendChild(f)
+      f.submit()
     })
 
-    // ── Compass ───────────────────────────────────────────────
-    function bindCompass() {
-      const needle = compassEl.querySelector('.fp-compass-needle')
-      let north = window._fpNorth || 0
-      const apply = (deg) => {
-        north = ((deg % 360) + 360) % 360
-        compassEl.style.setProperty('--north', north + 'deg')
-        needle.style.transform = `rotate(${north}deg)`
-        document.getElementById('compass-value').textContent = Math.round(north) + '°'
-        document.getElementById('north-angle-input').value = north.toFixed(1)
-      }
-      const fromEvent = (ev) => {
-        const r = compassEl.getBoundingClientRect()
-        const cx = r.left + r.width / 2, cy = r.top + r.height / 2
-        apply((Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180 / Math.PI + 90 + 360) % 360)
-      }
-      compassEl.addEventListener('pointerdown', (e) => {
-        e.preventDefault()
-        fromEvent(e)
-        const move = (ev) => fromEvent(ev)
-        const up = () => { document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up) }
-        document.addEventListener('pointermove', move)
-        document.addEventListener('pointerup', up)
-      })
-      apply(north)
-    }
-
-    // ── init ──────────────────────────────────────────────────
-    setMode('markers')
-    renderWpList()
-    renderConList()
-    bindCompass()
-    loadPathIntoEditor(null)
+    /* ── Init ──────────────────────────────────────────── */
+    setMode('move')
+    renderRoutes()
   })()  </script>
 <?php else: ?>
   <?php if ($filterBuildingId):

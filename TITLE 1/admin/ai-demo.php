@@ -108,10 +108,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
 function copyToClipboard(text) {
   navigator.clipboard.writeText(text).then(() => {
-    alert('Copied to clipboard!');
+    // Show inline success message instead of alert
+    showCopySuccess();
   }).catch(err => {
     console.error('Failed to copy:', err);
+    showCopyError();
   });
+}
+
+function showCopySuccess() {
+  var btn = document.querySelector('[onclick*="copyToClipboard"]');
+  if (btn) {
+    var originalText = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('btn-success');
+    setTimeout(function() {
+      btn.textContent = originalText;
+      btn.classList.remove('btn-success');
+    }, 2000);
+  }
+}
+
+function showCopyError() {
+  var btn = document.querySelector('[onclick*="copyToClipboard"]');
+  if (btn) {
+    var originalText = btn.textContent;
+    btn.textContent = '✗ Failed';
+    btn.classList.add('btn-danger');
+    setTimeout(function() {
+      btn.textContent = originalText;
+      btn.classList.remove('btn-danger');
+    }, 2000);
+  }
 }
 </script>
 

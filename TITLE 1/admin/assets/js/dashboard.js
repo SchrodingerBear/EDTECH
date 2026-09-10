@@ -226,14 +226,25 @@
     if (!ok) return
     try {
       const res = await fetch(form.action || location.href, { method: 'POST', body: new FormData(form) })
+      
+      if (res.redirected) {
+        window.location.href = res.url
+        return
+      }
+      
+      const contentType = res.headers.get('content-type') || ''
+      if (!contentType.includes('application/json')) {
+        if (res.ok) window.location.reload()
+        else window.iaToast('Delete failed', 'error')
+        return
+      }
+      
       const data = await res.json().catch(() => ({}))
       if (data.ok) {
-        window.iaToast(data.message || 'Deleted', 'success')
         form.closest('tr')?.remove()
-        setTimeout(() => location.reload(), 700)
+        window.location.reload()
       } else {
         window.iaToast(data.message || 'Delete failed', 'error')
-        setTimeout(() => location.reload(), 900)
       }
     } catch (err) {
       window.iaToast('Network error', 'error')

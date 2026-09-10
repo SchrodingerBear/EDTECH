@@ -33,7 +33,6 @@ $brandLogoUrl = !empty($platform_settings['logo_path']) ? url($platform_settings
   <meta name="color-scheme" content="light dark">
   <title><?= h($pageTitle ?? 'Dashboard') ?> · <?= h(APP_NAME) ?></title>
   <link rel="icon" href="<?= url('public/icon.svg') ?>" type="image/svg+xml">
-  <link rel="manifest" href="<?= url('manifest.json') ?>">
   <meta name="theme-color" content="#4f46e5">
   <link href="<?= url('assets/css/inter-font.css') ?>" rel="stylesheet">
   <link href="<?= url('assets/css/bootstrap.min.css') ?>" rel="stylesheet">

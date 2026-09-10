@@ -1,5 +1,5 @@
 // Main entry point for the photosphere capture app
-import { PhotosphereApp } from './modules/app.js';
+import { PhotosphereApp } from './modules/app.js?v=2';
 // OpenCV removed - using WebGL2 for all stitching
 
 // Global app instance
@@ -183,10 +183,15 @@ document.addEventListener('visibilitychange', () => {
 
 // Global functions for UI buttons
 window.openGallery = async function() {
+    console.log('openGallery called');
     if (window.sphereCapture && window.sphereCapture.cameraRoll) {
+        console.log('Opening camera roll');
         await window.sphereCapture.cameraRoll.show();
     } else {
-        console.error('Camera roll not initialized');
+        console.error('Camera roll not initialized', {
+            sphereCapture: !!window.sphereCapture,
+            cameraRoll: window.sphereCapture ? !!window.sphereCapture.cameraRoll : false
+        });
     }
 };
 
@@ -355,15 +360,8 @@ window.startApp = async () => {
         await window.sphereCapture.camera.startCamera();
     }
     
-    // Enable capturing
-    if (window.sphereCapture) {
-        window.sphereCapture.setCapturingEnabled(true);
-    }
-    
-    // Show capture UI elements and ensure scene is properly rendered
+    // Ensure scene is properly rendered after DOM updates
     if (window.sphereCapture && window.sphereCapture.scene) {
-        // Show the hotspots immediately
-        window.sphereCapture.scene.showCaptureState();
         // Then ensure proper sizing after DOM updates
         requestAnimationFrame(() => {
             window.sphereCapture.scene.handleResize();
