@@ -74,7 +74,7 @@ $buildings = crud()->raw(
             <td class="text-end">
               <div class="d-inline-flex gap-1">
                 <button class="btn btn-sm btn-outline-ia" data-bs-toggle="modal" data-bs-target="#bdg-modal"
-                  data-mode="edit" data-id="<?= (int) $b['id'] ?>" data-name="<?= h($b['name'], ENT_QUOTES) ?>" data-code="<?= h($b['code'], ENT_QUOTES) ?>" data-desc="<?= h($b['description'], ENT_QUOTES) ?>"><i class="fas fa-edit"></i></button>
+                  data-mode="edit" data-id="<?= (int) $b['id'] ?>" data-name="<?= h($b['name'], ENT_QUOTES) ?>" data-code="<?= h($b['code'], ENT_QUOTES) ?>" data-desc="<?= h($b['description'], ENT_QUOTES) ?>" data-featured="<?= h($b['featured_image_path'] ?? '', ENT_QUOTES) ?>"><i class="fas fa-edit"></i></button>
                 <form method="post" class="d-inline" data-delete-form data-confirm="Archive '<?= h($b['name']) ?>'?">
                   <input type="hidden" name="bdg_action" value="delete"><input type="hidden" name="id" value="<?= (int) $b['id'] ?>">
                   <button class="btn btn-sm btn-outline-ia text-danger"><i class="fas fa-trash"></i></button>
@@ -112,7 +112,7 @@ $buildings = crud()->raw(
           $pickerValue = '';
           $pickerLabel = 'Featured Image';
           $pickerHelp = 'Used in the campus directory card (if applicable).';
-          require __DIR__ . '/../layout/media-picker.php';
+          require __DIR__ . '/../layout/media-picker-sweetalert.php';
           ?>
         </div>
       </div>
@@ -122,6 +122,24 @@ $buildings = crud()->raw(
 </div>
 
 <script>
+function setMediaPicker(wrapId, url, filename) {
+  const wrap = document.getElementById(wrapId)
+  if (!wrap) return
+  const pickerId = wrapId.replace(/^wrap_/, '')
+  const fullUrl = url ? (url.startsWith('http') ? url : (window.IA_BASE_URL + '/' + url.replace(/^\/+/, ''))) : ''
+  document.getElementById(pickerId + '_url').value = url || ''
+  document.getElementById(pickerId + '_label').innerHTML = url
+    ? '<span class="text-truncate">' + (filename || url.split('/').pop()) + '</span>'
+    : '<span class="text-muted">No media selected</span>'
+  document.getElementById(pickerId + '_sub').textContent = url || 'Choose a file or enter a link'
+  const preview = document.getElementById(pickerId + '_preview')
+  if (preview) {
+    preview.innerHTML = url
+      ? '<img src="' + fullUrl + '" alt="preview">'
+      : '<i class="fa-regular fa-image" style="font-size: 22px; color: #aab2c0;"></i>'
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const modal = document.getElementById('bdg-modal')
   modal.addEventListener('show.bs.modal', (e) => {
@@ -133,6 +151,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('bdg-code').value = btn.dataset.code || ''
     document.getElementById('bdg-desc').value = btn.dataset.desc || ''
     modal.querySelector('.modal-title').textContent = mode === 'edit' ? 'Edit building' : 'Add building'
+    
+    const featWrap = modal.querySelector('.ia-media-picker-wrapper[id^="wrap_picker_featured"]')
+    if (featWrap) {
+      if (mode === 'edit' && btn.dataset.featured)
+        setMediaPicker(featWrap.id, btn.dataset.featured, btn.dataset.featured.split('/').pop())
+      else if (typeof clearMediaPicker === 'function')
+        clearMediaPicker(featWrap.id.replace(/^wrap_/, ''))
+    }
   })
 })
 

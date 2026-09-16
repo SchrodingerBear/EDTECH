@@ -284,7 +284,7 @@ $tabs = [
             $pickerValue = ''; // The path is typically stored as a full URL, so we leave it empty to avoid confusion with relative paths
             $pickerLabel = 'Cover image (appears on the main platform landing page)';
             $pickerHelp = 'Recommended 1200×800 (landscape).';
-            require __DIR__ . '/../layout/media-picker.php';
+            require __DIR__ . '/../layout/media-picker-sweetalert.php';
             ?>
             <?php if (!empty($inst['cover_image_path'])): ?>
               <div class="mt-2">

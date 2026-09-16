@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../../includes/auth.php';
 require_admin();
 require_page('admin.ar');
@@ -127,7 +127,7 @@ $waypoints = crud()->raw(
     <h3 class="mb-0">
       <?= ia_icon('building', 17) ?> <?= h($b['name']) ?>
       <?php
-        $bplans = array_values(array_filter($floorPlanRaw, fn($p) => (int) ($p['building_id'] ?? 0) === (int) $b['id']));
+        $bplans = array_values(array_filter($floorPlanRaw, function($p) use ($b) { return (int) ($p['building_id'] ?? 0) === (int) $b['id']; }));
       ?>
       <span class="badge badge-soft ms-1"><?= count($bplans) ?> floor plan(s)</span>
     </h3>
@@ -216,7 +216,7 @@ $waypoints = crud()->raw(
 
 <?php
 // unassigned floor plans
-$unassigned = array_values(array_filter($floorPlanRaw, fn($p) => empty($p['building_id'])));
+$unassigned = array_values(array_filter($floorPlanRaw, function($p) { return empty($p['building_id']); }));
 ?>
 <?php if ($unassigned): ?>
 <div class="ia-card mb-3">

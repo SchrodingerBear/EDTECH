@@ -27,27 +27,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['hs_action'] ?? '';
     try {
         if ($action === 'add') {
+            $mediaPath = handle_media_picker('media_path', trim($inst['folder_path'], '/') . '/assets/hotspots') ?: trim($_POST['media_path'] ?? '');
             crud()->insert('scene_hotspots', [
                 'institution_id' => $iid, 'from_scene_id' => $sceneId, 'to_scene_id' => (int) ($_POST['to_scene_id'] ?? 0) ?: null,
                 'hotspot_type' => in_array($_POST['hotspot_type'] ?? '', ['navigation','info','facility','media']) ? $_POST['hotspot_type'] : 'info',
                 'label' => trim($_POST['label'] ?? '') ?: 'Info', 'body_html' => trim($_POST['body_html'] ?? '') ?: null,
-                'yaw' => (float) ($_POST['yaw'] ?? 0), 'pitch' => (float) ($_POST['pitch'] ?? 0)
+                'yaw' => (float) ($_POST['yaw'] ?? 0), 'pitch' => (float) ($_POST['pitch'] ?? 0),
+                'media_path' => $mediaPath ?: null
             ]);
             flash('success', 'Hotspot added.');
         }
         if ($action === 'edit') {
+            $mediaPath = handle_media_picker('media_path', trim($inst['folder_path'], '/') . '/assets/hotspots') ?: trim($_POST['media_path'] ?? '');
             crud()->update('scene_hotspots', [
                 'label' => trim($_POST['label'] ?? '') ?: 'Info',
                 'body_html' => trim($_POST['body_html'] ?? '') ?: null,
                 'yaw' => (float) ($_POST['yaw'] ?? 0), 'pitch' => (float) ($_POST['pitch'] ?? 0),
                 'to_scene_id' => (int) ($_POST['to_scene_id'] ?? 0) ?: null,
-                'hotspot_type' => in_array($_POST['hotspot_type'] ?? '', ['navigation','info','facility','media']) ? $_POST['hotspot_type'] : 'info'
+                'hotspot_type' => in_array($_POST['hotspot_type'] ?? '', ['navigation','info','facility','media']) ? $_POST['hotspot_type'] : 'info',
+                'media_path' => $mediaPath ?: null
             ], ['id' => (int) ($_POST['id'] ?? 0), 'institution_id' => $iid]);
             flash('success', 'Hotspot updated.');
         }
         if ($action === 'delete') {
             crud()->delete('scene_hotspots', ['id' => (int) ($_POST['id'] ?? 0), 'institution_id' => $iid]);
             flash('success', 'Hotspot removed.');
+        }
+        if ($action === 'set_start') {
+            crud()->update('tour_scenes', [
+                'initial_yaw' => (float) ($_POST['yaw'] ?? 0),
+                'initial_pitch' => (float) ($_POST['pitch'] ?? 0),
+            ], ['id' => $sceneId, 'institution_id' => $iid]);
+            flash('success', 'Starting viewpoint saved.');
         }
     } catch (Throwable $e) {
         flash('error', $e->getMessage());
@@ -75,7 +86,13 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
     <h3 class="fw-800 mb-0"><?= h($scene['title']) ?> — Hotspot Studio</h3>
     <p class="mb-0 ia-meta-md">Click anywhere in the 360 view to place a hotspot.</p>
   </div>
-  <button class="btn btn-grad btn-sm ms-auto" data-bs-toggle="modal" data-bs-target="#hs-modal" data-mode="add">+ Add hotspot</button>
+  <form method="post" id="form-set-start" class="d-none">
+    <input type="hidden" name="hs_action" value="set_start">
+    <input type="hidden" name="yaw" id="start-yaw" value="0">
+    <input type="hidden" name="pitch" id="start-pitch" value="0">
+  </form>
+  <button class="btn btn-outline-ia btn-sm ms-auto" id="btn-set-start"><?= ia_icon('camera', 13) ?> Set as Starting Point</button>
+  <button class="btn btn-grad btn-sm" data-bs-toggle="modal" data-bs-target="#hs-modal" data-mode="add">+ Add hotspot</button>
 </div>
 
 <?php if (!$equirectUrl): ?>
@@ -100,15 +117,15 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
             <a-assets>
               <img id="studio-pano" src="<?= h($equirectUrl) ?>" crossorigin="anonymous">
             </a-assets>
-            <a-sky id="studio-sky" src="#studio-pano" rotation="0 <?= (float)($scene['initial_yaw'] ?? 0) ?> 0"></a-sky>
+            <a-sky id="studio-sky" src="#studio-pano"></a-sky>
             <!-- hotspots rendered by JS -->
             <a-entity id="camera-rig">
-              <a-camera look-controls wasd-controls="enabled:false" id="studio-cam"></a-camera>
+              <a-camera position="0 0 0" look-controls wasd-controls="enabled:false" id="studio-cam"></a-camera>
             </a-entity>
           </a-scene>
         </div>
         <div id="studio-crosshair">
-          <img src="<?= url('assets/icons/crosshair.svg') ?>" width="20" height="20" alt="Crosshair">
+          <i class="fa-solid fa-crosshairs text-muted" style="font-size: 20px;"></i>
         </div>
         <div class="studio-hint">
           Drag to look · Double-click to place hotspot at crosshair
@@ -124,7 +141,7 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
       <?php if ($hotspots): ?>
         <div class="hots-list">
           <?php foreach ($hotspots as $hs): ?>
-            <div class="hotspot-row d-flex align-items-start gap-3 px-3 py-2 divider-bottom" id="hsrow-<?= (int)$hs['id'] ?>">
+            <div class="hotspot-row d-flex align-items-start gap-3 px-3 py-2 divider-bottom" style="cursor: pointer;" id="hsrow-<?= (int)$hs['id'] ?>" data-yaw="<?= (float)$hs['yaw'] ?>" data-pitch="<?= (float)$hs['pitch'] ?>">
               <div class="hotspot-icon-badge type-<?= h($hs['hotspot_type']) ?>">
                 <?= ia_icon($hs['hotspot_type'] === 'navigation' ? 'arrow' : ($hs['hotspot_type'] === 'info' ? 'info' : 'camera'), 14) ?>
               </div>
@@ -144,6 +161,7 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
                   data-to="<?= (int)$hs['to_scene_id'] ?>"
                   data-yaw="<?= (float)$hs['yaw'] ?>"
                   data-pitch="<?= (float)$hs['pitch'] ?>"
+                  data-media="<?= h($hs['media_path'] ?? '', ENT_QUOTES) ?>"
                   data-body="<?= h($hs['body_html'] ?? '', ENT_QUOTES) ?>"><?= ia_icon('file', 12) ?></button>
                 <form method="post" class="d-inline" data-delete-form data-confirm="Delete hotspot '<?= h($hs['label']) ?>'?">
                   <input type="hidden" name="hs_action" value="delete">
@@ -175,7 +193,7 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
         <h5 class="modal-title">Hotspot</h5>
         <button class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <form method="post">
+      <form method="post" enctype="multipart/form-data">
         <input type="hidden" name="hs_action" value="add" id="hs-action">
         <input type="hidden" name="id" value="0" id="hs-id">
         <div class="modal-body d-grid gap-3">
@@ -187,10 +205,9 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
             <div class="col-md-6">
               <label class="form-label">Type</label>
               <select class="form-select" name="hotspot_type" id="hs-type">
-                <option value="info">ℹ️ Info</option>
-                <option value="navigation">🧭 Navigation (→ scene)</option>
-                <option value="facility">🏛️ Facility</option>
-                <option value="media">🎬 Media</option>
+                <option value="info">Info</option>
+                <option value="navigation">Navigation (→ scene)</option>
+                <option value="media">Media</option>
               </select>
             </div>
             <div class="col-md-3">
@@ -212,7 +229,16 @@ $hotspotsJson = json_encode($hotspots, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
             </select>
             <div class="form-text">Only applies to Navigation type hotspots.</div>
           </div>
-          <div>
+          <div id="hs-media-wrap">
+            <?php
+            $pickerName = 'media_path';
+            $pickerValue = '';
+            $pickerLabel = 'Media Image';
+            $pickerHelp = 'Image to display for Media type hotspots.';
+            require __DIR__ . '/../layout/media-picker-sweetalert.php';
+            ?>
+          </div>
+          <div id="hs-info-wrap">
             <div class="d-flex justify-content-between align-items-center">
               <label class="form-label mb-1">Popup body (HTML allowed)</label>
               <button type="button" class="btn btn-sm btn-outline-ia" data-ai-gen data-ai-type="hotspot" data-ai-id-el="hs-id" data-ai-target-el="hs-body"><?= ia_icon('wand', 13) ?> Generate AI</button>
@@ -264,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function yawPitchToXYZ(yawDeg, pitchDeg, r) {
     const y = (yawDeg  || 0) * Math.PI / 180;
     const p = (pitchDeg || 0) * Math.PI / 180;
-    const x = r * Math.cos(p) * Math.sin(-y);
+    const x = r * Math.cos(p) * Math.sin(y);
     const z = -r * Math.cos(p) * Math.cos(y);
     const vY = r * Math.sin(p);
     return `${x.toFixed(4)} ${vY.toFixed(4)} ${z.toFixed(4)}`;
@@ -274,6 +300,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function getCameraLook() {
     const cam = document.getElementById('studio-cam');
     if (!cam) return { yaw: 0, pitch: 0 };
+    const lc = cam.components['look-controls'];
+    if (lc) {
+      return {
+        yaw: -(lc.yawObject.rotation.y * 180 / Math.PI),
+        pitch: lc.pitchObject.rotation.x * 180 / Math.PI
+      };
+    }
     const rot = cam.getAttribute('rotation');
     return { yaw: -(rot.y || 0), pitch: (rot.x || 0) };
   }
@@ -294,6 +327,16 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.show();
   });
 
+  const hsTypeSelect = document.getElementById('hs-type');
+  function toggleModalFields() {
+    const t = hsTypeSelect.value;
+    document.getElementById('hs-scene-wrap').style.display = t === 'navigation' ? 'block' : 'none';
+    document.getElementById('hs-media-wrap').style.display = t === 'media' ? 'block' : 'none';
+    const infoWrap = document.getElementById('hs-info-wrap');
+    if (infoWrap) infoWrap.style.display = t === 'info' ? 'block' : 'none';
+  }
+  hsTypeSelect.addEventListener('change', toggleModalFields);
+
   // ── modal wiring ──
   document.getElementById('hs-modal').addEventListener('show.bs.modal', e => {
     const btn = e.relatedTarget;
@@ -308,6 +351,30 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('hs-pitch').value = btn.dataset.pitch || 0;
     document.getElementById('hs-body').value  = btn.dataset.body || '';
     document.getElementById('hs-modal').querySelector('.modal-title').textContent = mode === 'edit' ? 'Edit hotspot' : 'Add hotspot';
+
+    const mediaWrap = document.getElementById('wrap_picker_media_path');
+    if (mediaWrap) {
+      if (mode === 'edit' && btn.dataset.media) {
+        if (typeof setMediaPicker === 'function') {
+          setMediaPicker(mediaWrap.id, btn.dataset.media, btn.dataset.media.split('/').pop());
+        }
+      } else {
+        if (typeof clearMediaPicker === 'function') {
+          clearMediaPicker('picker_media_path');
+        }
+      }
+    }
+    
+    // update dynamic fields visibility
+    toggleModalFields();
+  });
+
+  // ── "Set as Starting Point" top button ──
+  document.getElementById('btn-set-start')?.addEventListener('click', () => {
+    const look = getCameraLook();
+    document.getElementById('start-yaw').value = look.yaw.toFixed(2);
+    document.getElementById('start-pitch').value = look.pitch.toFixed(2);
+    document.getElementById('form-set-start').submit();
   });
 
   // ── "Add hotspot" top button: use current camera direction ──
@@ -322,9 +389,15 @@ document.addEventListener('DOMContentLoaded', () => {
   function applyInitialHeading() {
     const cam = document.getElementById('studio-cam');
     if (!cam) return;
-    const rig = document.getElementById('camera-rig');
-    if (rig) rig.setAttribute('rotation', `0 ${initialYaw} 0`);
-    if (initialPitch) cam.setAttribute('rotation', `${initialPitch} 0 0`);
+    const lc = cam.components['look-controls'];
+    if (lc) {
+      lc.pitchObject.rotation.x = (initialPitch || 0) * Math.PI / 180;
+      lc.yawObject.rotation.y = -(initialYaw || 0) * Math.PI / 180;
+    } else {
+      const rig = document.getElementById('camera-rig');
+      if (rig) rig.setAttribute('rotation', `0 ${initialYaw} 0`);
+      if (initialPitch) cam.setAttribute('rotation', `${initialPitch} 0 0`);
+    }
   }
 
   // Build after A-Frame is ready
@@ -336,7 +409,53 @@ document.addEventListener('DOMContentLoaded', () => {
     applyInitialHeading();
     buildHotspots();
   }
+
+  // Center camera when clicking hotspot row
+  document.querySelectorAll('.hotspot-row').forEach(row => {
+    row.addEventListener('click', e => {
+      if (e.target.closest('button') || e.target.closest('a')) return;
+      const cam = document.getElementById('studio-cam');
+      const lc = cam && cam.components['look-controls'];
+      if (lc) {
+        lc.pitchObject.rotation.x = parseFloat(row.dataset.pitch || 0) * Math.PI / 180;
+        lc.yawObject.rotation.y = -parseFloat(row.dataset.yaw || 0) * Math.PI / 180;
+      }
+    });
+  });
+
+  // ── Live Yaw/Pitch Indicator ──
+  const viewerWrap = document.getElementById('studio-viewer');
+  if (viewerWrap) {
+    const liveCoords = document.createElement('div');
+    liveCoords.style.cssText = 'position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: #fff; padding: 4px 8px; border-radius: 4px; font-family: monospace; z-index: 10; font-size: 12px; pointer-events: none;';
+    viewerWrap.appendChild(liveCoords);
+    
+    function updateLiveCoords() {
+      const look = getCameraLook();
+      liveCoords.textContent = `Yaw: ${look.yaw.toFixed(1)}° | Pitch: ${look.pitch.toFixed(1)}°`;
+      requestAnimationFrame(updateLiveCoords);
+    }
+    updateLiveCoords();
+  }
 });
+
+function setMediaPicker(wrapId, url, filename) {
+  const wrap = document.getElementById(wrapId)
+  if (!wrap) return
+  const pickerId = wrapId.replace(/^wrap_/, '')
+  const fullUrl = url ? (url.startsWith('http') ? url : (window.IA_BASE_URL + '/' + url.replace(/^\/+/, ''))) : ''
+  document.getElementById(pickerId + '_url').value = url || ''
+  document.getElementById(pickerId + '_label').innerHTML = url
+    ? '<span class="text-truncate">' + (filename || url.split('/').pop()) + '</span>'
+    : '<span class="text-muted">No media selected</span>'
+  document.getElementById(pickerId + '_sub').textContent = url || 'Choose a file or enter a link'
+  const preview = document.getElementById(pickerId + '_preview')
+  if (preview) {
+    preview.innerHTML = url
+      ? '<img src="' + fullUrl + '" alt="preview">'
+      : '<i class="fa-regular fa-image" style="font-size: 22px; color: #aab2c0;"></i>'
+  }
+}
 </script>
 
 <?php require __DIR__ . '/../layout/footer.php'; ?>

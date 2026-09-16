@@ -90,7 +90,7 @@ if ($usePlatform) {
                 <?php if ($pickerPreview && preg_match('/\.(jpe?g|png|webp|gif|svg|avif)(\?|$)/i', $pickerPreview)): ?>
                     <img src="<?= h($pickerPreview) ?>" alt="preview">
                 <?php else: ?>
-                    <img src="<?= url('assets/icons/image-placeholder.svg') ?>" width="22" height="22" alt="No media">
+                    <i class="fa-regular fa-image" style="font-size: 22px; color: #aab2c0;"></i>
                 <?php endif; ?>
             </div>
 
@@ -171,7 +171,7 @@ if ($usePlatform) {
                     <div class="tab-pane fade show active" id="tab-upload-<?= h($pickerId) ?>" role="tabpanel">
                         <div class="text-center p-4 border rounded-3 mp-dropzone">
                             <div class="mb-3">
-                                <img src="<?= url('assets/icons/upload-cloud.svg') ?>" width="40" height="40" alt="Upload">
+                                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 40px; color: #6a707f;"></i>
                             </div>
                             <h6 class="fw-bold">Upload an image file</h6>
                             <p class="text-muted small mb-3">Accepted formats: PNG, JPG, WebP, SVG, AVIF</p>
@@ -335,7 +335,7 @@ if ($usePlatform) {
                 document.getElementById(pickerId + '_label').textContent = name;
                 document.getElementById(pickerId + '_sub').textContent = val;
                 document.getElementById(pickerId + '_file_real').value = '';
-                document.getElementById(pickerId + '_preview').innerHTML = '<img src="' + mediaPreviewSrc(val) + '" onerror="this.src=\'<?= url('assets/icons/image-placeholder.svg') ?>\'">';
+                document.getElementById(pickerId + '_preview').innerHTML = '<img src="' + mediaPreviewSrc(val) + '" onerror="this.outerHTML=\'<i class=\\\'fa-regular fa-image\\\' style=\\\'font-size: 22px; color: #aab2c0;\\\'></i>\'">';
             }
             closeMediaPickerModal(pickerId);
         };
@@ -346,7 +346,7 @@ if ($usePlatform) {
             if (fileInput) fileInput.value = '';
             document.getElementById(pickerId + '_label').innerHTML = '<span class="text-muted">No media selected</span>';
             document.getElementById(pickerId + '_sub').textContent = 'Choose a file or enter a link';
-            document.getElementById(pickerId + '_preview').innerHTML = '<img src="<?= url('assets/icons/image-placeholder.svg') ?>" width="22" height="22" alt="No media">';
+            document.getElementById(pickerId + '_preview').innerHTML = '<i class="fa-regular fa-image" style="font-size: 22px; color: #aab2c0;"></i>';
         };
     }
 </script>

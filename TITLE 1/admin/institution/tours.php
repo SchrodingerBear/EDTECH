@@ -118,7 +118,7 @@ $panoramas = crud()->select('panoramas', 'id,title,equirect_path', ['institution
                 <button class="btn btn-sm btn-outline-ia" data-bs-toggle="modal" data-bs-target="#scene-modal"
                   data-mode="edit" data-id="<?= (int) $sc['id'] ?>" data-title="<?= h($sc['title'], ENT_QUOTES) ?>"
                   data-building="<?= (int) $sc['building_id'] ?>" data-room="<?= (int) $sc['room_id'] ?>"
-                  data-desc="<?= h($sc['description'], ENT_QUOTES) ?>" data-yaw="<?= (float) $sc['initial_yaw'] ?>" data-pitch="<?= (float) $sc['initial_pitch'] ?>"><?= ia_icon('file', 13) ?></button>
+                  data-desc="<?= h($sc['description'], ENT_QUOTES) ?>" data-yaw="<?= (float) $sc['initial_yaw'] ?>" data-pitch="<?= (float) $sc['initial_pitch'] ?>" data-featured="<?= h($sc['featured_image_path'] ?? '', ENT_QUOTES) ?>" data-equirect="<?= h($sc['equirect_path'] ?? '', ENT_QUOTES) ?>"><?= ia_icon('file', 13) ?></button>
                 <form method="post" class="d-inline">
                   <input type="hidden" name="tour_action" value="start"><input type="hidden" name="id" value="<?= (int) $sc['id'] ?>">
                   <button class="btn btn-sm btn-outline-ia" title="Make this the landing start"><?= ia_icon('rocket', 13) ?></button>
@@ -161,23 +161,13 @@ $panoramas = crud()->select('panoramas', 'id,title,equirect_path', ['institution
         </div>
         <div class="row g-3">
           <div class="col-md-6">
-            <label class="form-label">Equirect/pano image</label>
-            <div class="d-grid gap-2">
-              <select class="form-select" name="panorama_select" id="panorama-select">
-                <option value="">-- Select from 360 Camera App --</option>
-                <?php foreach ($panoramas as $pano): ?>
-                  <option value="<?= h(trim($inst['folder_path'], '/') . '/' . $pano['equirect_path']) ?>" data-title="<?= h($pano['title']) ?>"><?= h($pano['title']) ?></option>
-                <?php endforeach; ?>
-              </select>
-              <div class="text-center text-muted fs-12">— or upload manually —</div>
-              <?php
-              $pickerName = 'equirect_image';
-              $pickerValue = '';
-              $pickerLabel = 'Upload equirect';
-              $pickerHelp = '2:1 equirectangular panorama (stiched by AI or camera).';
-              require __DIR__ . '/../layout/media-picker.php';
-              ?>
-            </div>
+            <?php
+            $pickerName = 'equirect_image';
+            $pickerValue = '';
+            $pickerLabel = 'Equirect/pano image';
+            $pickerHelp = '2:1 equirectangular panorama (stiched by AI or camera).';
+            require __DIR__ . '/../layout/media-picker-sweetalert.php';
+            ?>
           </div>
           <div class="col-md-6">
             <?php
@@ -185,7 +175,7 @@ $panoramas = crud()->select('panoramas', 'id,title,equirect_path', ['institution
             $pickerValue = '';
             $pickerLabel = 'Featured image';
             $pickerHelp = '';
-            require __DIR__ . '/../layout/media-picker.php';
+            require __DIR__ . '/../layout/media-picker-sweetalert.php';
             ?>
           </div>
         </div>
@@ -206,6 +196,24 @@ $panoramas = crud()->select('panoramas', 'id,title,equirect_path', ['institution
 </div>
 
 <script>
+function setMediaPicker(wrapId, url, filename) {
+  const wrap = document.getElementById(wrapId)
+  if (!wrap) return
+  const pickerId = wrapId.replace(/^wrap_/, '')
+  const fullUrl = url ? (url.startsWith('http') ? url : (window.IA_BASE_URL + '/' + url.replace(/^\/+/, ''))) : ''
+  document.getElementById(pickerId + '_url').value = url || ''
+  document.getElementById(pickerId + '_label').innerHTML = url
+    ? '<span class="text-truncate">' + (filename || url.split('/').pop()) + '</span>'
+    : '<span class="text-muted">No media selected</span>'
+  document.getElementById(pickerId + '_sub').textContent = url || 'Choose a file or enter a link'
+  const preview = document.getElementById(pickerId + '_preview')
+  if (preview) {
+    preview.innerHTML = url
+      ? '<img src="' + fullUrl + '" alt="preview">'
+      : '<i class="fa-regular fa-image" style="font-size: 22px; color: #aab2c0;"></i>'
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const modal = document.getElementById('scene-modal')
   modal.addEventListener('show.bs.modal', (e) => {
@@ -220,36 +228,24 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('scene-yaw').value = btn.dataset.yaw || 0
     document.getElementById('scene-pitch').value = btn.dataset.pitch || 0
     modal.querySelector('.modal-title').textContent = mode === 'edit' ? 'Edit scene' : 'Add 360 scene'
+    
+    const featWrap = modal.querySelector('.ia-media-picker-wrapper[id^="wrap_picker_featured"]')
+    if (featWrap) {
+      if (mode === 'edit' && btn.dataset.featured)
+        setMediaPicker(featWrap.id, btn.dataset.featured, btn.dataset.featured.split('/').pop())
+      else if (typeof clearMediaPicker === 'function')
+        clearMediaPicker(featWrap.id.replace(/^wrap_/, ''))
+    }
+    
+    const equiWrap = modal.querySelector('.ia-media-picker-wrapper[id^="wrap_picker_equirect"]')
+    if (equiWrap) {
+      if (mode === 'edit' && btn.dataset.equirect)
+        setMediaPicker(equiWrap.id, btn.dataset.equirect, btn.dataset.equirect.split('/').pop())
+      else if (typeof clearMediaPicker === 'function')
+        clearMediaPicker(equiWrap.id.replace(/^wrap_/, ''))
+    }
   })
 
-  // Handle panorama selection from dropdown
-  const panoramaSelect = document.getElementById('panorama-select')
-  if (panoramaSelect) {
-    panoramaSelect.addEventListener('change', function() {
-      const selectedPath = this.value
-      const selectedTitle = this.options[this.selectedIndex].dataset.title
-
-      if (selectedPath) {
-        // Set the equirect_path hidden field
-        const equirectPathInput = document.querySelector('input[name="equirect_path"]')
-        if (!equirectPathInput) {
-          const hiddenInput = document.createElement('input')
-          hiddenInput.type = 'hidden'
-          hiddenInput.name = 'equirect_path'
-          hiddenInput.value = selectedPath
-          document.querySelector('form').appendChild(hiddenInput)
-        } else {
-          equirectPathInput.value = selectedPath
-        }
-
-        // Auto-fill title if empty
-        const titleInput = document.getElementById('scene-title')
-        if (titleInput && !titleInput.value && selectedTitle) {
-          titleInput.value = selectedTitle
-        }
-      }
-    })
-  }
 })
 
 </script>

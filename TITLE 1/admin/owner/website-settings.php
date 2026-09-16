@@ -168,7 +168,7 @@ $pickerLibrary = 'platform';
                 $pickerValue = $s['hero_image_path'] ?? '';
                 $pickerLabel = 'Hero Image';
                 $pickerHelp = 'Replaces public/campus-hero.*. Recommended 1400×900+.';
-                require __DIR__ . '/../layout/media-picker.php';
+                require __DIR__ . '/../layout/media-picker-sweetalert.php';
                 ?>
               </div>
 
@@ -179,7 +179,7 @@ $pickerLibrary = 'platform';
                 $pickerValue = $s['logo_path'] ?? '';
                 $pickerLabel = 'Brand Logo';
                 $pickerHelp = 'Replaces the default 3D box icon across the site headers and footers.';
-                require __DIR__ . '/../layout/media-picker.php';
+                require __DIR__ . '/../layout/media-picker-sweetalert.php';
                 ?>
               </div>
 
@@ -362,7 +362,7 @@ $pickerLibrary = 'platform';
                     $pickerValue = $fImgVal;
                     $pickerLabel = 'Card Image';
                     $pickerHelp  = '';
-                    require __DIR__ . '/../layout/media-picker.php';
+                    require __DIR__ . '/../layout/media-picker-sweetalert.php';
                     ?>
                   </div>
                 </div>

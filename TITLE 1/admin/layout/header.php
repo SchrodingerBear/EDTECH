@@ -37,8 +37,9 @@ $brandLogoUrl = !empty($platform_settings['logo_path']) ? url($platform_settings
   <link href="<?= url('assets/css/inter-font.css') ?>" rel="stylesheet">
   <link href="<?= url('assets/css/bootstrap.min.css') ?>" rel="stylesheet">
   <link href="<?= url('assets/css/simple-datatables.min.css') ?>" rel="stylesheet">
-  <link rel="stylesheet" href="<?= url('assets/css/font-awesome.min.css') ?>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="<?= url('admin/assets/css/dashboard.css') ?>">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>window.IA_BASE_URL = <?= json_encode(BASE_URL, JSON_UNESCAPED_SLASHES) ?>;</script>
 </head>
 

@@ -66,6 +66,16 @@ ServerSignature Off
 </FilesMatch>
 
 # ---------------------------------------------------------------------------
+# MIME types
+# ---------------------------------------------------------------------------
+AddType image/svg+xml .svg
+AddType image/svg+xml .svgz
+
+<IfModule mod_mime.c>
+  AddType image/svg+xml .svg .svgz
+</IfModule>
+
+# ---------------------------------------------------------------------------
 # Compression + caching
 # ---------------------------------------------------------------------------
 <IfModule mod_deflate.c>

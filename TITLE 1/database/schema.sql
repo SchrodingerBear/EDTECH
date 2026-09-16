@@ -559,7 +559,7 @@ CREATE TABLE `institutions` (
 --
 
 INSERT INTO `institutions` (`id`, `slug`, `name`, `short_name`, `institution_type`, `description`, `logo_path`, `cover_image_path`, `address`, `city`, `province`, `country`, `latitude`, `longitude`, `website_url`, `contact_email`, `contact_phone`, `folder_path`, `landing_mode`, `starting_scene_id`, `starting_floor_plan_id`, `require_landscape_mobile`, `is_published`, `is_active`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 'immaculada-concepcion-college', 'Immaculada Concepcion College', 'ICC', 'school', NULL, NULL, 'http://localhost/G7 4D THESIS/TITLE 1/organizations/immaculada-concepcion-college/assets/552414c35a5e616e.png', 'Purok II, Barangay 185, Zone 16, District 3, Caloocan, Northern Manila District, Metro Manila, 1426, Philippines', 'Caloocan', 'Metro Manila', 'Philippines', 14.7677658, 121.0797429, 'https://www.immaculada.edu.ph/home', 'icc@immaculada.edu.ph', '+63 709 42 25', 'organizations/immaculada-concepcion-college', 'floor_plan', NULL, 1, 1, 1, 1, 1, '2026-08-31 10:49:52', '2026-09-01 23:19:39', NULL);
+(1, 'immaculada-concepcion-college', 'Immaculada Concepcion College', 'ICC', 'school', NULL, NULL, 'organizations/immaculada-concepcion-college/assets/552414c35a5e616e.png', 'Purok II, Barangay 185, Zone 16, District 3, Caloocan, Northern Manila District, Metro Manila, 1426, Philippines', 'Caloocan', 'Metro Manila', 'Philippines', 14.7677658, 121.0797429, 'https://www.immaculada.edu.ph/home', 'icc@immaculada.edu.ph', '+63 709 42 25', 'organizations/immaculada-concepcion-college', 'floor_plan', NULL, 1, 1, 1, 1, 1, '2026-08-31 10:49:52', '2026-09-01 23:19:39', NULL);
 
 -- --------------------------------------------------------
 

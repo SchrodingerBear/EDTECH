@@ -339,10 +339,12 @@ $statusBadge = ['draft' => 'badge-draft', 'uploading' => 'badge-draft', 'queued'
         <div class="row g-3 align-items-center card-body-night">
           <div class="col-md-3">
             <?php if ($pano['thumbnail_path']): ?>
-              <img src="<?= h(url($inst['folder_path'] . '/' . $pano['thumbnail_path'])) ?>" class="equirect-thumb rounded-3"
+              <?php $tUrl = str_starts_with($pano['thumbnail_path'], 'http') ? $pano['thumbnail_path'] : url($inst['folder_path'] . '/' . $pano['thumbnail_path']); ?>
+              <img src="<?= h($tUrl) ?>" class="equirect-thumb rounded-3"
                 alt="thumbnail">
             <?php elseif ($pano['equirect_path']): ?>
-              <img src="<?= h(url($inst['folder_path'] . '/' . $pano['equirect_path'])) ?>" class="equirect-thumb rounded-3"
+              <?php $eUrl = str_starts_with($pano['equirect_path'], 'http') ? $pano['equirect_path'] : url($inst['folder_path'] . '/' . $pano['equirect_path']); ?>
+              <img src="<?= h($eUrl) ?>" class="equirect-thumb rounded-3"
                 alt="panorama">
             <?php else: ?>
               <div class="equirect-thumb rounded-3 bg-light d-flex align-items-center justify-content-center">

@@ -1960,6 +1960,42 @@ body.page-staff-aistitch .sj-opt > input:checked + .sj-box {
   border-color: var(--ia-border) !important;
 }
 
+/* Ensure picker bar never overflows a modal */
+.modal .ia-media-picker-wrapper .mp-bar {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.modal .ia-media-picker-wrapper .mp-bar > .d-flex {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.modal .ia-media-picker-wrapper .mp-preview {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+}
+
+.modal .ia-media-picker-wrapper .fw-semibold {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modal .ia-media-picker-wrapper .text-muted {
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modal .ia-media-picker-wrapper .d-flex {
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+}
+
 .ia-media-picker-wrapper .mp-preview {
   width: 52px;
   height: 52px;

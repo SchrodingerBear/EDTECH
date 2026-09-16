@@ -215,6 +215,7 @@ foreach ($hotspots as $hs) {
       'yaw' => (float)$hs['yaw'],
       'pitch' => (float)$hs['pitch'],
       'body_html' => $hs['body_html'],
+      'media_path' => $hs['media_path'] ?? null,
       'to_scene_id' => $hs['to_scene_id'] ? (int)$hs['to_scene_id'] : null,
       'target_facility_id' => $hs['target_facility_id'] ? (int)$hs['target_facility_id'] : null
     ];
@@ -295,7 +296,7 @@ if (!$config['starting_floor_plan'] && !empty($config['floor_plans'])) {
 function normalizePaths(&$arr, $slug) {
     if (!is_array($arr)) return;
 
-    $pathKeys = ['equirect_path', 'featured_image_path', 'image_path', 'pano_url', 'sub_fp_image', 'floor_plan_image', 'scene_equirect', 'thumbnail_path'];
+    $pathKeys = ['equirect_path', 'featured_image_path', 'image_path', 'pano_url', 'sub_fp_image', 'floor_plan_image', 'scene_equirect', 'thumbnail_path', 'media_path'];
 
     foreach ($arr as $k => &$v) {
         if (is_string($v)) {
@@ -344,7 +345,7 @@ normalizePaths($config, $slug);
 <body>
   <!-- =========================== 360 MODE (A-Frame) =========================== -->
   <div id="mode-360" class="mode hidden">
-    <a-scene id="aframe-scene" embedded vr-mode-ui="enabled: false">
+    <a-scene id="aframe-scene" embedded vr-mode-ui="enabled: false" renderer="antialias: true; colorManagement: true; highRefreshRate: true; precision: high;">
       <a-assets>
         <img id="pano" crossorigin="anonymous">
       </a-assets>
@@ -414,6 +415,7 @@ normalizePaths($config, $slug);
     let fpStack      = [];
     let currentMode  = null;
     let sceneCount   = 0;
+    let activeSceneId = null;
 
     function yawPitchToXYZ(yawDeg, pitchDeg, r = 8) {
       const y = (yawDeg  || 0) * Math.PI / 180;
@@ -443,6 +445,11 @@ normalizePaths($config, $slug);
       }
 
       renderSceneCarousel();
+
+      // Set initial active scene
+      if (config.starting_scene && config.starting_scene.id) {
+        setActiveScene(config.starting_scene.id);
+      }
 
       if (config.landing_mode === 'floor_plan' && config.starting_floor_plan && config.starting_floor_plan.image_path) {
         const fp = config.floor_plans[config.starting_floor_plan.id];
@@ -501,14 +508,17 @@ normalizePaths($config, $slug);
     }
 
     function handleMarkerClick(m) {
-      if (m.target_type === 'scene' && m.scene_equirect) {
-        openScene({
-          id:            m.target_scene_id,
-          title:         m.scene_title || m.label,
-          equirect_path: m.scene_equirect,
-          initial_yaw:   m.scene_yaw || 0,
-          initial_pitch: m.scene_pitch || 0,
-        });
+      if (m.target_type === 'scene' && m.target_scene_id) {
+        const targetScene = config.scenes[m.target_scene_id];
+        if (targetScene) {
+          openScene({
+            id:            targetScene.id,
+            title:         targetScene.title,
+            equirect_path: targetScene.equirect_path,
+            initial_yaw:   targetScene.initial_yaw,
+            initial_pitch: targetScene.initial_pitch,
+          });
+        }
       } else if (m.target_type === 'floor_plan' && m.sub_fp_image) {
         openFloorPlan(m.sub_fp_image, m.sub_markers || [], m.sub_fp_title || m.label, true);
       } else {
@@ -527,12 +537,8 @@ normalizePaths($config, $slug);
       $('#info-panel').classList.add('hidden');
       setActiveScene(scene.id);
 
-      panoEl.onload = () => {
-        skyEl.setAttribute('src', '#pano');
-        skyEl.setAttribute('rotation', `0 ${scene.initial_yaw || 0} 0`);
-        
+      const loadHotspots = () => {
         document.querySelectorAll('.scene-hs').forEach(e => e.remove());
-
         const sceneData = config.scenes && config.scenes[scene.id];
         if (sceneData && sceneData.hotspots) {
           const aScene = $('#aframe-scene');
@@ -542,11 +548,8 @@ normalizePaths($config, $slug);
             entity.setAttribute('position', yawPitchToXYZ(hs.yaw, hs.pitch, 8));
             
             let color = '#38b2ac';
-            if (hs.hotspot_type === 'navigation') {
-              color = '#5b5bd6';
-            } else if (hs.hotspot_type === 'facility') {
-              color = '#ed8936';
-            }
+            if (hs.hotspot_type === 'navigation') color = '#5b5bd6';
+            else if (hs.hotspot_type === 'facility') color = '#ed8936';
 
             entity.innerHTML = `
               <a-sphere radius="0.25" color="${color}" opacity="0.9" class="clickable"
@@ -558,36 +561,47 @@ normalizePaths($config, $slug);
 
             entity.querySelector('a-sphere').addEventListener('click', () => {
               if (hs.hotspot_type === 'navigation' && hs.to_scene_id) {
-                openScene({
-                  id: hs.to_scene_id,
-                  title: hs.to_scene_title,
-                  equirect_path: hs.to_scene_equirect,
-                  initial_yaw: hs.to_scene_yaw,
-                  initial_pitch: hs.to_scene_pitch
-                });
-              } else {
+                const targetScene = config.scenes[hs.to_scene_id];
+                if (targetScene) {
+                  openScene(targetScene);
+                }
+              } else if (hs.hotspot_type === 'info') {
                 openPopup({
                   label: hs.label,
                   popup_title: hs.label,
                   popup_html: hs.body_html
                 });
+              } else if (hs.hotspot_type === 'media' && hs.media_path) {
+                showMediaPopup(hs.media_path);
+              } else {
+                openPopup({
+                  label: hs.label,
+                  popup_title: hs.label,
+                  popup_html: hs.body_html || '<p>No additional info.</p>'
+                });
               }
             });
-
             aScene.appendChild(entity);
           });
         }
+      };
 
+      const finalizeLoad = () => {
+        skyEl.setAttribute('src', '#pano');
+        skyEl.setAttribute('rotation', `0 ${scene.initial_yaw || 0} 0`);
+        loadHotspots();
         activate('360');
       };
-      panoEl.src = scene.equirect_path;
-      hintEl.textContent = scene.title ? `${scene.title} — drag to look around` : 'Drag to look around';
 
-      if (!panoEl.complete) {
-        // trigger load
-      } else {
-        activate('360');
-      }
+      panoEl.onload = finalizeLoad;
+      panoEl.onerror = () => {
+        panoEl.onerror = null;
+        panoEl.onload = finalizeLoad;
+        panoEl.src = scene.equirect_path;
+      };
+      panoEl.src = scene.equirect_path;
+
+      hintEl.textContent = scene.title ? `${scene.title} — drag to look around` : 'Drag to look around';
     }
 
     function renderSceneCarousel() {
@@ -645,6 +659,7 @@ normalizePaths($config, $slug);
     }
 
     function setActiveScene(id) {
+      activeSceneId = id;
       const cards = document.querySelectorAll('#scene-carousel-track .scene-card');
       cards.forEach((card) => {
         const isActive = Number(card.dataset.sceneId) === Number(id);
@@ -661,6 +676,18 @@ normalizePaths($config, $slug);
       const body = $('#info-body');
       body.innerHTML = m.popup_html || '<p class="popup-empty">No additional info.</p>';
       $('#info-panel').classList.remove('hidden');
+    }
+
+    function showMediaPopup(mediaPath) {
+      const overlay = document.createElement('div');
+      overlay.className = 'media-popup-overlay';
+      overlay.innerHTML = `
+        <div class="media-popup-content">
+          <img src="${mediaPath}" alt="Media">
+        </div>
+      `;
+      overlay.addEventListener('click', () => overlay.remove());
+      document.body.appendChild(overlay);
     }
 
     $('#info-close') && $('#info-close').addEventListener('click', () => {

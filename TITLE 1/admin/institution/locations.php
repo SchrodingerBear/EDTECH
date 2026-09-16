@@ -85,13 +85,13 @@ $rows = crud()->raw(
        FROM campus_areas a LEFT JOIN buildings b ON b.id=a.building_id
       WHERE a.institution_id=:iid2",
     [':iid1' => $iid, ':iid2' => $iid])->fetchAll();
-usort($rows, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+usort($rows, function($a, $b) { return strcasecmp($a['name'], $b['name']); });
 $typeFilter = $_GET['type'] ?? 'all';
 if (in_array($typeFilter, ['room', 'area'], true)) {
-    $rows = array_values(array_filter($rows, fn($r) => $r['kind'] === $typeFilter));
+    $rows = array_values(array_filter($rows, function($r) use ($typeFilter) { return $r['kind'] === $typeFilter; }));
 }
-$roomCount = count(array_filter($rows, fn($r) => $r['kind'] === 'room'));
-$areaCount = count(array_filter($rows, fn($r) => $r['kind'] === 'area'));
+$roomCount = count(array_filter($rows, function($r) { return $r['kind'] === 'room'; }));
+$areaCount = count(array_filter($rows, function($r) { return $r['kind'] === 'area'; }));
 ?>
 <div class="row g-4">
   <div class="col-12">
@@ -139,7 +139,7 @@ $areaCount = count(array_filter($rows, fn($r) => $r['kind'] === 'area'));
                     <button class="btn btn-sm btn-outline-ia" data-bs-toggle="modal" data-bs-target="#location-modal"
                       data-mode="edit" data-kind="<?= $r['kind'] ?>" data-id="<?= (int) $r['id'] ?>" data-name="<?= h($r['name'], ENT_QUOTES) ?>" data-building="<?= (int) $r['building_id'] ?>"
                       data-category="<?= h($r['category'], ENT_QUOTES) ?>" data-code="<?= h($r['code'], ENT_QUOTES) ?>" data-floor="<?= h($r['floor_label'], ENT_QUOTES) ?>"
-                      data-cap="<?= (int) $r['capacity'] ?>" data-desc="<?= h($r['description'], ENT_QUOTES) ?>"><i class="fas fa-edit"></i></button>
+                      data-cap="<?= (int) $r['capacity'] ?>" data-desc="<?= h($r['description'], ENT_QUOTES) ?>" data-featured="<?= h($r['featured_image_path'] ?? '', ENT_QUOTES) ?>"><i class="fas fa-edit"></i></button>
                     <form method="post" class="d-inline" data-delete-form data-confirm="<?= $isRoom ? 'Archive' : 'Remove' ?> '<?= h($r['name']) ?>'?">
                       <input type="hidden" name="loc_action" value="loc-delete">
                       <input type="hidden" name="loc_type" value="<?= $r['kind'] ?>"><input type="hidden" name="id" value="<?= (int) $r['id'] ?>">
@@ -216,7 +216,7 @@ $areaCount = count(array_filter($rows, fn($r) => $r['kind'] === 'area'));
           $pickerValue = '';
           $pickerLabel = 'Featured Image';
           $pickerHelp = 'Used in the campus directory card (if applicable).';
-          require __DIR__ . '/../layout/media-picker.php';
+          require __DIR__ . '/../layout/media-picker-sweetalert.php';
           ?>
         </div>
       </div>
@@ -226,6 +226,24 @@ $areaCount = count(array_filter($rows, fn($r) => $r['kind'] === 'area'));
 </div>
 
 <script>
+function setMediaPicker(wrapId, url, filename) {
+  const wrap = document.getElementById(wrapId)
+  if (!wrap) return
+  const pickerId = wrapId.replace(/^wrap_/, '')
+  const fullUrl = url ? (url.startsWith('http') ? url : (window.IA_BASE_URL + '/' + url.replace(/^\/+/, ''))) : ''
+  document.getElementById(pickerId + '_url').value = url || ''
+  document.getElementById(pickerId + '_label').innerHTML = url
+    ? '<span class="text-truncate">' + (filename || url.split('/').pop()) + '</span>'
+    : '<span class="text-muted">No media selected</span>'
+  document.getElementById(pickerId + '_sub').textContent = url || 'Choose a file or enter a link'
+  const preview = document.getElementById(pickerId + '_preview')
+  if (preview) {
+    preview.innerHTML = url
+      ? '<img src="' + fullUrl + '" alt="preview">'
+      : '<i class="fa-regular fa-image" style="font-size: 22px; color: #aab2c0;"></i>'
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const typeSel = document.getElementById('loc-type')
   const action  = document.getElementById('loc-action')
@@ -268,6 +286,14 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('loc-cap').value = btn.dataset.cap || 0
     document.getElementById('loc-desc').value = btn.dataset.desc || ''
     syncType()
+    
+    const featWrap = modal.querySelector('.ia-media-picker-wrapper[id^="wrap_picker_featured"]')
+    if (featWrap) {
+      if (mode === 'edit' && btn.dataset.featured)
+        setMediaPicker(featWrap.id, btn.dataset.featured, btn.dataset.featured.split('/').pop())
+      else if (typeof clearMediaPicker === 'function')
+        clearMediaPicker(featWrap.id.replace(/^wrap_/, ''))
+    }
   })
 
   document.getElementById('loc-search').addEventListener('input', (e) => {
