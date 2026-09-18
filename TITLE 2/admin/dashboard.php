@@ -125,7 +125,7 @@ require_once __DIR__ . '/layout/header.php';
     <div class="col-6 col-xl-3">
       <a href="<?= h($link) ?>" class="pos-stat h-100 <?= $mod ?> text-decoration-none">
         <span class="pos-stat-ic"><?= ia_icon($icon, 20) ?></span>
-        <span class="pos-stat-num"><?= h($num) ?></span>
+        <span class="pos-stat-num" id="stat-<?= strtolower(str_replace([' ', '&#39;'], ['-', ''], $label)) ?>"><?= h($num) ?></span>
         <span class="pos-stat-label"><?= $label ?></span>
       </a>
     </div>
@@ -187,7 +187,7 @@ require_once __DIR__ . '/layout/header.php';
     <h3>Today's orders <span class="ia-micro text-ia-muted fw-normal">· tap a row for receipt</span></h3>
     <a class="back-link" href="orders">View all</a>
   </div>
-  <div class="pos-receipt-list">
+  <div class="pos-receipt-list" id="dashboard-orders-list">
     <?php foreach ($todayOrders as $o): ?>
       <button type="button" class="pos-row" data-receipt="<?= (int) $o['id'] ?>">
         <span class="pos-row-id">
@@ -303,4 +303,6 @@ require_once __DIR__ . '/layout/header.php';
 
 <script type="application/json" id="receipt-data"><?= json_enc($receipts) ?></script>
 
+<!-- Offline bridge for dashboard -->
+<script type="module" src="<?= url('assets/js/ui/dashboard.offline.js') ?>"></script>
 <?php require __DIR__ . '/layout/footer.php'; ?>

@@ -65,31 +65,52 @@ $__can = fn($k) => $__acc === null || in_array($k, $__acc, true);
     <div class="ia-bn-backdrop d-lg-none" data-bn-close></div>
 </div>
 
+  <!-- Offline status banner (managed by app.js) -->
+  <div id="lav-offline-banner">⚠️ You are offline — all changes saved locally and will auto-sync when online.</div>
+  <div id="lav-sync-badge" title="Unsynced changes"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js"></script>
 <script src="<?= url('admin/assets/js/dashboard.js') ?>"></script>
+<!-- Offline-First App Boot (ES Module) -->
+<script type="module" src="<?= url('assets/js/app.js') ?>"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function () {
-    var more = document.getElementById('ia-bn-more');
-    var backdrop = document.querySelector('.ia-bn-backdrop');
-    var btnMore = document.querySelector('[data-bn-more]');
-    var closeBtns = document.querySelectorAll('[data-bn-close]');
-    if (btnMore) btnMore.addEventListener('click', function (e) {
-      e.preventDefault();
-      if (more) more.hidden = false;
-      if (backdrop) backdrop.classList.add('show');
+  // Show offline badge with unsynced count when lavadora is ready
+  document.addEventListener('lavadora:ready', () => {
+    const banner = document.getElementById('lav-offline-banner');
+    const badge = document.getElementById('lav-sync-badge');
+
+    async function refreshBadge() {
+      if (!window.lavadora?.orders) return;
+      const stats = await window.lavadora.orders.getDashboardStats();
+      if (stats.unsynced > 0) {
+        badge.textContent = `⏳ ${stats.unsynced} unsynced`;
+        badge.style.display = 'block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    // Update badge every 10 seconds
+    refreshBadge();
+    setInterval(refreshBadge, 10000);
+
+    // Online/Offline banner
+    window.lavadora.detector.onStatusChange((isOnline) => {
+      banner.style.display = isOnline ? 'none' : 'block';
+      if (isOnline) refreshBadge();
     });
-    closeBtns.forEach(function (b) {
-      b.addEventListener('click', function () {
-        if (more) more.hidden = true;
-        if (backdrop) backdrop.classList.remove('show');
-      });
-    });
-    if (backdrop) backdrop.addEventListener('click', function () {
-      if (more) more.hidden = true;
-      this.classList.remove('show');
-    });
+    if (!window.lavadora.detector.isOnline()) banner.style.display = 'block';
   });
+
+  // Service Worker registration
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('<?= url('sw.js') ?>')
+        .then(r => console.log('[SW] Registered:', r.scope))
+        .catch(e => console.warn('[SW] Registration failed:', e));
+    });
+  }
 </script>
 </body>
 </html>

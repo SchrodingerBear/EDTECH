@@ -287,9 +287,36 @@ function h($value): string
 }
 
 /** Full URL for a project-relative path (leading slash). */
-function url(string $path = ''): string
+function url(string $path = '', bool $absolute = false): string
 {
     $path = ltrim($path, '/');
+    if ($absolute) {
+        return BASE_URL . '/' . $path;
+    }
+
+    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+    $callerFile = '';
+    foreach ($trace as $t) {
+        if (!empty($t['file']) && $t['file'] !== __FILE__) {
+            $callerFile = $t['file'];
+            break;
+        }
+    }
+
+    if ($callerFile) {
+        $root = rtrim(str_replace('\\', '/', ROOT_PATH), '/');
+        $callerFile = str_replace('\\', '/', $callerFile);
+        if (str_starts_with($callerFile, $root)) {
+            $rel = ltrim(substr($callerFile, strlen($root)), '/');
+            $depth = substr_count($rel, '/') - 1;
+            if ($depth < 0) $depth = 0;
+            
+            $prefix = $depth > 0 ? str_repeat('../', $depth) : '';
+            $result = $prefix . $path;
+            return $result === '' ? './' : $result;
+        }
+    }
+
     return BASE_URL . '/' . $path;
 }
 
@@ -749,8 +776,8 @@ function send_credentials(array $user, string $roleSlug, string $password, ?stri
         '{{password}}' => $password,
         '{{role}}' => ucfirst(str_replace('_', ' ', $roleSlug)),
         '{{institution}}' => $institution ?: '—',
-        '{{link}}' => url('admin/index'),
-        '{{login_link}}' => url('admin/index'),
+        '{{link}}' => url('admin/index.php', true),
+        '{{login_link}}' => url('admin/index.php', true),
     ];
     $subject = strtr((string) $row['subject'], $vars);
     $body = strtr((string) $row['body_html'], $vars);
@@ -788,7 +815,7 @@ function send_ticket_status_email(array $ticket): array
             '{{ticket_subject}}'  => $ticket['subject'] ?? '',
             '{{ticket_message}}'  => $ticket['message'] ?? '',
             '{{ticket_status}}'   => str_replace('_', ' ', strtolower((string) ($ticket['status'] ?? 'open'))),
-            '{{link}}'            => url('admin/index'),
+            '{{link}}'            => url('admin/index.php', true),
         ];
         $subject = strtr((string) $row['subject'], $vars);
         $body = strtr((string) $row['body_html'], $vars);

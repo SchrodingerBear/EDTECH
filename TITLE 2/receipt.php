@@ -112,6 +112,7 @@ $statusDescriptions = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Order Receipt #<?= h($order['order_no']) ?> - <?= h($businessName) ?></title>
+    <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -437,14 +438,72 @@ $statusDescriptions = [
         </div>
     </div>
     
+    <!-- Offline Modal -->
+    <div class="modal fade" id="offlineModal" tabindex="-1" aria-labelledby="offlineModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-warning text-dark">
+            <h5 class="modal-title" id="offlineModalLabel">You are Offline</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>It looks like you don't have an active internet connection. Online sharing is currently disabled, but you can still view this receipt and take a screenshot.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function copyReceiptLink() {
+            if (!navigator.onLine) {
+                const offlineModal = new bootstrap.Modal(document.getElementById('offlineModal'));
+                offlineModal.show();
+                return;
+            }
+            
             const url = window.location.href;
             navigator.clipboard.writeText(url).then(() => {
                 alert('Receipt link copied to clipboard!');
             }).catch(err => {
                 console.error('Failed to copy: ', err);
             });
+        }
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    }, err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
+        // Offline Detection
+        window.addEventListener('offline', () => {
+            const offlineModal = new bootstrap.Modal(document.getElementById('offlineModal'));
+            offlineModal.show();
+            document.querySelector('.copy-link').disabled = true;
+        });
+
+        window.addEventListener('online', () => {
+            document.querySelector('.copy-link').disabled = false;
+        });
+        
+        // Initial check
+        if (!navigator.onLine) {
+            document.querySelector('.copy-link').disabled = true;
+            // Optionally show modal immediately on load if offline
+            setTimeout(() => {
+                const offlineModal = new bootstrap.Modal(document.getElementById('offlineModal'));
+                offlineModal.show();
+            }, 1000);
         }
     </script>
 </body>

@@ -25,6 +25,9 @@ $brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : u
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
   <title><?= h($pageTitle ?? 'Dashboard') ?> · <?= h(APP_NAME) ?></title>
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="<?= url('manifest.json') ?>">
+  <meta name="theme-color" content="#667eea">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -32,6 +35,27 @@ $brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : u
   <link rel="stylesheet" href="<?= url('admin/assets/css/dashboard.css') ?>">
   <script>window.IA_BASE_URL = <?= json_encode(BASE_URL, JSON_UNESCAPED_SLASHES) ?>;</script>
   <script>window.LAVADORA_SHOP_NAME = <?= json_encode($settings['business_name'] ?? APP_NAME) ?>;</script>
+  <style>
+    /* Offline status banner */
+    #lav-offline-banner {
+      display: none; position: fixed; bottom: 76px; left: 50%;
+      transform: translateX(-50%); background: #dc3545; color: #fff;
+      padding: 8px 22px; border-radius: 30px; font-size: .82rem;
+      font-weight: 600; z-index: 9999;
+      box-shadow: 0 4px 18px rgba(0,0,0,.35);
+      animation: fadeInUp .3s ease;
+    }
+    #lav-sync-badge {
+      display: none; position: fixed; bottom: 76px; right: 18px;
+      background: #f59e0b; color: #1a1a1a;
+      padding: 5px 14px; border-radius: 20px; font-size: .78rem;
+      font-weight: 700; z-index: 9999;
+    }
+    @keyframes fadeInUp {
+      from { opacity:0; transform: translateX(-50%) translateY(10px); }
+      to   { opacity:1; transform: translateX(-50%) translateY(0); }
+    }
+  </style>
 </head>
 
 <body class="<?= h(trim((string) ($bodyClass ?? ''))) ?>">

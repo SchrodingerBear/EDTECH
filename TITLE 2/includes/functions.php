@@ -269,9 +269,36 @@ function h($value): string
 }
 
 /** Full URL for a project-relative path (leading slash). */
-function url(string $path = ''): string
+function url(string $path = '', bool $absolute = false): string
 {
     $path = ltrim($path, '/');
+    if ($absolute) {
+        return BASE_URL . '/' . $path;
+    }
+
+    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+    $callerFile = '';
+    foreach ($trace as $t) {
+        if (!empty($t['file']) && $t['file'] !== __FILE__) {
+            $callerFile = $t['file'];
+            break;
+        }
+    }
+
+    if ($callerFile) {
+        $root = rtrim(str_replace('\\', '/', ROOT_PATH), '/');
+        $callerFile = str_replace('\\', '/', $callerFile);
+        if (str_starts_with($callerFile, $root)) {
+            $rel = ltrim(substr($callerFile, strlen($root)), '/');
+            $depth = substr_count($rel, '/') - 1;
+            if ($depth < 0) $depth = 0;
+            
+            $prefix = $depth > 0 ? str_repeat('../', $depth) : '';
+            $result = $prefix . $path;
+            return $result === '' ? './' : $result;
+        }
+    }
+
     return BASE_URL . '/' . $path;
 }
 
@@ -482,7 +509,7 @@ function generate_receipt_token(int $orderId, string $orderNo, string $createdAt
 /** Get the public receipt URL for an order. */
 function get_receipt_url(string $token): string
 {
-    return url('receipt.php?token=' . $token);
+    return url('receipt.php?token=' . $token, true);
 }
 
 /** Generate or get existing receipt token for an order. */

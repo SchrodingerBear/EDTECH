@@ -633,7 +633,7 @@ require_once __DIR__ . '/layout/header.php';
     </form>
   </div>
   <div class="table-responsive">
-    <table class="table table-ia" data-force-datatable>
+    <table class="table table-ia" id="orders-table" data-force-datatable>
       <thead>
         <tr>
           <th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Pay</th><th>Status</th><th>Staff</th><th>Date</th><th>Actions</th>
@@ -682,5 +682,7 @@ require_once __DIR__ . '/layout/header.php';
   window.ORDER_SERVICES = <?= json_enc(array_map(fn($s) => ['id' => (int)$s['id'], 'name' => $s['name'], 'price' => (float)$s['price'], 'unit' => $s['unit']], $services)) ?>;
 </script>
 <script src="<?= url('admin/assets/js/orders.js') ?>"></script>
+<!-- Offline bridge for orders -->
+<script type="module" src="<?= url('assets/js/ui/orders.offline.js') ?>"></script>
 
 <?php require __DIR__ . '/layout/footer.php'; ?>

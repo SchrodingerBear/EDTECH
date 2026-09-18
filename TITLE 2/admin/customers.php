@@ -84,7 +84,7 @@ require_once __DIR__ . '/layout/header.php';
   <div class="ia-card">
     <div class="card-head"><h3><?= $isEdit ? 'Edit customer' : 'Add customer' ?></h3><a class="back-link" href="customers">← Back</a></div>
     <div class="card-body card-body-px">
-      <form method="post" class="row g-3">
+      <form method="post" class="row g-3" id="customer-form">
         <input type="hidden" name="form" value="<?= $isEdit ? 'update' : 'create' ?>">
         <?php if ($isEdit): ?><input type="hidden" name="id" value="<?= (int) $f['id'] ?>"><?php endif; ?>
         <div class="col-md-6"><label class="form-label">Name</label><input class="form-control" name="first_name" required value="<?= h($f['first_name'] ?? '') ?>"></div>
@@ -115,7 +115,7 @@ require_once __DIR__ . '/layout/header.php';
 <div class="ia-card">
   <div class="card-head"><h3>Customers (<?= count($customers) ?>)</h3></div>
   <div class="table-responsive">
-    <table class="table table-ia" data-force-datatable>
+    <table class="table table-ia" id="customers-table" data-force-datatable>
       <thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Orders</th><th>Total spent</th><th>Added</th><th></th></tr></thead>
       <tbody>
         <?php foreach ($customers as $cm): ?>
@@ -150,3 +150,5 @@ require_once __DIR__ . '/layout/header.php';
 </div>
 
 <?php require __DIR__ . '/layout/footer.php'; ?>
+<!-- Offline bridge for customers -->
+<script type="module" src="<?= url('assets/js/ui/customers.offline.js') ?>"></script>

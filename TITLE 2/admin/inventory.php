@@ -142,7 +142,7 @@ require_once __DIR__ . '/layout/header.php';
   <div class="ia-card">
     <div class="card-head"><h3><?= $isEdit ? 'Edit inventory item' : 'Add inventory item' ?></h3><a class="back-link" href="inventory">← Back</a></div>
     <div class="card-body card-body-px">
-      <form method="post" class="row g-3">
+      <form method="post" class="row g-3" id="inventory-item-form">
         <input type="hidden" name="form" value="<?= $isEdit ? 'update' : 'create' ?>">
         <?php if ($isEdit): ?><input type="hidden" name="id" value="<?= (int) $f['id'] ?>"><?php endif; ?>
         <div class="col-md-4"><label class="form-label">Item name</label><input class="form-control" name="name" required value="<?= h($f['name'] ?? '') ?>"></div>
@@ -199,7 +199,7 @@ require_once __DIR__ . '/layout/header.php';
         <?php if ($role === 'owner'): ?><a class="btn btn-sm btn-grad" href="inventory?action=new"><?= ia_icon('plus', 14) ?> Add item</a><?php endif; ?>
       </div>
       <div class="table-responsive">
-        <table class="table table-ia" data-force-datatable>
+        <table class="table table-ia" id="inventory-table" data-force-datatable>
           <thead><tr><th>Item</th><th>Category</th><th>Unit</th><th class="text-end">Stock</th><th class="text-end">Min</th><th>Status</th><?php if ($role === 'owner'): ?><th></th><?php endif; ?></tr></thead>
           <tbody>
             <?php foreach ($items as $i): ?>
@@ -294,4 +294,6 @@ require_once __DIR__ . '/layout/header.php';
   });
 </script>
 
+<!-- Offline bridge for inventory -->
+<script type="module" src="<?= url('assets/js/ui/inventory.offline.js') ?>"></script>
 <?php require __DIR__ . '/layout/footer.php'; ?>
