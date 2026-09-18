@@ -1,6 +1,0 @@
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  # Rewrite foo/ or foo to foo.php even when foo/ directory exists
-  RewriteCond %{REQUEST_FILENAME}\.php -f
-  RewriteRule ^(.+?)/?$ $1.php [L]
-</IfModule>
