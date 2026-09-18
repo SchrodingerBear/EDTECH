@@ -1,15 +1,2 @@
 # Disable directory listing
 Options -Indexes
-
-# Rewrite org slugs to query params: /organizations/{slug}/ → /organizations/index.php?org={slug}
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  
-  # Pass through existing files only
-  RewriteCond %{REQUEST_FILENAME} -f
-  RewriteRule ^ - [L]
-  
-  # Rewrite org slug to query parameter
-  RewriteRule ^([a-z0-9\-]+)/?$ index.php?org=$1 [QSA,L]
-</IfModule>
-

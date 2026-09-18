@@ -119,7 +119,7 @@ try {
                 'buildings' => (int) $row['building_count'],
                 'status'    => 'live',
                 'cover'     => $row['cover_image_path'] ?: $landing['hero_image_path'],
-                'url'       => ORG_ROOT_URL . '/' . rawurlencode($row['slug']) . '/',
+                'url'       => ORG_ROOT_URL . '/index?org=' . rawurlencode($row['slug']),
                 'description' => $row['description'] ?? '',
             ];
         }
