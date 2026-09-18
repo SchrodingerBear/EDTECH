@@ -272,6 +272,16 @@ function h($value): string
 function url(string $path = '', bool $absolute = false): string
 {
     $path = ltrim($path, '/');
+    
+    $parts = explode('?', $path, 2);
+    $base = $parts[0];
+    if ($base !== '' && !str_ends_with($base, '/') && !str_contains(basename($base), '.')) {
+        if (is_file(ROOT_PATH . '/' . $base . '.php')) {
+            $parts[0] = $base . '.php';
+            $path = implode('?', $parts);
+        }
+    }
+
     if ($absolute) {
         return BASE_URL . '/' . $path;
     }
@@ -290,7 +300,7 @@ function url(string $path = '', bool $absolute = false): string
         $callerFile = str_replace('\\', '/', $callerFile);
         if (str_starts_with($callerFile, $root)) {
             $rel = ltrim(substr($callerFile, strlen($root)), '/');
-            $depth = substr_count($rel, '/') - 1;
+            $depth = substr_count($rel, '/');
             if ($depth < 0) $depth = 0;
             
             $prefix = $depth > 0 ? str_repeat('../', $depth) : '';
