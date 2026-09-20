@@ -72,16 +72,16 @@ $businessName = $settings['business_name'] ?? APP_NAME;
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
   <title>Sign in · <?= h(APP_NAME) ?></title>
-  <link href="<?= url('assets/css/fonts.css') ?>" rel="stylesheet">
-  <link href="<?= url('assets/css/bootstrap.min.css') ?>" rel="stylesheet">
-  <link href="<?= url('admin/assets/css/dashboard.css') ?>" rel="stylesheet">
+  <link href="../assets/css/fonts.css" rel="stylesheet">
+  <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/css/admin-dashboard.css" rel="stylesheet">
 </head>
 
 <body class="page-auth">
   <div class="login-wrap">
     <div class="login-brand">
       <div class="brand">
-        <div class="logo"><img src="<?= h($settings['logo_path'] ? url($settings['logo_path']) : url('admin/assets/img/logo.svg')) ?>" alt="<?= h(APP_NAME) ?>"></div>
+        <div class="logo"><img src="<?= h($settings['logo_path'] ? '../' . $settings['logo_path'] : '../assets/img/admin-logo.svg') ?>" alt="<?= h(APP_NAME) ?>"></div>
         <span><?= h($businessName) ?></span>
       </div>
       <div class="tagline">
@@ -144,8 +144,8 @@ $businessName = $settings['business_name'] ?? APP_NAME;
     </div>
   </div>
 
-  <script src="<?= url('assets/js/bootstrap.bundle.min.js') ?>"></script>
-  <script src="<?= url('admin/assets/js/dashboard.js') ?>"></script>
+  <script src="../assets/js/bootstrap.bundle.min.js"></script>
+  <script src="../assets/js/admin-dashboard.js"></script>
   <script>
     document.querySelectorAll('.quick-login').forEach(function (btn) {
       btn.addEventListener('click', function () {

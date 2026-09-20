@@ -282,7 +282,11 @@ function url(string $path = '', bool $absolute = true): string
         }
     }
 
-    // Always use absolute URL - most reliable
+    // Simple relative path for button clicks - works better with IP access
+    if (!$absolute) {
+        return '/' . $path;
+    }
+    
     return BASE_URL . '/' . $path;
 }
 
@@ -322,7 +326,7 @@ function pull_flash(): array
 /** Redirect and stop. */
 function redirect(string $path): never
 {
-    header('Location: ' . url($path));
+    header('Location: ' . $path . '.php');
     exit;
 }
 
@@ -500,7 +504,7 @@ function generate_receipt_token(int $orderId, string $orderNo, string $createdAt
 /** Get the public receipt URL for an order. */
 function get_receipt_url(string $token): string
 {
-    return url('receipt.php?token=' . $token, true);
+    return 'receipt.php?token=' . $token;
 }
 
 /** Generate or get existing receipt token for an order. */

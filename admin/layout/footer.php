@@ -11,9 +11,9 @@ $__can = fn($k) => $__acc === null || in_array($k, $__acc, true);
   <!-- ========================= BOTTOM NAV (mobile) ========================= -->
   <?php
   $__bottom = [
-    ['Dashboard', 'admin/dashboard', 'home'],
-    ['Orders', 'admin/orders', 'clipboard'],
-    ['Inventory', 'admin/inventory', 'layers'],
+    ['Dashboard', 'dashboard', 'home'],
+    ['Orders', 'orders', 'clipboard'],
+    ['Inventory', 'inventory', 'layers'],
   ];
   $__activePage = $active ?? '';
   ?>
@@ -21,7 +21,7 @@ $__can = fn($k) => $__acc === null || in_array($k, $__acc, true);
     <?php foreach ($__bottom as [$__label, $__href, $__icon]):
       $__isActive = $__activePage === $__label;
       ?>
-      <a class="bn-item <?= $__isActive ? 'active' : '' ?>" href="<?= url($__href) ?>">
+      <a class="bn-item <?= $__isActive ? 'active' : '' ?>" href="<?= $__href ?>.php">
         <span class="bn-icon"><?= ia_icon($__icon, 22) ?></span>
         <span class="bn-label"><?= h($__label) ?></span>
       </a>
@@ -39,7 +39,7 @@ $__can = fn($k) => $__acc === null || in_array($k, $__acc, true);
     foreach (($__grp['items'] ?? []) as $__it) {
       $__href = $__it[1] ?? '';
       $__label = $__it[0] ?? '';
-      if ($__href === 'admin/dashboard' || $__href === 'admin/orders' || $__href === 'admin/inventory') continue;
+      if ($__href === 'dashboard' || $__href === 'orders' || $__href === 'inventory') continue;
       $__moreItems[] = ['label' => $__label, 'href' => $__href, 'icon' => $__it[2] ?? 'home', 'page' => $__it[3] ?? null];
     }
   }
@@ -52,14 +52,14 @@ $__can = fn($k) => $__acc === null || in_array($k, $__acc, true);
       <div class="ia-bn-list">
         <?php foreach ($__moreItems as $__it):
           if ($__it['page'] && !$__can($__it['page'])) continue; ?>
-          <a class="ia-bn-item" href="<?= url($__it['href']) ?>">
+          <a class="ia-bn-item" href="<?= $__it['href'] ?>.php">
             <span class="ia-icon"><?= ia_icon($__it['icon'], 20) ?></span>
             <span><?= h($__it['label']) ?></span>
           </a>
         <?php endforeach; ?>
         <hr class="my-2">
-        <a class="ia-bn-item" href="<?= url('admin/profile') ?>"><span class="ia-icon"><?= ia_icon('user', 20) ?></span><span>My profile</span></a>
-        <a class="ia-bn-item text-danger" href="<?= url('admin/logout') ?>"><span class="ia-icon"><?= ia_icon('logout', 20) ?></span><span>Sign out</span></a>
+        <a class="ia-bn-item" href="profile.php"><span class="ia-icon"><?= ia_icon('user', 20) ?></span><span>My profile</span></a>
+        <a class="ia-bn-item text-danger" href="logout.php"><span class="ia-icon"><?= ia_icon('logout', 20) ?></span><span>Sign out</span></a>
       </div>
     </div>
     <div class="ia-bn-backdrop d-lg-none" data-bn-close></div>
@@ -69,11 +69,11 @@ $__can = fn($k) => $__acc === null || in_array($k, $__acc, true);
   <div id="lav-offline-banner">⚠️ You are offline — all changes saved locally and will auto-sync when online.</div>
   <div id="lav-sync-badge" title="Unsynced changes"></div>
 
-<script src="<?= url('assets/js/bootstrap.bundle.min.js') ?>"></script>
-<script src="<?= url('assets/js/simple-datatables.min.js') ?>"></script>
-<script src="<?= url('admin/assets/js/dashboard.js') ?>"></script>
+<script src="../assets/js/bootstrap.bundle.min.js"></script>
+<script src="../assets/js/simple-datatables.min.js"></script>
+<script src="../assets/js/admin-dashboard.js"></script>
 <!-- Offline-First App Boot (ES Module) -->
-<script type="module" src="<?= url('assets/js/app.js') ?>"></script>
+<script type="module" src="../assets/js/app.js"></script>
 <script>
   // Show offline badge with unsynced count when lavadora is ready
   document.addEventListener('lavadora:ready', () => {
@@ -120,7 +120,7 @@ $__can = fn($k) => $__acc === null || in_array($k, $__acc, true);
   // Service Worker registration
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('<?= url('sw.js') ?>')
+      navigator.serviceWorker.register('../sw.js')
         .then(r => console.log('[SW] Registered:', r.scope))
         .catch(e => console.warn('[SW] Registration failed:', e));
     });

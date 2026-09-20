@@ -152,4 +152,4 @@ require_once __DIR__ . '/layout/header.php';
 
 <?php require __DIR__ . '/layout/footer.php'; ?>
 <!-- Offline bridge for customers -->
-<script type="module" src="<?= url('assets/js/ui/customers.offline.js') ?>"></script>
+<script type="module" src="../assets/js/ui/customers.offline.js"></script>

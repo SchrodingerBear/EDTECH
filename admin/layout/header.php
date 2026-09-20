@@ -15,7 +15,7 @@ $roleHome = role_home($role);
 $roleLabel = ucwords(str_replace('_', ' ', (string) $role));
 
 $settings = crud()->get('settings', 1) ?? [];
-$brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : url('admin/assets/img/logo.svg');
+$brandLogoUrl = !empty($settings['logo_path']) ? '../' . $settings['logo_path'] : '../assets/img/admin-logo.svg';
 ?>
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
@@ -26,13 +26,13 @@ $brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : u
   <meta name="color-scheme" content="light dark">
   <title><?= h($pageTitle ?? 'Dashboard') ?> · <?= h(APP_NAME) ?></title>
   <!-- PWA Manifest -->
-  <link rel="manifest" href="<?= url('manifest.json') ?>">
+  <link rel="manifest" href="../manifest.json">
   <meta name="theme-color" content="#0891b2">
-  <link href="<?= url('assets/css/fonts.css') ?>" rel="stylesheet">
-  <link href="<?= url('assets/css/bootstrap.min.css') ?>" rel="stylesheet">
-  <link href="<?= url('assets/css/simple-datatables.min.css') ?>" rel="stylesheet">
-  <link rel="stylesheet" href="<?= url('admin/assets/css/dashboard.css') ?>">
-  <script>window.IA_BASE_URL = <?= json_encode(BASE_URL, JSON_UNESCAPED_SLASHES) ?>;</script>
+  <link href="../assets/css/fonts.css" rel="stylesheet">
+  <link href="../assets/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/css/simple-datatables.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/admin-dashboard.css">
+  <script>window.IA_BASE_URL = '';</script>
   <script>window.LAVADORA_SHOP_NAME = <?= json_encode($settings['business_name'] ?? APP_NAME) ?>;</script>
   <style>
     /* Offline status banner */
@@ -73,7 +73,7 @@ $brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : u
     <!-- ============================== SIDEBAR ============================== -->
     <aside class="ia-sidebar">
       <div class="brand">
-        <a class="brand-logo" href="<?= url($roleHome) ?>">
+        <a class="brand-logo" href="<?= $roleHome ?>.php">
           <img src="<?= h($brandLogoUrl) ?>" alt="<?= h(APP_NAME) ?>">
         </a>
         <div class="brand-name"><?= h(APP_NAME) ?><small><?= h($roleLabel) ?></small></div>
@@ -86,7 +86,7 @@ $brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : u
             <ul class="ia-nav">
               <?php foreach ($group['items'] as [$text, $href, $icon]): ?>
                 <li>
-                  <a class="nav-link <?= $active === $text ? 'active' : '' ?>" href="<?= url($href) ?>">
+                  <a class="nav-link <?= $active === $text ? 'active' : '' ?>" href="<?= $href ?>.php">
                     <span class="ia-icon"><?= ia_icon($icon) ?></span>
                     <span><?= h($text) ?></span>
                   </a>
@@ -98,7 +98,7 @@ $brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : u
 
       <div class="side-foot">
         <div class="foot-text"><?= h($roleLabel) ?> workspace · v1.0</div>
-        <a class="nav-link" href="<?= url('admin/logout') ?>">
+        <a class="nav-link" href="logout.php">
           <span class="ia-icon"><?= ia_icon('logout') ?></span>
           <span>Sign out</span>
         </a>
@@ -142,8 +142,8 @@ $brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : u
           <li>
             <hr class="dropdown-divider">
           </li>
-          <li><a class="dropdown-item" href="<?= url('admin/profile') ?>"><?= ia_icon('user', 15) ?> My profile</a></li>
-          <li><a class="dropdown-item text-danger" href="<?= url('admin/logout') ?>"><?= ia_icon('logout', 15) ?> Sign
+          <li><a class="dropdown-item" href="profile.php"><?= ia_icon('user', 15) ?> My profile</a></li>
+          <li><a class="dropdown-item text-danger" href="logout.php"><?= ia_icon('logout', 15) ?> Sign
               out</a></li>
         </ul>
       </div>

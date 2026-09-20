@@ -392,7 +392,7 @@ require_once __DIR__ . '/layout/header.php';
           <a class="btn btn-outline-ia" href="orders?edit=<?= (int) $vo['id'] ?>"><?= ia_icon('edit', 15) ?> Edit order</a>
 
           <?php if (!empty($vo['receipt_token'])): 
-            $receiptUrl = get_receipt_url($vo['receipt_token']);
+            $receiptUrl = '../receipt.php?token=' . $vo['receipt_token'];
           ?>
             <a class="btn btn-outline-success" href="<?= h($receiptUrl) ?>" target="_blank"><?= ia_icon('eye', 15) ?> View Receipt</a>
           <?php endif; ?>
@@ -573,7 +573,7 @@ require_once __DIR__ . '/layout/header.php';
 <?php if ($isNew && isset($_GET['created']) && isset($_GET['order_id'])): 
   $createdOrder = $c->get('laundry_orders', (int)$_GET['order_id']);
   if ($createdOrder && !empty($createdOrder['receipt_token'])):
-    $receiptUrl = get_receipt_url($createdOrder['receipt_token']);
+    $receiptUrl = '../receipt.php?token=' . $createdOrder['receipt_token'];
 ?>
 <!-- Receipt Modal with QR Code -->
 <div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
@@ -673,7 +673,7 @@ require_once __DIR__ . '/layout/header.php';
 </script>
 <?php endif; endif; ?>
 <script>window.ORDER_SERVICES = <?= json_enc(array_map(fn($s) => ['id' => (int)$s['id'], 'name' => $s['name'], 'price' => (float)$s['price'], 'unit' => $s['unit']], $services)) ?>;</script>
-<script src="<?= url('admin/assets/js/orders.js') ?>"></script>
+<script src="../assets/js/admin-orders.js"></script>
 <?php require __DIR__ . '/layout/footer.php'; return; endif; ?>
 
 <!-- ------------------------------ LIST VIEW ------------------------------ -->
@@ -732,7 +732,7 @@ require_once __DIR__ . '/layout/header.php';
               <a class="btn btn-sm btn-icon" href="orders?view=<?= (int) $o['id'] ?>" title="View"><?= ia_icon('eye', 15) ?></a>
               <a class="btn btn-sm btn-icon" href="orders?edit=<?= (int) $o['id'] ?>" title="Edit"><?= ia_icon('edit', 15) ?></a>
               <?php if (!empty($o['receipt_token'])): ?>
-                <a class="btn btn-sm btn-icon text-success" href="<?= h(get_receipt_url($o['receipt_token'])) ?>" target="_blank" title="View Receipt"><?= ia_icon('mail', 15) ?></a>
+                <a class="btn btn-sm btn-icon text-success" href="../receipt.php?token=<?= h($o['receipt_token']) ?>" target="_blank" title="View Receipt"><?= ia_icon('mail', 15) ?></a>
               <?php endif; ?>
             </td>
           </tr>
@@ -748,8 +748,8 @@ require_once __DIR__ . '/layout/header.php';
 <script>
   window.ORDER_SERVICES = <?= json_enc(array_map(fn($s) => ['id' => (int)$s['id'], 'name' => $s['name'], 'price' => (float)$s['price'], 'unit' => $s['unit']], $services)) ?>;
 </script>
-<script src="<?= url('admin/assets/js/orders.js') ?>"></script>
+<script src="../assets/js/admin-orders.js"></script>
 <!-- Offline bridge for orders -->
-<script type="module" src="<?= url('assets/js/ui/orders.offline.js') ?>"></script>
+<script type="module" src="../assets/js/ui/orders.offline.js"></script>
 
 <?php require __DIR__ . '/layout/footer.php'; ?>

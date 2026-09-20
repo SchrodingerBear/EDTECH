@@ -51,37 +51,37 @@ function role_nav(string $role): array
     $nav = [
         'owner' => [
             ['title' => 'Overview', 'items' => [
-                ['Dashboard', 'admin/dashboard', 'home', 'dashboard'],
+                ['Dashboard', 'dashboard', 'home', 'dashboard'],
             ]],
             ['title' => 'Laundry', 'items' => [
-                ['Orders', 'admin/orders', 'clipboard', 'orders'],
-                ['Customers', 'admin/customers', 'users', 'customers'],
-                ['Services & Pricing', 'admin/services', 'tag', 'services'],
-                ['Staff Roster', 'admin/employees', 'user', 'employees'],
+                ['Orders', 'orders', 'clipboard', 'orders'],
+                ['Customers', 'customers', 'users', 'customers'],
+                ['Services & Pricing', 'services', 'tag', 'services'],
+                ['Staff Roster', 'employees', 'user', 'employees'],
             ]],
             ['title' => 'Inventory', 'items' => [
-                ['Inventory', 'admin/inventory', 'layers', 'inventory'],
-                ['Inventory Config', 'admin/inventory-settings', 'settings', 'inventory_settings'],
+                ['Inventory', 'inventory', 'layers', 'inventory'],
+                ['Inventory Config', 'inventory-settings', 'settings', 'inventory_settings'],
             ]],
             ['title' => 'Insights', 'items' => [
-                ['Reports', 'admin/reports', 'chart', 'reports'],
-                ['Audit Logs', 'admin/logs', 'clock', 'logs'],
+                ['Reports', 'reports', 'chart', 'reports'],
+                ['Audit Logs', 'logs', 'clock', 'logs'],
             ]],
             ['title' => 'System', 'items' => [
-                ['Accounts', 'admin/accounts', 'shield', 'accounts'],
-                ['System Settings', 'admin/system-settings', 'settings', 'system_settings'],
+                ['Accounts', 'accounts', 'shield', 'accounts'],
+                ['System Settings', 'system-settings', 'settings', 'system_settings'],
             ]],
         ],
         'staff' => [
             ['title' => 'Overview', 'items' => [
-                ['Dashboard', 'admin/dashboard', 'home', 'dashboard'],
+                ['Dashboard', 'dashboard', 'home', 'dashboard'],
             ]],
             ['title' => 'Laundry', 'items' => [
-                ['Orders', 'admin/orders', 'clipboard', 'orders'],
-                ['Customers', 'admin/customers', 'users', 'customers'],
+                ['Orders', 'orders', 'clipboard', 'orders'],
+                ['Customers', 'customers', 'users', 'customers'],
             ]],
             ['title' => 'Inventory', 'items' => [
-                ['Inventory', 'admin/inventory', 'layers', 'inventory'],
+                ['Inventory', 'inventory', 'layers', 'inventory'],
             ]],
         ],
     ];

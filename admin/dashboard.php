@@ -123,7 +123,7 @@ require_once __DIR__ . '/layout/header.php';
   ];
   foreach ($statCards as [$label, $num, $icon, $link, $mod]): ?>
     <div class="col-6 col-xl-3">
-      <a href="<?= h($link) ?>" class="pos-stat h-100 <?= $mod ?> text-decoration-none">
+      <a href="<?= h($link) ?>.php" class="pos-stat h-100 <?= $mod ?> text-decoration-none">
         <span class="pos-stat-ic"><?= ia_icon($icon, 20) ?></span>
         <span class="pos-stat-num" id="stat-<?= strtolower(str_replace([' ', '&#39;'], ['-', ''], $label)) ?>"><?= h($num) ?></span>
         <span class="pos-stat-label"><?= $label ?></span>
@@ -135,45 +135,45 @@ require_once __DIR__ . '/layout/header.php';
 <!-- ============================ POS ACTION GRID (touch buttons) ============================ -->
 <div class="pos-actions mb-3">
   <div class="pos-grid">
-    <a href="orders?action=new" class="pos-btn pos-btn-hero">
+    <a href="orders.php?action=new" class="pos-btn pos-btn-hero">
       <span class="pos-btn-ic"><?= ia_icon('plus', 26) ?></span>
       <span class="pos-btn-txt">New<br>Order</span>
     </a>
-    <a href="orders" class="pos-btn">
+    <a href="orders.php" class="pos-btn">
       <span class="pos-btn-ic"><?= ia_icon('clipboard', 22) ?></span>
       <span class="pos-btn-txt">Orders</span>
     </a>
-    <a href="customers" class="pos-btn">
+    <a href="customers.php" class="pos-btn">
       <span class="pos-btn-ic"><?= ia_icon('users', 22) ?></span>
       <span class="pos-btn-txt">Customers</span>
     </a>
-    <a href="inventory" class="pos-btn">
+    <a href="inventory.php" class="pos-btn">
       <span class="pos-btn-ic"><?= ia_icon('layers', 22) ?></span>
       <span class="pos-btn-txt">Inventory</span>
     </a>
-    <a href="orders?status=ready" class="pos-btn">
+    <a href="orders.php?status=ready" class="pos-btn">
       <span class="pos-btn-ic"><?= ia_icon('shirt', 22) ?></span>
       <span class="pos-btn-txt">Ready to<br>Pickup</span>
     </a>
-    <a href="customers?action=new" class="pos-btn">
+    <a href="customers.php?action=new" class="pos-btn">
       <span class="pos-btn-ic"><?= ia_icon('user', 22) ?></span>
       <span class="pos-btn-txt">New<br>Customer</span>
     </a>
     <?php if ($role === 'owner'): ?>
-      <a href="reports" class="pos-btn">
+      <a href="reports.php" class="pos-btn">
         <span class="pos-btn-ic"><?= ia_icon('chart', 22) ?></span>
         <span class="pos-btn-txt">Reports</span>
       </a>
-      <a href="system-settings" class="pos-btn">
+      <a href="system-settings.php" class="pos-btn">
         <span class="pos-btn-ic"><?= ia_icon('settings', 22) ?></span>
         <span class="pos-btn-txt">Settings</span>
       </a>
     <?php else: ?>
-      <a href="orders?status=pending" class="pos-btn">
+      <a href="orders.php?status=pending" class="pos-btn">
         <span class="pos-btn-ic"><?= ia_icon('wrench', 22) ?></span>
         <span class="pos-btn-txt">Pending</span>
       </a>
-      <a href="orders?status=completed" class="pos-btn">
+      <a href="orders.php?status=completed" class="pos-btn">
         <span class="pos-btn-ic"><?= ia_icon('shield', 22) ?></span>
         <span class="pos-btn-txt">Claimed</span>
       </a>
@@ -185,7 +185,7 @@ require_once __DIR__ . '/layout/header.php';
 <div class="ia-card pos-recent">
   <div class="card-head">
     <h3>Today's orders <span class="ia-micro text-ia-muted fw-normal">· tap a row for receipt</span></h3>
-    <a class="back-link" href="orders">View all</a>
+    <a class="back-link" href="orders.php">View all</a>
   </div>
   <div class="pos-receipt-list" id="dashboard-orders-list">
     <?php foreach ($todayOrders as $o): ?>
@@ -264,10 +264,10 @@ require_once __DIR__ . '/layout/header.php';
 
     <div class="col-md-4">
       <div class="ia-card h-100">
-        <div class="card-head"><h3>Recent customers</h3><a class="back-link" href="customers">All</a></div>
+        <div class="card-head"><h3>Recent customers</h3><a class="back-link" href="customers.php">All</a></div>
         <div class="card-body card-body-px">
           <?php foreach ($recentCustomers as $cm): ?>
-            <a class="d-flex align-items-center gap-3 mb-3 text-reset text-decoration-none" href="customers?view=<?= (int) $cm['id'] ?>">
+            <a class="d-flex align-items-center gap-3 mb-3 text-reset text-decoration-none" href="customers.php?view=<?= (int) $cm['id'] ?>">
               <div class="ia-avatar"><?= h(strtoupper(mb_substr($cm['first_name'][0] ?? '', 0, 1))) ?></div>
               <div class="flex-grow-1">
                 <div class="fw-semibold"><?= h($cm['first_name']) ?></div>
@@ -294,7 +294,7 @@ require_once __DIR__ . '/layout/header.php';
         <div id="receipt-slot"></div>
       </div>
       <div class="modal-footer">
-        <a href="orders?view=" class="btn btn-outline-ia" id="receipt-open">Open order</a>
+        <a href="orders.php?view=" class="btn btn-outline-ia" id="receipt-open">Open order</a>
         <button type="button" class="btn btn-grad" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
@@ -304,5 +304,5 @@ require_once __DIR__ . '/layout/header.php';
 <script type="application/json" id="receipt-data"><?= json_enc($receipts) ?></script>
 
 <!-- Offline bridge for dashboard -->
-<script type="module" src="<?= url('assets/js/ui/dashboard.offline.js') ?>"></script>
+<script type="module" src="../assets/js/ui/dashboard.offline.js"></script>
 <?php require __DIR__ . '/layout/footer.php'; ?>

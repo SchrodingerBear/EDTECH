@@ -295,5 +295,5 @@ require_once __DIR__ . '/layout/header.php';
 </script>
 
 <!-- Offline bridge for inventory -->
-<script type="module" src="<?= url('assets/js/ui/inventory.offline.js') ?>"></script>
+<script type="module" src="../assets/js/ui/inventory.offline.js"></script>
 <?php require __DIR__ . '/layout/footer.php'; ?>

@@ -118,7 +118,7 @@ $statusDescriptions = [
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background: url('bg.png') center center no-repeat;
+            background: url('assets/bg.png') center center no-repeat;
             background-size: cover;
             min-height: 100vh;
             padding: 20px;

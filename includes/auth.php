@@ -25,8 +25,8 @@ function current_role(): ?string
 function role_home(string $role): string
 {
     return match ($role) {
-        'owner' => 'admin/dashboard',
-        'staff' => 'admin/dashboard',
+        'owner' => 'dashboard',
+        'staff' => 'dashboard',
         default => '',
     };
 }
@@ -35,7 +35,7 @@ function role_home(string $role): string
 function require_login(): void
 {
     if (!current_user()) {
-        redirect('admin/index');
+        redirect('index');
     }
 }
 

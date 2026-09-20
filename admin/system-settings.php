@@ -126,7 +126,7 @@ require_once __DIR__ . '/layout/header.php';
             <label class="form-label">Logo</label>
             <input class="form-control" type="file" name="logo" accept="image/*">
             <?php if ($settings['logo_path']): ?>
-              <img src="<?= h(url($settings['logo_path'])) ?>" alt="logo" class="setting-thumb mt-2">
+              <img src="<?= h('../' . $settings['logo_path']) ?>" alt="logo" class="setting-thumb mt-2">
             <?php endif; ?>
           </div>
           <div class="col-12"><button class="btn btn-grad" type="submit"><?= ia_icon('save', 15) ?> Save settings</button></div>

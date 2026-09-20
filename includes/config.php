@@ -40,47 +40,10 @@ define('BASE_URL', (function () {
     }
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-
-    // More robust base URL detection
-    $scriptName = (string) ($_SERVER['SCRIPT_NAME'] ?? '/');
-    $scriptFile = str_replace('\\', '/', $_SERVER['SCRIPT_FILENAME'] ?? '');
-    $realFile = realpath($scriptFile) ?: $scriptFile;
-    $rootBase = rtrim(str_replace('\\', '/', ROOT_PATH), '/');
-    $prefix = '';
-
-    // Method 1: Use SCRIPT_FILENAME vs ROOT_PATH
-    if ($scriptFile !== '' && str_starts_with($scriptFile, $rootBase)) {
-        $trail = substr($scriptFile, strlen($rootBase));
-        if ($trail !== '' && str_ends_with($scriptName, $trail)) {
-            $prefix = rtrim(substr($scriptName, 0, -strlen($trail)), '/');
-        }
-    }
-
-    // Method 2: Fallback - derive from REQUEST_URI if SCRIPT_NAME didn't work
-    if ($prefix === '') {
-        $requestUri = $_SERVER['REQUEST_URI'] ?? '';
-        $requestUri = parse_url($requestUri, PHP_URL_PATH) ?? $requestUri;
-        $requestUri = rtrim($requestUri, '/');
-        
-        // Find the project folder name in the path
-        $projectFolder = basename($rootBase); // 'G7-4D-THESIS'
-        if ($projectFolder && str_contains($requestUri, '/' . $projectFolder . '/')) {
-            $pos = strpos($requestUri, '/' . $projectFolder . '/');
-            $prefix = substr($requestUri, 0, $pos + strlen($projectFolder) + 1);
-            $prefix = rtrim($prefix, '/');
-        }
-    }
-
-    // Method 3: Last resort - check if we're in a subdirectory
-    if ($prefix === '' && $host === 'localhost') {
-        // Check common subdirectory patterns
-        $uri = $_SERVER['REQUEST_URI'] ?? '';
-        if (preg_match('~^(/[^/]+)/admin/~', $uri, $m)) {
-            $prefix = $m[1];
-        }
-    }
-
-    return $scheme . '://' . $host . $prefix;
+    
+    // Simple and reliable - just use scheme + host
+    // This works for both localhost and IP addresses
+    return $scheme . '://' . $host;
 })());
 
 /* ---------------------------------- database -------------------------------- */
