@@ -9,7 +9,7 @@ export class OfflineDetector {
         this.isOnlineStatus = navigator.onLine;
         this.listeners = [];
         this._checkInterval = null;
-        this._PING_URL = './api/ping.php'; // Lightweight PHP ping endpoint
+        this._PING_URL = (window.IA_BASE_URL || '') + '/api/ping.php';
         this._PING_INTERVAL_MS = 30000;    // Check every 30 seconds
     }
 

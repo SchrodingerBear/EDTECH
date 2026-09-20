@@ -23,10 +23,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var row = document.createElement('div');
     row.className = 'row g-2 item-row mb-2';
     row.innerHTML =
-      '<div class="col-md-6"><select class="form-select item-service">' + serviceOption(item.service_id || '') + '</select></div>' +
+      '<div class="col-md-5"><select class="form-select item-service">' + serviceOption(item.service_id ? String(item.service_id) : '') + '</select></div>' +
       '<div class="col-md-2"><input class="form-control item-qty" type="number" step="0.01" min="0.01" value="' + (item.quantity || 1) + '"></div>' +
       '<div class="col-md-2"><input class="form-control item-price" type="number" step="0.01" min="0" value="' + (item.unit_price || '') + '"></div>' +
-      '<div class="col-md-1 text-end"><span class="item-line form-control-plaintext">' + peso(item.line_total) + '</span></div>' +
+      '<div class="col-md-2 text-end"><span class="item-line form-control-plaintext">' + peso(item.line_total) + '</span></div>' +
       '<div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm btn-remove-item" title="Remove">&times;</button></div>';
     return row;
   }
@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var sub = document.getElementById('calc-subtotal');
   var total = document.getElementById('calc-total');
   var paid = document.getElementById('calc-paid');
+  var paymentStatus = document.querySelector('select[name="payment_status"]');
   var pickup = document.getElementById('pickup-type');
   var deliveryAddr = document.getElementById('delivery-address');
   var deliveryLabel = document.getElementById('delivery-address-label');
@@ -59,6 +60,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (paid) {
       var p = parseFloat(paid.value) || 0;
       if (p > t) { paid.value = t; p = t; }
+      // Auto-calculate payment status
+      if (paymentStatus) {
+        if (p <= 0) paymentStatus.value = 'unpaid';
+        else if (p >= t) paymentStatus.value = 'paid';
+        else paymentStatus.value = 'partial';
+      }
     }
   }
 

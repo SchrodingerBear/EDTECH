@@ -2,8 +2,7 @@ const CACHE_NAME = 'lavadora-cache-v1';
 const STATIC_ASSETS = [
     './',
     './manifest.json',
-    './assets/images/icon-192x192.png',
-    './assets/images/icon-512x512.png',
+    './admin/assets/img/logo.svg',
     'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css',
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js',
@@ -28,6 +27,7 @@ const STATIC_ASSETS = [
     // Admin specific
     './admin/assets/css/dashboard.css',
     './admin/assets/js/dashboard.js',
+    './admin/assets/js/orders.js',
     './admin/assets/img/logo.svg'
 ];
 
@@ -61,6 +61,10 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
     // Only intercept GET requests
     if (event.request.method !== 'GET') return;
+    
+    // Skip non-http(s) schemes (chrome-extension, etc.)
+    const url = new URL(event.request.url);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
     
     // Don't intercept API calls (we want them to fail naturally if offline so our sync logic kicks in)
     if (event.request.url.includes('/api/')) return;

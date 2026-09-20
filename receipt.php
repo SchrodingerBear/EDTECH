@@ -118,7 +118,8 @@ $statusDescriptions = [
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: url('bg.png') center center no-repeat;
+            background-size: cover;
             min-height: 100vh;
             padding: 20px;
         }
@@ -131,7 +132,7 @@ $statusDescriptions = [
             overflow: hidden;
         }
         .receipt-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0891b2 0%, #06b6d4 55%, #22d3ee 130%);
             color: white;
             padding: 30px;
             text-align: center;
@@ -152,7 +153,7 @@ $statusDescriptions = [
         .order-number {
             font-size: 2rem;
             font-weight: 700;
-            color: #667eea;
+            color: #0891b2;
             text-align: center;
             margin-bottom: 20px;
         }
@@ -167,7 +168,7 @@ $statusDescriptions = [
         .progress-bar-fill {
             height: 100%;
             border-radius: 6px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(90deg, #0891b2 0%, #06b6d4 55%, #22d3ee 130%);
             transition: width 0.5s ease;
         }
         .status-badge {
@@ -240,7 +241,7 @@ $statusDescriptions = [
         .total-row.final {
             font-size: 1.2rem;
             font-weight: 700;
-            color: #667eea;
+            color: #0891b2;
             margin-top: 15px;
             padding-top: 15px;
             border-top: 2px solid #dee2e6;

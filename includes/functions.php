@@ -269,7 +269,7 @@ function h($value): string
 }
 
 /** Full URL for a project-relative path (leading slash). */
-function url(string $path = '', bool $absolute = false): string
+function url(string $path = '', bool $absolute = true): string
 {
     $path = ltrim($path, '/');
     
@@ -282,33 +282,7 @@ function url(string $path = '', bool $absolute = false): string
         }
     }
 
-    if ($absolute) {
-        return BASE_URL . '/' . $path;
-    }
-
-    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-    $callerFile = '';
-    foreach ($trace as $t) {
-        if (!empty($t['file']) && $t['file'] !== __FILE__) {
-            $callerFile = $t['file'];
-            break;
-        }
-    }
-
-    if ($callerFile) {
-        $root = rtrim(str_replace('\\', '/', ROOT_PATH), '/');
-        $callerFile = str_replace('\\', '/', $callerFile);
-        if (str_starts_with($callerFile, $root)) {
-            $rel = ltrim(substr($callerFile, strlen($root)), '/');
-            $depth = substr_count($rel, '/');
-            if ($depth < 0) $depth = 0;
-            
-            $prefix = $depth > 0 ? str_repeat('../', $depth) : '';
-            $result = $prefix . $path;
-            return $result === '' ? './' : $result;
-        }
-    }
-
+    // Always use absolute URL - most reliable
     return BASE_URL . '/' . $path;
 }
 
@@ -485,8 +459,15 @@ function deduct_inventory_for_order(DbCrud $crud, array $order): void
             foreach ($usages as $u) {
                 $itemId = (int) $u['inventory_item_id'];
                 $rate = (float) $u['usage_per_kg'];
+                $type = $u['consumption_type'] ?? 'per_kg';
                 if ($rate <= 0) continue;
-                $consume = round($qty * $rate, 2);
+                
+                if ($type === 'per_order') {
+                    $consume = $rate; // Fixed amount per order
+                } else {
+                    $consume = round($qty * $rate, 2); // Per kg
+                }
+                
                 if ($consume <= 0) continue;
                 $inv = $crud->get('inventory_items', $itemId);
                 if (!$inv) continue;

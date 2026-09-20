@@ -69,8 +69,8 @@ $__can = fn($k) => $__acc === null || in_array($k, $__acc, true);
   <div id="lav-offline-banner">⚠️ You are offline — all changes saved locally and will auto-sync when online.</div>
   <div id="lav-sync-badge" title="Unsynced changes"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js"></script>
+<script src="<?= url('assets/js/bootstrap.bundle.min.js') ?>"></script>
+<script src="<?= url('assets/js/simple-datatables.min.js') ?>"></script>
 <script src="<?= url('admin/assets/js/dashboard.js') ?>"></script>
 <!-- Offline-First App Boot (ES Module) -->
 <script type="module" src="<?= url('assets/js/app.js') ?>"></script>
@@ -79,6 +79,19 @@ $__can = fn($k) => $__acc === null || in_array($k, $__acc, true);
   document.addEventListener('lavadora:ready', () => {
     const banner = document.getElementById('lav-offline-banner');
     const badge = document.getElementById('lav-sync-badge');
+    const statusEl = document.getElementById('online-status');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+
+    function updateStatusUI(isOnline) {
+      if (statusEl) statusEl.style.display = 'flex';
+      if (statusDot) {
+        statusDot.style.background = isOnline ? '#28a745' : '#dc3545';
+        statusDot.style.boxShadow = isOnline ? '0 0 8px #28a745' : '0 0 8px #dc3545';
+      }
+      if (statusText) statusText.textContent = isOnline ? 'Online' : 'Offline';
+      if (banner) banner.style.display = isOnline ? 'none' : 'block';
+    }
 
     async function refreshBadge() {
       if (!window.lavadora?.orders) return;
@@ -95,12 +108,13 @@ $__can = fn($k) => $__acc === null || in_array($k, $__acc, true);
     refreshBadge();
     setInterval(refreshBadge, 10000);
 
-    // Online/Offline banner
+    // Online/Offline status
     window.lavadora.detector.onStatusChange((isOnline) => {
-      banner.style.display = isOnline ? 'none' : 'block';
+      updateStatusUI(isOnline);
       if (isOnline) refreshBadge();
     });
-    if (!window.lavadora.detector.isOnline()) banner.style.display = 'block';
+    // Initial state
+    updateStatusUI(window.lavadora.detector.isOnline());
   });
 
   // Service Worker registration
@@ -111,6 +125,39 @@ $__can = fn($k) => $__acc === null || in_array($k, $__acc, true);
         .catch(e => console.warn('[SW] Registration failed:', e));
     });
   }
+// Bottom nav "More" menu handlers
+  document.addEventListener('click', function(e) {
+    const moreBtn = e.target.closest('[data-bn-more]');
+    const closeBtn = e.target.closest('[data-bn-close]');
+    const moreMenu = document.getElementById('ia-bn-more');
+    const backdrop = document.querySelector('.ia-bn-backdrop');
+    
+    if (moreBtn) {
+      e.preventDefault();
+      moreMenu.hidden = false;
+      backdrop.hidden = false;
+      document.body.style.overflow = 'hidden';
+    }
+    
+    if (closeBtn || (e.target === backdrop && moreMenu && !moreMenu.hidden)) {
+      moreMenu.hidden = true;
+      backdrop.hidden = true;
+      document.body.style.overflow = '';
+    }
+  });
+
+  // Close on escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      const moreMenu = document.getElementById('ia-bn-more');
+      const backdrop = document.querySelector('.ia-bn-backdrop');
+      if (moreMenu && !moreMenu.hidden) {
+        moreMenu.hidden = true;
+        backdrop.hidden = true;
+        document.body.style.overflow = '';
+      }
+    }
+  });
 </script>
 </body>
 </html>

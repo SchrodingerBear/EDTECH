@@ -27,11 +27,10 @@ $brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : u
   <title><?= h($pageTitle ?? 'Dashboard') ?> · <?= h(APP_NAME) ?></title>
   <!-- PWA Manifest -->
   <link rel="manifest" href="<?= url('manifest.json') ?>">
-  <meta name="theme-color" content="#667eea">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/style.min.css" rel="stylesheet">
+  <meta name="theme-color" content="#0891b2">
+  <link href="<?= url('assets/css/fonts.css') ?>" rel="stylesheet">
+  <link href="<?= url('assets/css/bootstrap.min.css') ?>" rel="stylesheet">
+  <link href="<?= url('assets/css/simple-datatables.min.css') ?>" rel="stylesheet">
   <link rel="stylesheet" href="<?= url('admin/assets/css/dashboard.css') ?>">
   <script>window.IA_BASE_URL = <?= json_encode(BASE_URL, JSON_UNESCAPED_SLASHES) ?>;</script>
   <script>window.LAVADORA_SHOP_NAME = <?= json_encode($settings['business_name'] ?? APP_NAME) ?>;</script>
@@ -55,6 +54,13 @@ $brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : u
       from { opacity:0; transform: translateX(-50%) translateY(10px); }
       to   { opacity:1; transform: translateX(-50%) translateY(0); }
     }
+    /* Online/Offline status indicator */
+    .online-status { align-items: center; }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      transition: background .2s, box-shadow .2s;
+    }
+    .status-text { white-space: nowrap; }
   </style>
 </head>
 
@@ -115,6 +121,12 @@ $brandLogoUrl = !empty($settings['logo_path']) ? url($settings['logo_path']) : u
         title="Toggle dark / light">
         <span class="knob"><?= ia_icon('moon', 13) ?></span>
       </button>
+
+      <!-- Online/Offline Status -->
+      <div class="online-status d-flex align-items-center gap-1 ms-2" id="online-status" style="display:none;">
+        <span class="status-dot" id="status-dot"></span>
+        <span class="status-text small fw-medium" id="status-text">Online</span>
+      </div>
 
       <div class="dropdown">
         <button class="btn p-0 border-0" data-bs-toggle="dropdown" aria-expanded="false">

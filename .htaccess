@@ -8,6 +8,7 @@ ServerSignature Off
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
+  RewriteBase /G7-4D-THESIS/
 
   # -- Security: never serve dotfiles or sensitive dirs ----------------------
   RewriteRule ^\.git - [F,L]
@@ -22,7 +23,7 @@ ServerSignature Off
   RewriteRule ^(.+)$ - [E=LC_PATH:${lc:$1}]
 
   RewriteCond %{ENV:LC_PATH} !=""
-  RewriteCond %{DOCUMENT_ROOT}/%{ENV:LC_PATH}\.php -f
+  RewriteCond %{REQUEST_FILENAME}\.php -f
   RewriteCond %{REQUEST_URI} [A-Z]
   RewriteRule ^ %{ENV:LC_PATH}.php [L]
 
@@ -59,4 +60,15 @@ ServerSignature Off
   ExpiresByType image/svg+xml "access plus 7 days"
   ExpiresByType text/css "access plus 1 day"
   ExpiresByType application/javascript "access plus 1 day"
+  ExpiresByType font/ttf "access plus 1 year"
+  ExpiresByType font/woff "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType application/font-woff "access plus 1 year"
+  ExpiresByType application/font-woff2 "access plus 1 year"
+</IfModule>
+
+<IfModule mod_mime.c>
+  AddType font/ttf .ttf
+  AddType font/woff .woff
+  AddType font/woff2 .woff2
 </IfModule>

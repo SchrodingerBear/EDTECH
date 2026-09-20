@@ -14,6 +14,8 @@ require_page('reports');
 $c = crud();
 
 $range = $_GET['range'] ?? 'this_month';
+$forecastService = (int) ($_GET['forecast_service'] ?? 0);
+
 $now = new DateTime();
 $start = null;
 $end = null;
@@ -71,19 +73,34 @@ $summary = $c->raw(
    FROM laundry_orders o WHERE $whereCmd", $params
 )->fetch();
 
-// revenue by day (last 14 or 30 days)
-$days = $range === 'today' ? 7 : 14;
-$dailyParams = $params;
-$dailyFrom = date('Y-m-d', strtotime('-' . ($days - 1) . ' days')) . ' 00:00:00';
-if (!$start || $start < $dailyFrom) $startForChart = $dailyFrom; else $startForChart = $start;
-$chartParams = $params;
-$chartParams['cs'] = $startForChart;
-$daily = $c->raw(
-  "SELECT DATE(o.created_at) AS d, COALESCE(SUM(o.total),0) AS rev, COUNT(*) AS n
-   FROM laundry_orders o
-   WHERE o.status='completed' AND o.created_at >= :cs
-   GROUP BY DATE(o.created_at) ORDER BY d ASC", ['cs' => $startForChart]
-)->fetchAll();
+// revenue by day (full range for the selected period)
+    if ($range === 'today') {
+        $days = 7;
+        $dailyFrom = date('Y-m-d', strtotime('-6 days')) . ' 00:00:00';
+    } elseif ($range === 'this_week') {
+        $days = 7;
+        $dailyFrom = date('Y-m-d', strtotime('monday this week')) . ' 00:00:00';
+    } elseif ($range === 'this_month') {
+        $days = (int) date('t'); // days in current month
+        $dailyFrom = date('Y-m-01 00:00:00');
+    } elseif ($range === 'last_30') {
+        $days = 30;
+        $dailyFrom = date('Y-m-d', strtotime('-29 days')) . ' 00:00:00';
+    } else {
+        $days = 14;
+        $dailyFrom = date('Y-m-d', strtotime('-13 days')) . ' 00:00:00';
+    }
+    
+    $dailyParams = $params;
+    if (!$start || $start < $dailyFrom) $startForChart = $dailyFrom; else $startForChart = $start;
+    $chartParams = $params;
+    $chartParams['cs'] = $startForChart;
+    $daily = $c->raw(
+      "SELECT DATE(o.created_at) AS d, COALESCE(SUM(o.total),0) AS rev, COUNT(*) AS n
+       FROM laundry_orders o
+       WHERE o.status='completed' AND o.created_at >= :cs
+       GROUP BY DATE(o.created_at) ORDER BY d ASC", ['cs' => $startForChart]
+    )->fetchAll();
 
 $dailyData = [];
 $cursor = new DateTime($startForChart);
@@ -137,6 +154,108 @@ $maxRev = 0;
 foreach ($dailyData as $dd) if ($dd['rev'] > $maxRev) $maxRev = $dd['rev'];
 if ($maxRev <= 0) $maxRev = 1;
 
+// Forecast section
+$services = $c->select('services', '*', ['is_active' => 1], 'ORDER BY name');
+$items = $c->select('inventory_items', '*', ['is_active' => 1], 'ORDER BY category, name');
+$forecastItems = [];
+$firstToRunOut = null;
+$minOrders = PHP_INT_MAX;
+$selectedServiceName = '';
+
+if ($forecastService > 0) {
+    foreach ($services as $s) {
+        if ((int) $s['id'] === $forecastService) {
+            $selectedServiceName = $s['name'];
+            break;
+        }
+    }
+    
+    // Get completed orders count for avg kg calculation
+    $completedOrders30d = 0;
+    try {
+        $completedOrders30d = (int) $c->raw(
+            "SELECT COUNT(*) FROM laundry_orders WHERE status = 'completed' AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND service_id = ?",
+            [$forecastService]
+        )->fetchColumn();
+    } catch (Throwable $e) {}
+    
+    // Check if we have sufficient historical data for reliable forecast
+    $hasSufficientData = $completedOrders30d >= 5; // Need at least 5 completed orders in 30 days
+    
+    // Get usage rates for this service
+    $usageRows = $c->select('inventory_usage', '*', ['service_id' => $forecastService]);
+    $usageMap = [];
+    foreach ($usageRows as $r) $usageMap[(int) $r['inventory_item_id']] = $r;
+    
+    foreach ($items as $it):
+        $usage = $usageMap[$it['id']] ?? null;
+        if (!$usage || (float) $usage['usage_per_kg'] <= 0) continue;
+        
+        $stock = (float) $it['current_stock'];
+        $rate = (float) $usage['usage_per_kg'];
+        $type = $usage['consumption_type'] ?? 'per_kg';
+        
+        // Get kg used in last 30 days for this service
+        $kg = 0;
+        try {
+            $kg = (float) $c->raw(
+                "SELECT COALESCE(SUM(oi.quantity),0) FROM order_items oi
+                 JOIN laundry_orders o ON o.id = oi.order_id
+                 WHERE o.status = 'completed' AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                   AND oi.service_id = ?",
+                [$forecastService]
+            )->fetchColumn();
+        } catch (Throwable $e) {}
+        
+        // Calculate avg kg per order from history
+        $avgKgPerOrder = 3.0;
+        if ($kg > 0 && $completedOrders30d > 0) {
+            $avgKgPerOrder = $kg / $completedOrders30d;
+        }
+        
+        if ($type === 'per_order') {
+            $usedPerOrder = $rate;
+            $ordersLeft = $usedPerOrder > 0 ? floor($stock / $usedPerOrder) : null;
+            $usedPerMonth = $rate * 10;
+        } else {
+            $usedPerOrder = $rate * $avgKgPerOrder;
+            $ordersLeft = $usedPerOrder > 0 ? floor($stock / $usedPerOrder) : null;
+            $usedPerMonth = $kg > 0 ? $rate * $kg : ($rate * $avgKgPerOrder * 10);
+        }
+        
+        $daysLeft = $usedPerMonth > 0 ? round(($stock / $usedPerMonth) * 30) : null;
+        $daysLeft = $daysLeft !== null ? max(0, $daysLeft) : null;
+        
+        $stockPercentage = min(100, ($stock / ($stock + ($usedPerOrder * 20))) * 100);
+        
+        $forecastItems[] = [
+            'name' => $it['name'],
+            'unit' => $it['unit'],
+            'stock' => $stock,
+            'rate' => $rate,
+            'type' => $type,
+            'orders_left' => $ordersLeft,
+            'days_left' => $daysLeft,
+            'used_per_order' => $usedPerOrder,
+            'stock_percentage' => $stockPercentage,
+            'has_real_data' => $hasSufficientData,
+        ];
+        
+        if ($ordersLeft !== null && $ordersLeft < $minOrders) {
+            $minOrders = $ordersLeft;
+            $firstToRunOut = $it['name'];
+        }
+    endforeach;
+    
+    // Sort by orders left (lowest first)
+    usort($forecastItems, function($a, $b) {
+        if ($a['orders_left'] === null && $b['orders_left'] === null) return 0;
+        if ($a['orders_left'] === null) return 1;
+        if ($b['orders_left'] === null) return -1;
+        return $a['orders_left'] <=> $b['orders_left'];
+    });
+}
+
 require_once __DIR__ . '/layout/header.php';
 ?>
 
@@ -184,7 +303,7 @@ require_once __DIR__ . '/layout/header.php';
               <div class="bar-track">
                 <div class="bar-fill" style="height:<?= $pct ?>%"></div>
               </div>
-              <div class="bar-label"><?= h(date('j', strtotime($dd['d']))) ?></div>
+              <div class="bar-label"><?= h(date('M j', strtotime($dd['d']))) ?></div>
             </div>
           <?php endforeach; ?>
         </div>
@@ -212,7 +331,7 @@ require_once __DIR__ . '/layout/header.php';
   </div>
 </div>
 
-<div class="row g-4">
+<div class="row g-4 mb-4">
   <div class="col-xl-7">
     <div class="ia-card">
       <div class="card-head"><h3>Revenue by service</h3></div>
@@ -253,6 +372,83 @@ require_once __DIR__ . '/layout/header.php';
             <?php if (!$topCustomers): ?><tr><td colspan="3"><div class="empty-state"><p>No data yet.</p></div></td></tr><?php endif; ?>
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Forecast Section -->
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <div class="ia-card">
+      <div class="card-head">
+        <h3>⚠ Inventory Forecast (30-day estimate)</h3>
+        <form method="get" class="d-flex align-items-end gap-2" style="margin: 0;">
+          <input type="hidden" name="range" value="<?= h($range) ?>">
+          <label class="form-label mb-1">Select service for forecast</label>
+          <select name="forecast_service" class="form-select" style="width:auto;min-width:250px" onchange="this.form.submit()">
+            <option value="0">— Select a service —</option>
+            <?php foreach ($services as $s): ?>
+              <option value="<?= (int) $s['id'] ?>" <?= $forecastService === (int) $s['id'] ? 'selected' : '' ?>>
+                <?= h($s['name'] . ' — ' . peso($s['price']) . '/' . $s['unit']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </form>
+      </div>
+      <div class="card-body card-body-px">
+        <?php if (!$forecastService): ?>
+          <p class="ia-micro text-ia-muted">Select a service above to see forecast.</p>
+        <?php elseif (!$forecastItems): ?>
+          <p class="ia-micro text-ia-muted">No usage rates configured for <strong><?= h($selectedServiceName) ?></strong>. Set rates in <a href="inventory-settings?service=<?= $forecastService ?>">Inventory Config</a> to see forecast.</p>
+        <?php else: ?>
+          <?php 
+          $hasRealData = !empty($forecastItems) && $forecastItems[0]['has_real_data'] ?? false;
+          ?>
+          <?php if (!$hasRealData): ?>
+            <div class="alert alert-info border-0 rounded-4 mb-3 py-3 px-3">
+              <strong><?= ia_icon('info-circle', 14) ?></strong>
+              <span class="ms-1">Insufficient historical data for accurate forecast. Need at least <strong>5 completed orders</strong> in the last 30 days for <strong><?= h($selectedServiceName) ?></strong>. Complete more orders to enable accurate forecasting.</span>
+            </div>
+            <p class="ia-micro text-ia-muted">Currently showing projections based on default assumptions (3kg/order, 10 orders/month). These are <strong>not reliable</strong> until enough real data is collected.</p>
+          <?php endif; ?>
+          
+          <?php if ($firstToRunOut && $minOrders !== PHP_INT_MAX && $minOrders >= 0): ?>
+            <div class="alert alert-warning border-0 rounded-4 mb-3 py-2 px-3">
+              <strong><?= ia_icon('alert-triangle', 14) ?></strong>
+              <span class="ms-1">There are <strong><?= $minOrders ?></strong> orders left for <strong><?= h($firstToRunOut) ?></strong> based on available stock. This item will run out first.</span>
+            </div>
+          <?php endif; ?>
+          
+          <?php foreach ($forecastItems as $item): ?>
+            <div class="mb-3">
+              <div class="d-flex justify-content-between">
+                <span class="small fw-semibold"><?= h($item['name']) ?></span>
+                <span class="badge <?= ($item['orders_left'] !== null && $item['orders_left'] <= 5) ? 'badge-off' : (($item['orders_left'] !== null && $item['orders_left'] <= 15) ? 'badge-warn' : 'badge-live') ?>">
+                  <?= $item['orders_left'] !== null ? $item['orders_left'] . ' orders left' : 'N/A' ?>
+                  <?= $item['days_left'] !== null ? ' · ~' . $item['days_left'] . ' days' : '' ?>
+                  <span class="ms-1 badge bg-secondary"><?= $item['type'] === 'per_order' ? 'Per Order' : 'Per Kg' ?></span>
+                </span>
+              </div>
+              <div class="ia-micro text-ia-muted mb-1">
+                <?= h($item['stock']) ?> <?= h($item['unit']) ?> in stock · 
+                ~<?= h(number_format($item['used_per_order'], 2)) ?> per order 
+                (<?= h($item['rate']) ?><?= $item['type'] === 'per_order' ? '/order' : '/kg' ?>)
+                <?php if (!($item['has_real_data'] ?? false)): ?>
+                  <span class="badge bg-secondary ms-1">Estimated</span>
+                <?php endif; ?>
+              </div>
+              <div class="progress" style="height:6px">
+                <div class="progress-bar bg-<?= ($item['orders_left'] !== null && $item['orders_left'] <= 5) ? 'danger' : (($item['orders_left'] !== null && $item['orders_left'] <= 15) ? 'warning' : 'success') ?>" 
+                     style="width:<?= $item['orders_left'] !== null ? min(100, max(0, 100 - ($item['orders_left'] * 5))) : 0 ?>%"></div>
+              </div>
+            </div>
+          <?php endforeach; ?>
+          
+          <?php if ($firstToRunOut === null && array_filter($forecastItems, fn($i) => $i['rate'] > 0)): ?>
+            <p class="ia-micro mt-2 text-ia-muted">Items have usage rates configured but stock levels need adjustment.</p>
+          <?php endif; ?>
+        <?php endif; ?>
       </div>
     </div>
   </div>

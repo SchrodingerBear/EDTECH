@@ -140,7 +140,8 @@ export class Database {
         return new Promise((resolve, reject) => {
             const tx = this.db.transaction(storeName, 'readonly');
             const index = tx.objectStore(storeName).index(indexName);
-            const request = index.getAll(value);
+            const range = (value === null || value === undefined) ? null : IDBKeyRange.only(value);
+            const request = range ? index.getAll(range) : index.getAll();
             request.onsuccess = () => resolve(request.result || []);
             request.onerror = () => reject(request.error);
         });

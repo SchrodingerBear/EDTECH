@@ -16,8 +16,8 @@ header('Content-Type: application/json');
 header('Cache-Control: no-store');
 
 // Basic auth check — only logged in admin can seed data
-session_start();
-if (!isset($_SESSION['user_id'])) {
+require_once __DIR__ . '/../includes/auth.php';
+if (!current_user()) {
     http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Unauthorized']);
     exit;

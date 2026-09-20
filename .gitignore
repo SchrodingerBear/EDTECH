@@ -2,3 +2,4 @@
 *.log
 public/uploads/*
 !public/uploads/.gitkeep
+pwa/node_modules

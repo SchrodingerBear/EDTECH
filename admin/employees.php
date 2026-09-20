@@ -22,7 +22,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       'first_name' => trim($_POST['first_name'] ?? ''),
       'phone' => trim($_POST['phone'] ?? '') ?: null,
       'position' => trim($_POST['position'] ?? '') ?: null,
-      'salary' => (float) ($_POST['salary'] ?? 0),
       'hire_date' => !empty($_POST['hire_date']) ? $_POST['hire_date'] : null,
       'is_active' => isset($_POST['is_active']) ? 1 : 0,
     ];
@@ -79,9 +78,8 @@ require_once __DIR__ . '/layout/header.php';
         <?php if ($isEdit): ?><input type="hidden" name="id" value="<?= (int) $f['id'] ?>"><?php endif; ?>
         <div class="col-md-6"><label class="form-label">Name</label><input class="form-control" name="first_name" required value="<?= h($f['first_name'] ?? '') ?>"></div>
         <div class="col-md-6"><label class="form-label">Phone</label><input class="form-control" name="phone" value="<?= h($f['phone'] ?? '') ?>"></div>
-        <div class="col-md-4"><label class="form-label">Position</label><input class="form-control" name="position" value="<?= h($f['position'] ?? '') ?>" placeholder="e.g. Laundry Operator"></div>
-        <div class="col-md-4"><label class="form-label">Monthly salary (₱)</label><input class="form-control" type="number" step="0.01" min="0" name="salary" value="<?= h($f['salary'] ?? '') ?>"></div>
-        <div class="col-md-4"><label class="form-label">Hire date</label><input class="form-control" type="date" name="hire_date" value="<?= h($f['hire_date'] ?? '') ?>"></div>
+        <div class="col-md-6"><label class="form-label">Position</label><input class="form-control" name="position" value="<?= h($f['position'] ?? '') ?>" placeholder="e.g. Laundry Operator"></div>
+        <div class="col-md-6"><label class="form-label">Hire date</label><input class="form-control" type="date" name="hire_date" value="<?= h($f['hire_date'] ?? '') ?>"></div>
         <div class="col-12 d-flex align-items-end">
           <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" name="is_active" id="is_active" <?= ($f['is_active'] ?? 1) ? 'checked' : '' ?>>
@@ -102,7 +100,7 @@ require_once __DIR__ . '/layout/header.php';
 <div class="ia-card">
   <div class="table-responsive">
     <table class="table table-ia" data-force-datatable>
-      <thead><tr><th>Name</th><th>Position</th><th>Phone</th><th>Salary</th><th>Jobs</th><th>Hired</th><th>Status</th><th></th></tr></thead>
+      <thead><tr><th>Name</th><th>Position</th><th>Phone</th><th>Jobs</th><th>Hired</th><th>Status</th><th></th></tr></thead>
       <tbody>
         <?php foreach ($employees as $em): ?>
           <tr>
@@ -114,7 +112,6 @@ require_once __DIR__ . '/layout/header.php';
             </td>
             <td class="text-ia-muted"><?= h($em['position'] ?? '—') ?></td>
             <td class="text-ia-muted"><?= h($em['phone'] ?? '—') ?></td>
-            <td><?= peso($em['salary']) ?></td>
             <td class="text-ia-muted"><?= (int) $em['jobs'] ?></td>
             <td class="text-ia-muted text-nowrap"><?= $em['hire_date'] ? h(date('M j, Y', strtotime($em['hire_date']))) : '—' ?></td>
             <td><span class="badge <?= $em['is_active'] ? 'badge-live' : 'badge-off' ?>"><?= $em['is_active'] ? 'active' : 'inactive' ?></span></td>
@@ -130,7 +127,7 @@ require_once __DIR__ . '/layout/header.php';
             </td>
           </tr>
         <?php endforeach; ?>
-        <?php if (!$employees): ?><tr><td colspan="8"><div class="empty-state"><h4>No employees yet</h4><p>Add your laundry team to start assigning orders.</p></div></td></tr><?php endif; ?>
+        <?php if (!$employees): ?><tr><td colspan="7"><div class="empty-state"><h4>No employees yet</h4><p>Add your laundry team to start assigning orders.</p></div></td></tr><?php endif; ?>
       </tbody>
     </table>
   </div>

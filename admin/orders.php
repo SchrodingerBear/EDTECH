@@ -36,7 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         $customerData = [
-          'first_name' => $fname, 'phone' => $phone,
+          'first_name' => $fname,
+          'last_name' => '',  // Required by schema
+          'phone' => $phone,
           'email' => trim($_POST['c_email'] ?? '') ?: null,
           'address' => trim($_POST['c_address'] ?? '') ?: null,
         ];
@@ -105,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'amount_paid' => $amountPaid,
       ];
 
-      db_transaction(function (PDO $pdo) use ($c, $isEdit, $orderId, $base, $orderItems) {
+      $newOrderId = db_transaction(function (PDO $pdo) use ($c, $isEdit, $orderId, $base, $orderItems) {
         $crud = new DbCrud($pdo);
         if ($isEdit) {
           $crud->update('laundry_orders', $base, ['id' => $orderId]);
@@ -113,6 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           foreach ($orderItems as $it) {
             $crud->insert('order_items', $it + ['order_id' => $orderId]);
           }
+          return $orderId;
         } else {
           $orderNo = next_order_number(null, $pdo);
           $orderData = array_merge([
@@ -132,35 +135,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // If column check fails, proceed without receipt token
           }
           
-          $orderId = $crud->insert('laundry_orders', $orderData);
+          $newId = $crud->insert('laundry_orders', $orderData);
           
           // Update receipt token with actual order ID if column exists
           try {
             $columns = $pdo->query("SHOW COLUMNS FROM laundry_orders")->fetchAll();
             $columnNames = array_column($columns, 'Field');
             if (in_array('receipt_token', $columnNames)) {
-              $token = generate_receipt_token($orderId, $orderNo, date('Y-m-d H:i:s'));
-              $crud->update('laundry_orders', ['receipt_token' => $token], ['id' => $orderId]);
+              $token = generate_receipt_token($newId, $orderNo, date('Y-m-d H:i:s'));
+              $crud->update('laundry_orders', ['receipt_token' => $token], ['id' => $newId]);
             }
           } catch (Throwable $e) {
             // If update fails, proceed without receipt token
           }
           
           foreach ($orderItems as $it) {
-            $crud->insert('order_items', $it + ['order_id' => $orderId]);
+            $crud->insert('order_items', $it + ['order_id' => $newId]);
           }
+          return $newId;
         }
-        return $orderId;
       });
+      
+      $orderId = $newOrderId;
 
       if ($isEdit) {
         audit('order.update', 'orders', 'order', $orderId);
         flash('success', 'Order ' . $orderId . ' updated.');
+        redirect('admin/orders');
       } else {
         audit('order.create', 'orders', 'order', $orderId);
         flash('success', 'New order created.');
+        redirect('admin/orders?action=new&created=1&order_id=' . $orderId);
       }
-      redirect('admin/orders');
     } catch (Throwable $e) {
       flash('danger', 'Something went wrong: ' . $e->getMessage());
       // redirect('admin/orders');
@@ -215,47 +221,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $c->delete('laundry_orders', ['id' => $orderId]);
       audit('order.delete', 'orders', 'order', $orderId);
       flash('success', 'Order deleted.');
-    }
-    redirect('admin/orders');
-  }
-
-  /* ---- SEND RECEIPT ---- */
-  if ($action === 'send_receipt') {
-    $orderId = (int) ($_POST['order_id'] ?? 0);
-    if ($orderId > 0) {
-      try {
-        // Check if receipt columns exist
-        $columns = db()->query("SHOW COLUMNS FROM laundry_orders")->fetchAll();
-        $columnNames = array_column($columns, 'Field');
-        
-        if (in_array('receipt_token', $columnNames)) {
-          $order = $c->get('laundry_orders', $orderId);
-          if ($order) {
-            // Generate receipt token if it doesn't exist
-            if (empty($order['receipt_token'])) {
-              $token = get_or_create_receipt_token($c, $orderId);
-            } else {
-              $token = $order['receipt_token'];
-            }
-            
-            // Mark receipt as sent if column exists
-            if (in_array('receipt_sent_at', $columnNames)) {
-              $c->update('laundry_orders', ['receipt_sent_at' => date('Y-m-d H:i:s')], ['id' => $orderId]);
-            }
-            
-            $receiptUrl = get_receipt_url($token);
-            flash('success', 'Receipt link generated: <a href="' . h($receiptUrl) . '" target="_blank">' . h($receiptUrl) . '</a>');
-          } else {
-            flash('danger', 'Order not found.');
-          }
-        } else {
-          flash('warning', 'Receipt system not yet set up. The receipt link feature requires database setup. Contact your administrator.');
-        }
-      } catch (Throwable $e) {
-        flash('danger', 'Error generating receipt: ' . $e->getMessage());
-      }
-    } else {
-      flash('danger', 'Invalid order ID.');
     }
     redirect('admin/orders');
   }
@@ -426,11 +391,11 @@ require_once __DIR__ . '/layout/header.php';
 
           <a class="btn btn-outline-ia" href="orders?edit=<?= (int) $vo['id'] ?>"><?= ia_icon('edit', 15) ?> Edit order</a>
 
-          <form method="post" class="d-grid gap-2">
-            <input type="hidden" name="form" value="send_receipt">
-            <input type="hidden" name="order_id" value="<?= (int) $vo['id'] ?>">
-            <button class="btn btn-outline-success" type="submit"><?= ia_icon('mail', 15) ?> Generate Receipt Link</button>
-          </form>
+          <?php if (!empty($vo['receipt_token'])): 
+            $receiptUrl = get_receipt_url($vo['receipt_token']);
+          ?>
+            <a class="btn btn-outline-success" href="<?= h($receiptUrl) ?>" target="_blank"><?= ia_icon('eye', 15) ?> View Receipt</a>
+          <?php endif; ?>
 
           <form method="post" onsubmit="return confirm('Delete this order permanently?');">
             <input type="hidden" name="form" value="delete">
@@ -536,9 +501,8 @@ require_once __DIR__ . '/layout/header.php';
             $svg = $services;
             ?>
             <div class="row g-2 item-row mb-2">
-              <div class="col-md-6">
+              <div class="col-md-5">
                <select class="form-select item-service" name="items[]">
-                  <option value="">Select service</option>
                   <?php foreach ($services as $sv): ?>
                     <option value="<?= (int) $sv['id'] ?>" data-price="<?= h($sv['price']) ?>" <?= $svcId === (int) $sv['id'] ? 'selected' : '' ?>>
                       <?= h($sv['name'] . ' — ' . peso($sv['price'] . '/' . $sv['unit'])) ?>
@@ -546,7 +510,9 @@ require_once __DIR__ . '/layout/header.php';
                   <?php endforeach; ?>
                 </select>
               </div>
-           <input class="form-control item-price" type="number" step="0.01" min="0" name="unit_price[]" value="<?= h($it['unit_price'] ?? '') ?>"><div class="col-md-1 text-end"><span class="item-line form-control-plaintext"><?= peso($it['line_total'] ?? 0) ?></span></div>
+              <div class="col-md-2"><input class="form-control item-qty" type="number" step="0.01" min="0.01" name="quantity[]" value="<?= h($it['quantity'] ?? 1) ?>"></div>
+              <div class="col-md-2"><input class="form-control item-price" type="number" step="0.01" min="0" name="unit_price[]" value="<?= h($it['unit_price'] ?? '') ?>"></div>
+              <div class="col-md-2 text-end"><span class="item-line form-control-plaintext"><?= peso($it['line_total'] ?? 0) ?></span></div>
               <div class="col-md-1"><button type="button" class="btn btn-outline-danger btn-sm btn-remove-item"><?= ia_icon('trash', 14) ?></button></div>
             </div>
           <?php endforeach; ?>
@@ -603,6 +569,109 @@ require_once __DIR__ . '/layout/header.php';
       </form>
     </div>
   </div>
+
+<?php if ($isNew && isset($_GET['created']) && isset($_GET['order_id'])): 
+  $createdOrder = $c->get('laundry_orders', (int)$_GET['order_id']);
+  if ($createdOrder && !empty($createdOrder['receipt_token'])):
+    $receiptUrl = get_receipt_url($createdOrder['receipt_token']);
+?>
+<!-- Receipt Modal with QR Code -->
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-grad text-white">
+        <h5 class="modal-title"><?= ia_icon('clipboard', 18) ?> Order Created Successfully</h5>
+      </div>
+      <div class="modal-body">
+        <div class="row g-4">
+          <div class="col-md-7">
+            <div class="ia-card">
+              <div class="card-head"><h5>Order Details</h5></div>
+              <div class="card-body card-body-px">
+                <div class="row g-2 mb-3">
+                  <div class="col-6"><span class="text-ia-muted">Order #</span></div>
+                  <div class="col-6 text-end fw-bold fs-5"><?= h($createdOrder['order_no']) ?></div>
+                  <div class="col-6"><span class="text-ia-muted">Customer</span></div>
+                  <div class="col-6 text-end"><?= h($createdOrder['customer_name'] ?? 'Walk-in') ?></div>
+                  <div class="col-6"><span class="text-ia-muted">Total</span></div>
+                  <div class="col-6 text-end fw-bold text-ia-primary fs-5"><?= peso($createdOrder['total']) ?></div>
+                  <div class="col-6"><span class="text-ia-muted">Paid</span></div>
+                  <div class="col-6 text-end"><?= peso($createdOrder['amount_paid']) ?></div>
+                  <div class="col-6"><span class="text-ia-muted">Balance</span></div>
+                  <div class="col-6 text-end fw-bold <?= ($createdOrder['total'] - $createdOrder['amount_paid']) > 0 ? 'text-danger' : 'text-success' ?>">
+                    <?= peso($createdOrder['total'] - $createdOrder['amount_paid']) ?>
+                  </div>
+                  <div class="col-6"><span class="text-ia-muted">Status</span></div>
+                  <div class="col-6 text-end"><span class="badge <?= status_badge($createdOrder['status']) ?>"><?= h(order_statuses()[$createdOrder['status']] ?? $createdOrder['status']) ?></span></div>
+                  <div class="col-6"><span class="text-ia-muted">Payment</span></div>
+                  <div class="col-6 text-end"><span class="badge <?= $createdOrder['payment_status'] === 'paid' ? 'badge-success' : ($createdOrder['payment_status'] === 'partial' ? 'badge-warn' : 'badge-off') ?>"><?= h(ucfirst($createdOrder['payment_status'])) ?></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-5">
+            <div class="ia-card text-center p-4">
+              <h6 class="mb-3">Customer Receipt & Tracking</h6>
+              <p class="ia-micro text-ia-muted mb-3">Scan QR code or share link for order tracking</p>
+              <div id="qr-code" class="mb-3"></div>
+              <div class="d-grid gap-2">
+                <a href="<?= h($receiptUrl) ?>" target="_blank" class="btn btn-grad">
+                  <?= ia_icon('eye', 15) ?> View Receipt
+                </a>
+                <button class="btn btn-outline-ia" onclick="copyReceiptLink('<?= h($receiptUrl) ?>')">
+                  <?= ia_icon('copy', 15) ?> Copy Link
+                </button>
+                <button class="btn btn-outline-secondary" onclick="printQR()">
+                  <?= ia_icon('printer', 15) ?> Print QR
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-grad" data-bs-dismiss="modal">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var modal = new bootstrap.Modal(document.getElementById('receiptModal'));
+    modal.show();
+    
+    // Generate QR code
+    var qr = new QRCode(document.getElementById('qr-code'), {
+      text: '<?= h($receiptUrl) ?>',
+      width: 200,
+      height: 200,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    
+    window.copyReceiptLink = function(url) {
+      navigator.clipboard.writeText(url).then(function() {
+        alert('Receipt link copied to clipboard!');
+      });
+    };
+    
+    window.printQR = function() {
+      var printWindow = window.open('', '', 'width=400,height=500');
+      var qrImg = document.querySelector('#qr-code img');
+      if (qrImg) {
+        printWindow.document.write('<html><head><title>QR Code - ' + '<?= h($createdOrder['order_no']) ?>' + '</title></head><body style="text-align:center;padding:20px">');
+        printWindow.document.write('<h3>Order: ' + '<?= h($createdOrder['order_no']) ?>' + '</h3>');
+        printWindow.document.write('<img src="' + qrImg.src + '" alt="QR Code" style="max-width:100%">');
+        printWindow.document.write('<p>Scan to track order</p>');
+        printWindow.document.close();
+        printWindow.print();
+      }
+    };
+  });
+</script>
+<?php endif; endif; ?>
 <script>window.ORDER_SERVICES = <?= json_enc(array_map(fn($s) => ['id' => (int)$s['id'], 'name' => $s['name'], 'price' => (float)$s['price'], 'unit' => $s['unit']], $services)) ?>;</script>
 <script src="<?= url('admin/assets/js/orders.js') ?>"></script>
 <?php require __DIR__ . '/layout/footer.php'; return; endif; ?>
@@ -662,11 +731,9 @@ require_once __DIR__ . '/layout/header.php';
             <td class="text-end text-nowrap">
               <a class="btn btn-sm btn-icon" href="orders?view=<?= (int) $o['id'] ?>" title="View"><?= ia_icon('eye', 15) ?></a>
               <a class="btn btn-sm btn-icon" href="orders?edit=<?= (int) $o['id'] ?>" title="Edit"><?= ia_icon('edit', 15) ?></a>
-              <form method="post" class="d-inline" onsubmit="return confirm('Generate receipt link for this order?');">
-                <input type="hidden" name="form" value="send_receipt">
-                <input type="hidden" name="order_id" value="<?= (int) $o['id'] ?>">
-                <button class="btn btn-sm btn-icon text-success" type="submit" title="Generate Receipt Link"><?= ia_icon('mail', 15) ?></button>
-              </form>
+              <?php if (!empty($o['receipt_token'])): ?>
+                <a class="btn btn-sm btn-icon text-success" href="<?= h(get_receipt_url($o['receipt_token'])) ?>" target="_blank" title="View Receipt"><?= ia_icon('mail', 15) ?></a>
+              <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>

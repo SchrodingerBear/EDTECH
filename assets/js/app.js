@@ -87,7 +87,8 @@ class LavadoraApp {
         if (orderCount === 0 || customerCount === 0 || serviceCount === 0) {
             console.log('[Lavadora] Seeding initial data from server...');
             try {
-                const res = await fetch('./api/data.php?action=initial_seed');
+                const baseUrl = window.IA_BASE_URL || '';
+                const res = await fetch(`${baseUrl}/api/data.php?action=initial_seed`);
                 if (!res.ok) return;
                 const data = await res.json();
 

@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Sep 01, 2026 at 03:30 PM
--- Server version: 8.0.46-0ubuntu0.24.04.3
+-- Generation Time: Sep 20, 2026 at 05:42 AM
+-- Server version: 8.0.46-0ubuntu0.24.04.4
 -- PHP Version: 8.3.6
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -75,7 +75,39 @@ INSERT INTO `audit_logs` (`id`, `actor_user_id`, `action`, `module`, `entity_typ
 (28, 1, 'order.status', 'orders', 'order', 2, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', NULL, '2026-09-01 13:00:00'),
 (29, 1, 'order.status', 'orders', 'order', 2, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', NULL, '2026-09-01 15:30:00'),
 (30, 1, 'inventory.receive', 'inventory', 'inventory_item', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', NULL, '2026-09-01 14:00:00'),
-(31, 1, 'inventory.adjust', 'inventory', 'inventory_item', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', NULL, '2026-09-01 12:00:00');
+(31, 1, 'inventory.adjust', 'inventory', 'inventory_item', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', NULL, '2026-09-01 12:00:00'),
+(32, 1, 'auth.login', 'auth', NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 09:33:58'),
+(33, 1, 'auth.login', 'auth', NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 10:41:39'),
+(34, 1, 'inventory.usage', 'inventory', 'service', 7, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 10:42:51'),
+(35, 1, 'inventory.usage', 'inventory', 'service', 7, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 10:48:11'),
+(36, 1, 'customer.create', 'customers', 'customer', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 10:57:20'),
+(37, 1, 'order.create', 'orders', 'order', 0, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 10:57:20'),
+(38, 1, 'customer.create', 'customers', 'customer', 2, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 11:08:50'),
+(39, 1, 'order.create', 'orders', 'order', 2, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 11:08:50'),
+(40, 1, 'customer.create', 'customers', 'customer', 3, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 11:14:26'),
+(41, 1, 'order.create', 'orders', 'order', 3, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 11:14:26'),
+(42, 1, 'customer.create', 'customers', 'customer', 4, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 11:23:16'),
+(43, 1, 'order.create', 'orders', 'order', 4, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 11:23:16'),
+(44, 1, 'customer.create', 'customers', 'customer', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 11:24:11'),
+(45, 1, 'order.create', 'orders', 'order', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 11:24:11'),
+(46, 1, 'order.create', 'orders', 'order', 2, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 11:24:27'),
+(47, 1, 'auth.login', 'auth', NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 11:33:12'),
+(48, 1, 'account.toggle', 'accounts', 'user', 2, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 11:34:01'),
+(49, 1, 'account.toggle', 'accounts', 'user', 2, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 11:34:10'),
+(50, 1, 'customer.create', 'customers', 'customer', 2, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 11:40:52'),
+(51, 1, 'order.create', 'orders', 'order', 3, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 11:40:52'),
+(52, 1, 'auth.login', 'auth', NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 12:19:17'),
+(53, 1, 'account.toggle', 'accounts', 'user', 2, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 12:19:23'),
+(54, 1, 'auth.login', 'auth', NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 12:28:38'),
+(55, 1, 'auth.login', 'auth', NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 13:13:57'),
+(56, 1, 'auth.login', 'auth', NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 13:15:22'),
+(57, 1, 'inventory.usage', 'inventory', 'service', 8, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 13:17:08'),
+(58, 1, 'order.create', 'orders', 'order', 4, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 13:20:11'),
+(59, 1, 'order.update', 'orders', 'order', 4, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 13:23:51'),
+(60, 1, 'order.update', 'orders', 'order', 4, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0', NULL, '2026-09-20 13:24:00'),
+(61, 1, 'auth.login', 'auth', NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Edg/153.0.0.0 Mobile Safari/537.36', NULL, '2026-09-20 13:25:25'),
+(62, 2, 'auth.login', 'auth', NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Edg/153.0.0.0 Mobile Safari/537.36', NULL, '2026-09-20 13:25:29'),
+(63, 1, 'auth.login', 'auth', NULL, NULL, '127.0.0.1', 'Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Edg/153.0.0.0 Mobile Safari/537.36', NULL, '2026-09-20 13:28:23');
 
 -- --------------------------------------------------------
 
@@ -100,15 +132,8 @@ CREATE TABLE `customers` (
 --
 
 INSERT INTO `customers` (`id`, `first_name`, `last_name`, `phone`, `email`, `address`, `notes`, `created_at`, `updated_at`) VALUES
-(2, 'T', 'T', 'T', NULL, NULL, NULL, '2026-08-31 18:39:47', '2026-08-31 18:39:47'),
-(3, 'Maria', 'Santos', '0917-123-4567', 'maria.santos@email.com', '456 Mabini Street, Manila', 'Regular customer, prefers wash & fold', '2026-09-01 08:00:00', '2026-09-01 08:00:00'),
-(4, 'Juan', 'Reyes', '0918-234-5678', 'juan.reyes@email.com', '789 Aurora Boulevard, Quezon City', 'Delicate fabrics only', '2026-09-01 09:00:00', '2026-09-01 09:00:00'),
-(5, 'Ana', 'Garcia', '0919-345-6789', 'ana.garcia@email.com', '123 Shaw Boulevard, Mandaluyong', 'Prefers dry cleaning for suits', '2026-09-01 10:00:00', '2026-09-01 10:00:00'),
-(6, 'Carlos', 'Diaz', '0920-456-7890', 'carlos.diaz@email.com', '567 Taft Avenue, Manila', 'Bulk orders - comforters and blankets', '2026-09-01 11:00:00', '2026-09-01 11:00:00'),
-(7, 'Elena', 'Ramos', '0921-567-8901', 'elena.ramos@email.com', '890 EDSA, Makati', 'VIP customer', '2026-09-01 12:00:00', '2026-09-01 12:00:00'),
-(8, 'Miguel', 'Torres', '0922-678-9012', 'miguel.torres@email.com', '234 Ortigas Avenue, Pasig', 'Regular pickup/delivery', '2026-09-01 13:00:00', '2026-09-01 13:00:00'),
-(9, 'Sofia', 'Castillo', '0923-789-0123', 'sofia.castillo@email.com', '678 Bonifacio Street, Taguig', 'New customer', '2026-09-01 14:00:00', '2026-09-01 14:00:00'),
-(10, 'Diego', 'Flores', '0924-890-1234', 'diego.flores@email.com', '901 Del Monte Avenue, Quezon City', 'Prefers iron only service', '2026-09-01 15:00:00', '2026-09-01 15:00:00');
+(1, 'SEAN CHARLES PUGOSA', '', '09938197944', NULL, NULL, NULL, '2026-09-20 11:24:11', '2026-09-20 11:24:11'),
+(2, 'SEAN CHARLES PUGOSA', '', '09938197944', NULL, NULL, NULL, '2026-09-20 11:40:52', '2026-09-20 11:40:52');
 
 -- --------------------------------------------------------
 
@@ -187,30 +212,6 @@ CREATE TABLE `inventory_movements` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `inventory_movements`
---
-
-INSERT INTO `inventory_movements` (`id`, `inventory_item_id`, `type`, `quantity`, `reference`, `notes`, `created_by`, `created_at`) VALUES
-(1, 1, 'in', 2000.00, 'STK-001', 'Initial stock receipt', 1, '2026-08-31 10:00:00'),
-(2, 2, 'in', 1500.00, 'STK-001', 'Initial stock receipt', 1, '2026-08-31 10:00:00'),
-(3, 3, 'in', 1000.00, 'STK-001', 'Initial stock receipt', 1, '2026-08-31 10:00:00'),
-(4, 4, 'in', 100.00, 'STK-001', 'Initial stock receipt', 1, '2026-08-31 10:00:00'),
-(5, 5, 'in', 500.00, 'STK-001', 'Initial stock receipt', 1, '2026-08-31 10:00:00'),
-(6, 1, 'out', 75.00, 'ORD-2026-0001', 'Used for order #1', 1, '2026-09-01 08:30:00'),
-(7, 2, 'out', 50.00, 'ORD-2026-0001', 'Used for order #1', 1, '2026-09-01 08:30:00'),
-(8, 3, 'out', 25.00, 'ORD-2026-0001', 'Used for order #1', 1, '2026-09-01 08:30:00'),
-(9, 1, 'out', 120.00, 'ORD-2026-0003', 'Used for order #3', 1, '2026-09-01 10:00:00'),
-(10, 2, 'out', 80.00, 'ORD-2026-0003', 'Used for order #3', 1, '2026-09-01 10:00:00'),
-(11, 3, 'out', 40.00, 'ORD-2026-0003', 'Used for order #3', 1, '2026-09-01 10:00:00'),
-(12, 5, 'out', 12.00, 'ORD-2026-0003', 'Used for order #3', 1, '2026-09-01 10:00:00'),
-(13, 1, 'out', 150.00, 'ORD-2026-0004', 'Used for order #4', 1, '2026-09-01 11:00:00'),
-(14, 2, 'out', 120.00, 'ORD-2026-0004', 'Used for order #4', 1, '2026-09-01 11:00:00'),
-(15, 3, 'out', 60.00, 'ORD-2026-0004', 'Used for order #4', 1, '2026-09-01 11:00:00'),
-(16, 1, 'adjust', -50.00, 'ADJ-001', 'Stock correction - spillage', 1, '2026-09-01 12:00:00'),
-(17, 1, 'in', 1000.00, 'STK-002', 'Restock delivery', 1, '2026-09-01 14:00:00'),
-(18, 2, 'in', 800.00, 'STK-002', 'Restock delivery', 1, '2026-09-01 14:00:00');
-
 -- --------------------------------------------------------
 
 --
@@ -222,6 +223,7 @@ CREATE TABLE `inventory_usage` (
   `service_id` int UNSIGNED NOT NULL,
   `inventory_item_id` int UNSIGNED NOT NULL,
   `usage_per_kg` decimal(10,4) NOT NULL DEFAULT '0.0000',
+  `consumption_type` enum('per_kg','per_order') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'per_kg',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -230,24 +232,12 @@ CREATE TABLE `inventory_usage` (
 -- Dumping data for table `inventory_usage`
 --
 
-INSERT INTO `inventory_usage` (`id`, `service_id`, `inventory_item_id`, `usage_per_kg`, `created_at`, `updated_at`) VALUES
-(1, 1, 1, 15.0000, '2026-08-31 17:32:13', '2026-08-31 17:32:13'),
-(2, 1, 2, 10.0000, '2026-08-31 17:32:13', '2026-08-31 17:32:13'),
-(3, 1, 3, 5.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14'),
-(4, 2, 1, 15.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14'),
-(5, 2, 2, 10.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14'),
-(6, 2, 3, 5.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14'),
-(7, 2, 5, 3.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14'),
-(8, 3, 1, 20.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14'),
-(9, 3, 2, 15.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14'),
-(10, 3, 3, 8.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14'),
-(11, 3, 5, 5.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14'),
-(12, 5, 1, 25.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14'),
-(13, 5, 2, 20.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14'),
-(14, 5, 3, 10.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14'),
-(15, 6, 1, 20.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14'),
-(16, 6, 2, 15.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14'),
-(17, 6, 5, 5.0000, '2026-08-31 17:32:14', '2026-08-31 17:32:14');
+INSERT INTO `inventory_usage` (`id`, `service_id`, `inventory_item_id`, `usage_per_kg`, `consumption_type`, `created_at`, `updated_at`) VALUES
+(23, 8, 1, 1.0000, 'per_kg', '2026-09-20 13:17:08', '2026-09-20 13:17:08'),
+(24, 8, 2, 1.0000, 'per_kg', '2026-09-20 13:17:08', '2026-09-20 13:17:08'),
+(25, 8, 3, 1.0000, 'per_kg', '2026-09-20 13:17:08', '2026-09-20 13:17:08'),
+(26, 8, 4, 1.0000, 'per_kg', '2026-09-20 13:17:08', '2026-09-20 13:17:08'),
+(27, 8, 5, 1.0000, 'per_kg', '2026-09-20 13:17:08', '2026-09-20 13:17:08');
 
 -- --------------------------------------------------------
 
@@ -273,24 +263,19 @@ CREATE TABLE `laundry_orders` (
   `amount_paid` decimal(10,2) NOT NULL DEFAULT '0.00',
   `created_by` int UNSIGNED DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `receipt_token` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `laundry_orders`
 --
 
-INSERT INTO `laundry_orders` (`id`, `order_no`, `customer_id`, `assigned_employee_id`, `status`, `payment_status`, `pickup_type`, `delivery_address`, `pickup_date`, `notes`, `subtotal`, `delivery_fee`, `discount`, `total`, `amount_paid`, `created_by`, `created_at`, `updated_at`) VALUES
-(1, 'ORD-2026-0001', 3, 1, 'completed', 'paid', 'walk_in', NULL, '2026-09-01', NULL, 300.00, 0.00, 0.00, 300.00, 300.00, 1, '2026-09-01 08:30:00', '2026-09-01 14:00:00'),
-(2, 'ORD-2026-0002', 4, 2, 'ready', 'paid', 'walk_in', NULL, '2026-09-01', 'Handle with care', 450.00, 0.00, 0.00, 450.00, 450.00, 1, '2026-09-01 09:15:00', '2026-09-01 15:30:00'),
-(3, 'ORD-2026-0003', 5, 1, 'drying', 'unpaid', 'pickup', '123 Shaw Boulevard, Mandaluyong', '2026-09-02', NULL, 600.00, 50.00, 0.00, 650.00, 0.00, 1, '2026-09-01 10:00:00', '2026-09-01 16:00:00'),
-(4, 'ORD-2026-0004', 6, 1, 'washing', 'partial', 'delivery', '567 Taft Avenue, Manila', '2026-09-02', 'Bulk order', 720.00, 50.00, 50.00, 720.00, 360.00, 1, '2026-09-01 11:00:00', '2026-09-01 16:30:00'),
-(5, 'ORD-2026-0005', 7, 2, 'pending', 'unpaid', 'walk_in', NULL, '2026-09-01', NULL, 540.00, 0.00, 0.00, 540.00, 0.00, 1, '2026-09-01 12:00:00', '2026-09-01 12:00:00'),
-(6, 'ORD-2026-0006', 8, 3, 'ready', 'paid', 'delivery', '234 Ortigas Avenue, Pasig', '2026-09-01', NULL, 380.00, 50.00, 0.00, 430.00, 430.00, 1, '2026-09-01 13:00:00', '2026-09-01 17:00:00'),
-(7, 'ORD-2026-0007', 9, 1, 'washing', 'unpaid', 'walk_in', NULL, '2026-09-02', NULL, 270.00, 0.00, 0.00, 270.00, 0.00, 1, '2026-09-01 14:00:00', '2026-09-01 17:30:00'),
-(8, 'ORD-2026-0008', 10, 2, 'drying', 'paid', 'walk_in', NULL, '2026-09-01', NULL, 200.00, 0.00, 0.00, 200.00, 200.00, 1, '2026-09-01 15:00:00', '2026-09-01 18:00:00'),
-(9, 'ORD-2026-0009', 3, 1, 'pending', 'unpaid', 'pickup', '456 Mabini Street, Manila', '2026-09-02', NULL, 180.00, 50.00, 0.00, 230.00, 0.00, 1, '2026-09-01 16:00:00', '2026-09-01 16:00:00'),
-(10, 'ORD-2026-0010', 4, 1, 'completed', 'paid', 'walk_in', NULL, '2026-09-01', NULL, 320.00, 0.00, 0.00, 320.00, 320.00, 1, '2026-09-01 17:00:00', '2026-09-01 18:30:00');
+INSERT INTO `laundry_orders` (`id`, `order_no`, `customer_id`, `assigned_employee_id`, `status`, `payment_status`, `pickup_type`, `delivery_address`, `pickup_date`, `notes`, `subtotal`, `delivery_fee`, `discount`, `total`, `amount_paid`, `created_by`, `created_at`, `updated_at`, `receipt_token`) VALUES
+(1, 'LAV-2026-0001', 1, NULL, 'pending', 'unpaid', 'walk_in', NULL, NULL, NULL, 30.00, 0.00, 0.00, 30.00, 0.00, 1, '2026-09-20 11:24:11', '2026-09-20 11:24:11', '81c5e0beb992ba311'),
+(2, 'LAV-2026-0002', 1, NULL, 'pending', 'unpaid', 'walk_in', NULL, NULL, NULL, 30.00, 0.00, 0.00, 30.00, 0.00, 1, '2026-09-20 11:24:27', '2026-09-20 11:24:27', 'ff481c7b3237a8bd2'),
+(3, 'LAV-2026-0003', 2, NULL, 'pending', 'unpaid', 'walk_in', NULL, NULL, NULL, 30.00, 0.00, 0.00, 30.00, 0.00, 1, '2026-09-20 11:40:52', '2026-09-20 11:40:52', '2628b94fdd5444743'),
+(4, 'LAV-2026-0004', 1, NULL, 'completed', 'paid', 'walk_in', NULL, NULL, NULL, 30.00, 0.00, 0.00, 30.00, 30.00, 1, '2026-09-20 13:20:11', '2026-09-20 13:24:00', '66ef3112a091869f4');
 
 -- --------------------------------------------------------
 
@@ -312,23 +297,10 @@ CREATE TABLE `order_items` (
 --
 
 INSERT INTO `order_items` (`id`, `order_id`, `service_id`, `quantity`, `unit_price`, `line_total`) VALUES
-(1, 1, 1, 5.00, 60.00, 300.00),
-(2, 2, 3, 3.00, 150.00, 450.00),
-(3, 3, 2, 4.00, 90.00, 360.00),
-(4, 3, 5, 1.00, 180.00, 180.00),
-(5, 3, 1, 1.00, 60.00, 60.00),
-(6, 4, 5, 4.00, 180.00, 720.00),
-(7, 5, 1, 6.00, 60.00, 360.00),
-(8, 5, 2, 2.00, 90.00, 180.00),
-(9, 6, 6, 2.00, 120.00, 240.00),
-(10, 6, 1, 2.00, 60.00, 120.00),
-(11, 6, 1, 0.33, 60.00, 20.00),
-(12, 7, 1, 4.50, 60.00, 270.00),
-(13, 8, 4, 4.00, 50.00, 200.00),
-(14, 9, 1, 3.00, 60.00, 180.00),
-(15, 10, 1, 3.00, 60.00, 180.00),
-(16, 10, 2, 1.00, 90.00, 90.00),
-(17, 10, 4, 1.00, 50.00, 50.00);
+(1, 1, 8, 1.00, 30.00, 30.00),
+(2, 2, 8, 1.00, 30.00, 30.00),
+(3, 3, 8, 1.00, 30.00, 30.00),
+(6, 4, 8, 1.00, 30.00, 30.00);
 
 -- --------------------------------------------------------
 
@@ -447,12 +419,7 @@ CREATE TABLE `services` (
 --
 
 INSERT INTO `services` (`id`, `name`, `unit`, `price`, `icon`, `description`, `is_active`, `created_at`, `updated_at`) VALUES
-(1, 'Wash & Fold', 'kg', 60.00, 'droplets', 'Machine wash, dry and fold. Per kilogram. 1-day turnaround.', 1, '2026-08-30 18:44:51', '2026-08-30 18:44:51'),
-(2, 'Wash & Iron', 'kg', 90.00, 'shirt', 'Wash, dry and professional hand ironing. Per kilogram.', 1, '2026-08-30 18:44:51', '2026-08-30 18:44:51'),
-(3, 'Dry Cleaning', 'piece', 150.00, 'tag', 'Gentle chemical cleaning for suits, gowns and delicate fabrics.', 1, '2026-08-30 18:44:51', '2026-08-30 18:44:51'),
-(4, 'Iron Only', 'kg', 50.00, 'wrench', 'Press and fold already-washed clothes. Per kilogram.', 1, '2026-08-30 18:44:51', '2026-08-30 18:44:51'),
-(5, 'Comforter', 'piece', 180.00, 'layers', 'Full wash and dry for blankets, quilts and comforters.', 1, '2026-08-30 18:44:51', '2026-08-30 18:44:51'),
-(6, 'Shoes & Sneakers', 'pair', 120.00, 'shirt', 'Deep clean wash for footwear. Per pair.', 1, '2026-08-30 18:44:51', '2026-08-30 18:44:51');
+(8, 'Laundry Service', 'kg', 30.00, 'droplets', 'Professional laundry service at 30 per kilogram', 1, '2026-09-20 11:23:55', '2026-09-20 11:23:55');
 
 -- --------------------------------------------------------
 
@@ -510,8 +477,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `role_id`, `email`, `username`, `password_hash`, `first_name`, `last_name`, `phone`, `avatar_path`, `is_active`, `last_login_at`, `created_by`, `created_at`, `updated_at`, `deleted_at`) VALUES
-(1, 1, 'thesis_2_owner@lavadora.local', 'thesis_2_owner', '$2y$10$fsuIqA7lHffMsgpsk2Y3l.S2sCnwbpwxbUkUqWM/cpJgBSh/nHODW', 'Thesis 2', 'Owner', '0917-000-0001', NULL, 1, '2026-09-01 23:24:27', NULL, '2026-08-30 18:44:50', '2026-09-01 23:24:27', NULL),
-(2, 2, 'thesis_2_staff@lavadora.local', 'thesis_2_staff', '$2y$10$fsuIqA7lHffMsgpsk2Y3l.S2sCnwbpwxbUkUqWM/cpJgBSh/nHODW', 'Thesis 2', 'Staff', '0917-000-0002', NULL, 0, '2026-08-31 19:52:25', NULL, '2026-08-30 18:44:50', '2026-09-01 23:28:11', NULL);
+(1, 1, 'thesis_2_owner@lavadora.local', 'thesis_2_owner', '$2y$10$fsuIqA7lHffMsgpsk2Y3l.S2sCnwbpwxbUkUqWM/cpJgBSh/nHODW', 'Thesis 2', 'Owner', '0917-000-0001', NULL, 1, '2026-09-20 13:28:23', NULL, '2026-08-30 18:44:50', '2026-09-20 13:28:23', NULL),
+(2, 2, 'thesis_2_staff@lavadora.local', 'thesis_2_staff', '$2y$10$fsuIqA7lHffMsgpsk2Y3l.S2sCnwbpwxbUkUqWM/cpJgBSh/nHODW', 'Thesis 2', 'Staff', '0917-000-0002', NULL, 1, '2026-09-20 13:25:28', NULL, '2026-08-30 18:44:50', '2026-09-20 13:25:28', NULL);
 
 -- --------------------------------------------------------
 
@@ -653,13 +620,13 @@ ALTER TABLE `user_page_access`
 -- AUTO_INCREMENT for table `audit_logs`
 --
 ALTER TABLE `audit_logs`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
 
 --
 -- AUTO_INCREMENT for table `customers`
 --
 ALTER TABLE `customers`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `employees`
@@ -677,25 +644,25 @@ ALTER TABLE `inventory_items`
 -- AUTO_INCREMENT for table `inventory_movements`
 --
 ALTER TABLE `inventory_movements`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `inventory_usage`
 --
 ALTER TABLE `inventory_usage`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT for table `laundry_orders`
 --
 ALTER TABLE `laundry_orders`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `password_resets`
@@ -719,7 +686,7 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT for table `services`
 --
 ALTER TABLE `services`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `users`

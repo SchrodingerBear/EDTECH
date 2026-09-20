@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $data = [
       'first_name' => trim($_POST['first_name'] ?? ''),
+      'last_name' => '',  // Required by schema
       'phone' => trim($_POST['phone'] ?? ''),
       'email' => trim($_POST['email'] ?? '') ?: null,
       'address' => trim($_POST['address'] ?? '') ?: null,

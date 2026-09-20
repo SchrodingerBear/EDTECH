@@ -20,7 +20,7 @@ export class SyncManager {
     constructor(db, offlineDetector) {
         this.db = db;
         this.offlineDetector = offlineDetector;
-        this._syncUrl = './api/sync.php';
+        this._syncUrl = (window.IA_BASE_URL || '') + '/api/sync.php';
         this._isSyncing = false;
     }
 
