@@ -3,11 +3,11 @@
 **Branch:** `main`  
 **Repository:** Innovatech PH Campus Navigation Platform
 
-A groundbreaking educational technology platform that merges **augmented reality (AR)**, **360° immersive imaging**, and **artificial intelligence** to transform how students, prospective applicants, and visitors experience educational campuses. This system represents the cutting edge of EdTech innovation, bringing physical spaces into the digital realm with unprecedented interactivity and intelligence.
+An educational technology platform that combines **augmented reality (AR)**, **360° immersive imaging**, and **artificial intelligence** to enhance how students, prospective applicants, and visitors experience educational campuses. This system brings physical spaces into the digital realm with interactive and intelligent features.
 
-## 🎓 Technology Overview
+## Technology Overview
 
-This system harnesses the power of emerging technologies to create immersive educational experiences:
+This system harnesses emerging technologies to create immersive educational experiences:
 
 - **360° Panoramic Imaging**: Full-sphere capture and rendering of campus spaces
 - **Augmented Reality (AR)**: Real-time digital overlays on physical campus views
@@ -16,17 +16,17 @@ This system harnesses the power of emerging technologies to create immersive edu
 - **Computer Vision**: Visual target recognition for location-aware experiences
 - **Immersive Web Technologies**: A-Frame-based VR/AR experiences in the browser
 
-## 👨‍💻 Credits
+## Credits
 
 **Lead Developer & Architect:**  
 **Sean Charles Puigosa**  
 *Full-stack development, system architecture, and implementation*
 
-This system represents a comprehensive thesis project demonstrating the transformative power of AR, 360° imaging, and AI integration in educational technology applications.
+This system is a thesis project demonstrating AR, 360° imaging, and AI integration in educational technology applications.
 
-## 🚀 Technological Capabilities
+## Technological Capabilities
 
-### � 360° Immersive Imaging Technology
+### 360° Immersive Imaging Technology
 - **Full-Sphere Panoramic Capture**: Complete 360° horizontal and vertical coverage
 - **A-Frame Integration**: WebVR framework for browser-based immersive experiences
 - **Hotspot Navigation**: Interactive points of interest within panoramic scenes
@@ -34,7 +34,7 @@ This system represents a comprehensive thesis project demonstrating the transfor
 - **Mobile-Optimized Rendering**: Landscape full-screen mode for immersive mobile experiences
 - **Equirectangular Projection**: Standard panorama format for broad compatibility
 
-### 📱 Augmented Reality (AR) Implementation
+### Augmented Reality (AR) Implementation
 - **Live AR Walking Mode**: Real-time camera overlay with digital information
 - **Computer Vision Detection**: Visual target recognition for location awareness
 - **GPS Integration**: Precise location tracking and waypoint matching
@@ -43,7 +43,7 @@ This system represents a comprehensive thesis project demonstrating the transfor
 - **Google Maps Live View Style**: Familiar AR navigation interface
 - **Waypoint System**: GPS and visual target-based location detection
 
-### 🤖 Artificial Intelligence Integration
+### Artificial Intelligence Integration
 - **AI Panorama Stitching**: Automatic merging of multiple images into seamless 360° panoramas
 - **Intelligent Content Generation**: AI-powered descriptions for buildings, rooms, and facilities
 - **Smart Capture Processing**: AI enhancement of in-app captured images
@@ -51,7 +51,7 @@ This system represents a comprehensive thesis project demonstrating the transfor
 - **Job Queue System**: Asynchronous AI processing with status tracking
 - **Ollama Integration**: Local AI processing for privacy and control
 
-### 🗺️ Interactive Digital Mapping
+### Interactive Digital Mapping
 - **Responsive Floor Plans**: Dynamic campus mapping that adapts to any screen size
 - **Percentage-Based Coordinate System**: Device-independent marker positioning
 - **Drag-and-Drop Interface**: Visual marker placement without coding
@@ -59,7 +59,7 @@ This system represents a comprehensive thesis project demonstrating the transfor
 - **Click-to-Navigate**: Direct floor plan to 360° scene integration
 - **Aspect Ratio Preservation**: Consistent mapping across all devices
 
-### � Web-Based Immersive Experience
+### Web-Based Immersive Experience
 - **Browser-Based VR/AR**: No app installation required
 - **Cross-Platform Compatibility**: Works on desktop, tablet, and mobile
 - **Progressive Web App (PWA)**: Offline capabilities and app-like experience
@@ -67,17 +67,17 @@ This system represents a comprehensive thesis project demonstrating the transfor
 - **Touch-Optimized Controls**: Intuitive gesture-based navigation
 - **Responsive Design**: Adaptive UI for all screen sizes
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **Backend**: PHP 8.3+ (Object-oriented, MVC architecture)
-- **Database**: MySQL 8.0+ (Multi-tenant schema design)
+- **Database**: MySQL 8.0+ (Schema design for campus data)
 - **Frontend**: JavaScript (ES6+), A-Frame for 360°/AR
 - **CSS**: Custom responsive design with CSS Grid/Flexbox
 - **AI Services**: Ollama integration for local AI processing
 - **File Management**: Drag-and-drop media uploader
 - **Authentication**: Session-based auth with role management
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 G7-4D-THESIS/
@@ -108,12 +108,12 @@ G7-4D-THESIS/
 └── .env                    # Environment configuration
 ```
 
-## 🗄️ Database Schema
+## Database Schema
 
-The system uses a comprehensive MySQL schema designed for AR/360 content management:
+The system uses a MySQL schema designed for AR/360 content management:
 
 - **users**: User accounts with role-based permissions
-- **institutions**: Institution management for multi-campus deployment
+- **institutions**: Institution management for campus deployment
 - **buildings**, **rooms**, **campus_areas**, **facilities**: Physical space hierarchy
 - **tour_scenes**: 360° scene management with navigation hotspots
 - **floor_plans**, **floor_plan_markers**: Interactive digital mapping system
@@ -124,7 +124,7 @@ The system uses a comprehensive MySQL schema designed for AR/360 content managem
 
 **Canonical schema**: `database/schema.sql`
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
 ### Prerequisites
 - PHP 8.3 or higher
@@ -184,7 +184,7 @@ Ensure Apache mod_rewrite is enabled for URL routing and proper handling of A-Fr
 
 Default admin account will be created during first setup.
 
-## 📖 Usage Guide
+## Usage Guide
 
 ### Creating 360° Virtual Tours
 1. Access the admin dashboard and navigate to Tour Studio
@@ -225,7 +225,7 @@ Default admin account will be created during first setup.
 5. Access AR walking mode on mobile devices
 6. Experience real-time AR information overlays
 
-## 🎯 Experience Modes
+## Experience Modes
 
 ### 1. 360° Immersive Mode
 - Full-screen A-Frame 360° panoramic viewer
@@ -239,7 +239,7 @@ Default admin account will be created during first setup.
 - Click markers to enter 360° tours or view information
 - Better for spatial orientation and wayfinding
 
-## 🔧 Configuration
+## Configuration
 
 ### AI Services Integration
 Configure Ollama for local AI processing in `includes/ollama-wrapper.php`:
@@ -269,7 +269,7 @@ All markers use percentage-based coordinates (0-1 range) for responsive scaling:
 }
 ```
 
-## 🔐 Security Features
+## Security Features
 
 - Role-based access control (RBAC) for content management
 - Session-based authentication with secure handling
@@ -279,7 +279,7 @@ All markers use percentage-based coordinates (0-1 range) for responsive scaling:
 - File upload validation and sanitization
 - Audit logging for all administrative actions
 
-## 📱 Mobile & AR Optimization
+## Mobile & AR Optimization
 
 - Landscape full-screen mode for optimal 360°/AR viewing
 - Touch-optimized controls for immersive navigation
@@ -288,7 +288,7 @@ All markers use percentage-based coordinates (0-1 range) for responsive scaling:
 - Progressive Web App (PWA) support for offline capabilities
 - GPS integration for location-aware AR features
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### 360° Rendering Issues
 - Check WebGL support in browser
@@ -320,28 +320,28 @@ All markers use percentage-based coordinates (0-1 range) for responsive scaling:
 - Check server response times
 - Consider CDN for static assets
 
-## 🤝 Contributing
+## Contributing
 
-This is an open-source project focused on advancing AR and 360° technologies in education. Contributions are welcome:
+This is an open-source project for AR and 360° technologies in education. Contributions are welcome:
 
 1. Fork the repository
-2. Create a feature branch for AR/360 enhancements
+2. Create a feature branch
 3. Make your changes following existing patterns
-4. Test thoroughly across different devices and browsers
-5. Submit a pull request with detailed description
+4. Test across different devices and browsers
+5. Submit a pull request with description
 
-## 📄 License
+## License
 
 This project is open-source. Please refer to the LICENSE file for details.
 
-## 📞 Support
+## Support
 
 For issues, questions, or contributions:
 - Open an issue on GitHub
 - Contact: [support email]
 - Documentation: Check the `docs/` directory for detailed guides
 
-## 🙏 Technology Acknowledgments
+## Technology Acknowledgments
 
 - **A-Frame**: WebVR framework for browser-based 360° and AR experiences
 - **Ollama**: Local AI processing for privacy-focused content generation
