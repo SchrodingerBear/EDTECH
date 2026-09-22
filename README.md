@@ -5,6 +5,10 @@
 
 An educational technology platform that combines **augmented reality (AR)**, **360° immersive imaging**, and **artificial intelligence** to enhance how students, prospective applicants, and visitors experience educational campuses. This system brings physical spaces into the digital realm with interactive and intelligent features.
 
+## Video Preview
+
+[Watch the system in action](preview.mp4)
+
 ## Technology Overview
 
 This system harnesses emerging technologies to create immersive educational experiences:
@@ -356,8 +360,8 @@ For issues, questions, or contributions:
 *Thesis Project - AI-Powered AR 360° Virtual Campus Navigation System*  
 *Educational Technology Innovation*
 
-**Status**: Production Ready | Open Source | AR/360 EdTech Platform
+**Status**: Production Ready | Open Source | AR/360 Platform
 
 ---
 
-> "This system demonstrates the transformative power of AR, 360° imaging, and AI in educational technology, creating immersive campus experiences that bridge physical and digital learning environments."
+> "This system combines AR, 360° imaging, and AI to create immersive campus experiences that connect physical and digital learning environments."
