@@ -1,0 +1,96 @@
+# =============================================================================
+# Innovatech PH — clean URLs + case-insensitivity + security
+#
+#  • Removes the .php extension  (/admin/dashboard  =>  admin/dashboard.php)
+#  • Case-insensitive file access (CheckSpelling via mod_speling when enabled)
+#  • Protects sensitive folders
+# =============================================================================
+
+Options -Indexes
+ServerSignature Off
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # -- Security: never serve dotfiles or sensitive dirs ----------------------
+  RewriteRule ^\.git - [F,L]
+  RewriteRule ^\.cursor - [F,L]
+  RewriteRule ^includes/ - [F,L]
+  RewriteRule ^database/ - [F,L]
+  RewriteRule ^old/ - [F,L]
+  RewriteRule ^templates/ - [F,L]
+  RewriteRule ^\.env - [F,L]
+
+  # -- Case-insensitivity ----------------------------------------------------
+  # Native: if mod_speling is loaded this is enough for existing files.
+  # Fallback: strip any uppercase segment and try the lowercase file.
+  RewriteCond %{REQUEST_URI} [A-Z]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  # Apache 2.4 supports the "lowercase:" map function for the LC token in E
+  # vars. When unavailable (no RewriteMap), the [L] below simply lets PHP route.
+  RewriteRule ^(.+)$ - [E=LC_PATH:${lc:$1}]
+
+  # If we derived a lowercase path that resolves to a .php file, serve it.
+  RewriteCond %{ENV:LC_PATH} !=""
+  RewriteCond %{DOCUMENT_ROOT}/%{ENV:LC_PATH}\.php -f
+  RewriteCond %{REQUEST_URI} [A-Z]
+  RewriteRule ^ %{ENV:LC_PATH}.php [L]
+  # -- Backward Compatibility Redirect for /organizations/{slug} ----
+  # If accessing an organization directory, redirect to parameter-based index
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^organizations/([a-z0-9\-]+)/?$ organizations/index.php?org=$1 [R=301,L,QSA]
+
+  # -- Internal routing: extensionless URL  =>  <path>.php -------------------
+  # NOTE: no RewriteBase is used so relative substitution resolves against the
+  # directory that contains this .htaccess, keeping this correct for both
+  # document-root and sub-directory installs.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_URI} !\.php$
+  RewriteCond %{REQUEST_FILENAME}\.php -f
+  RewriteRule ^(.+?)/?$ $1.php [L]
+</IfModule>
+
+# Fallback: MultiViews for extensionless PHP (works without mod_rewrite)
+<IfModule mod_negotiation.c>
+  Options -MultiViews
+</IfModule>
+
+# Case-insensitive matching of existing files/dirs (require mod_speling).
+<IfModule mod_speling.c>
+  CheckSpelling On
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# Downloads / PHP execution control
+# ---------------------------------------------------------------------------
+<FilesMatch "\.(?:ini|log|sql|md|lock|yaml|yml|sh|txt)$">
+  Require all denied
+</FilesMatch>
+
+# ---------------------------------------------------------------------------
+# MIME types
+# ---------------------------------------------------------------------------
+AddType image/svg+xml .svg
+AddType image/svg+xml .svgz
+
+<IfModule mod_mime.c>
+  AddType image/svg+xml .svg .svgz
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# Compression + caching
+# ---------------------------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/png "access plus 7 days"
+  ExpiresByType image/jpeg "access plus 7 days"
+  ExpiresByType image/svg+xml "access plus 7 days"
+  ExpiresByType text/css "access plus 1 day"
+  ExpiresByType application/javascript "access plus 1 day"
+</IfModule>

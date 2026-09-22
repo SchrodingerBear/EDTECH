@@ -1,0 +1,7 @@
+./admin/connection.php
+/.history
+./3d/get_data.php
+/.env
+/storage/*.eml
+/storage/mail/
+mindarcompiler-main

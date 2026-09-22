@@ -1,0 +1,342 @@
+{
+    "institution_id": 1,
+    "name": "Immaculada Concepcion College",
+    "short_name": "ICC",
+    "landing_mode": "floor_plan",
+    "require_landscape_mobile": true,
+    "published": true,
+    "theme": {
+        "primary": "#1a365d",
+        "secondary": "#ed8936",
+        "accent": "#38b2ac",
+        "popup_animation": "fade",
+        "marker_glow": false
+    },
+    "scenes": {
+        "1": {
+            "id": 1,
+            "title": "Main Entrance",
+            "featured_image_path": "assets/scenes/fbf9975537e11c40.png",
+            "equirect_path": "assets/scenes/134b318304988ff5.jpg",
+            "initial_yaw": 121.95,
+            "initial_pitch": -3.77,
+            "hotspots": [
+                {
+                    "id": 3,
+                    "label": "Guard Post",
+                    "hotspot_type": "navigation",
+                    "yaw": 169.5,
+                    "pitch": -4.8,
+                    "body_html": "Guard Post is a tour hotspot of Immaculada Concepcion College."
+                },
+                {
+                    "id": 19,
+                    "label": "Poster",
+                    "hotspot_type": "media",
+                    "yaw": 122,
+                    "pitch": -3.8,
+                    "body_html": ""
+                }
+            ]
+        },
+        "2": {
+            "id": 2,
+            "title": "Vehicle Gate",
+            "featured_image_path": "assets/scenes/82e87e786e8d0203.jpg",
+            "equirect_path": "assets/scenes/82e87e786e8d0203.jpg",
+            "initial_yaw": 151.62,
+            "initial_pitch": -3.92,
+            "hotspots": [
+                {
+                    "id": 16,
+                    "label": "Main Building",
+                    "hotspot_type": "media",
+                    "yaw": 22.7,
+                    "pitch": 21.3,
+                    "body_html": "Main Building is a tour hotspot of Immaculada Concepcion College.\r\n\r\nIt serves the campus community, set up for the \"Main Building\" stop on the 360° tour.\r\n\r\nFind it on the campus map, or step inside through the interactive 360° tour."
+                },
+                {
+                    "id": 17,
+                    "label": "Main Building",
+                    "hotspot_type": "info",
+                    "yaw": 16,
+                    "pitch": 4.1,
+                    "body_html": ""
+                },
+                {
+                    "id": 18,
+                    "label": "Main Entrance",
+                    "hotspot_type": "navigation",
+                    "yaw": 109.4,
+                    "pitch": -0.9,
+                    "body_html": "",
+                    "to_scene_id": 1,
+                    "to_scene_title": "Main Entrance",
+                    "to_scene_equirect": "assets/scenes/134b318304988ff5.jpg",
+                    "to_scene_yaw": 121.95,
+                    "to_scene_pitch": -3.77
+                }
+            ]
+        },
+        "3": {
+            "id": 3,
+            "title": "Classroom 103",
+            "featured_image_path": "assets/scenes/21fa43b7aed3d90b.jpg",
+            "equirect_path": "assets/scenes/21fa43b7aed3d90b.jpg",
+            "initial_yaw": -91.9,
+            "initial_pitch": -0.11,
+            "hotspots": []
+        },
+        "4": {
+            "id": 4,
+            "title": "Room Test",
+            "featured_image_path": "assets/scenes/ba38c7c9b85bf4f5.png",
+            "equirect_path": "assets/scenes/861b9d94274d3970.png",
+            "initial_yaw": 0,
+            "initial_pitch": 0,
+            "hotspots": []
+        }
+    },
+    "starting_scene": {
+        "id": 2,
+        "title": "Vehicle Gate",
+        "equirect_path": "assets/scenes/82e87e786e8d0203.jpg",
+        "initial_yaw": 151.62,
+        "initial_pitch": -3.92
+    },
+    "starting_floor_plan": {
+        "id": 1,
+        "title": "Campus",
+        "image_path": "assets/floorplans/6aadf112201a6.png",
+        "object_fit": "contain",
+        "north_angle": 0,
+        "building_id": null,
+        "floor_level": "1"
+    },
+    "fp_waypoints": [
+        {
+            "id": 2,
+            "label": "Waypoint",
+            "x": 50,
+            "y": 50,
+            "type": "normal"
+        },
+        {
+            "id": 3,
+            "label": "Waypoint",
+            "x": 50,
+            "y": 50,
+            "type": "normal"
+        }
+    ],
+    "fp_paths": [],
+    "fp_connections": [],
+    "floor_plan_markers": [
+        {
+            "id": 244,
+            "label": "Main Building",
+            "x": 32.2995,
+            "y": 29.8442,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 0,
+            "popup_title": "",
+            "popup_html": "",
+            "target_type": "scene",
+            "target_scene_id": 2,
+            "scene_title": "Vehicle Gate",
+            "scene_equirect": "assets/scenes/82e87e786e8d0203.jpg",
+            "scene_yaw": 151.62,
+            "scene_pitch": -3.92
+        },
+        {
+            "id": 245,
+            "label": "Entrance",
+            "x": 52.4507,
+            "y": 90.1483,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 0,
+            "popup_title": "",
+            "popup_html": "",
+            "target_type": "scene",
+            "target_scene_id": 1,
+            "scene_title": "Main Entrance",
+            "scene_equirect": "assets/scenes/134b318304988ff5.jpg",
+            "scene_yaw": 121.95,
+            "scene_pitch": -3.77
+        },
+        {
+            "id": 246,
+            "label": "Gym Main",
+            "x": 68.3477,
+            "y": 18.1018,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 296.4,
+            "popup_title": "",
+            "popup_html": "",
+            "marker_image": "assets/hotspots/f70ad17d854581de.jpg",
+            "marker_image_url": "http://localhost/G7-4D-THESIS/organizations/immaculada-concepcion-college/assets/hotspots/f70ad17d854581de.jpg",
+            "target_type": "scene",
+            "target_scene_id": 1,
+            "scene_title": "Main Entrance",
+            "scene_equirect": "assets/scenes/134b318304988ff5.jpg",
+            "scene_yaw": 121.95,
+            "scene_pitch": -3.77
+        },
+        {
+            "id": 247,
+            "label": "Compass",
+            "x": 32.9286,
+            "y": 3.2212,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 0,
+            "popup_title": "",
+            "popup_html": "",
+            "target_type": "popup"
+        },
+        {
+            "id": 248,
+            "label": "Compass",
+            "x": 21.6204,
+            "y": 47.9613,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 90,
+            "popup_title": "",
+            "popup_html": "",
+            "target_type": "popup"
+        },
+        {
+            "id": 249,
+            "label": "Compass",
+            "x": 76.9419,
+            "y": 3.4183,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 270,
+            "popup_title": "",
+            "popup_html": "",
+            "target_type": "popup"
+        },
+        {
+            "id": 250,
+            "label": "Compass",
+            "x": 67.7401,
+            "y": 88.5625,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 180,
+            "popup_title": "",
+            "popup_html": "",
+            "target_type": "popup"
+        },
+        {
+            "id": 251,
+            "label": "Compass",
+            "x": 18.2944,
+            "y": 22.1422,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 45,
+            "popup_title": "",
+            "popup_html": "",
+            "target_type": "popup"
+        },
+        {
+            "id": 252,
+            "label": "Compass",
+            "x": 54.4363,
+            "y": 0.2648,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 315,
+            "popup_title": "",
+            "popup_html": "",
+            "target_type": "popup"
+        },
+        {
+            "id": 253,
+            "label": "Compass",
+            "x": 40.5782,
+            "y": 72.4008,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 135,
+            "popup_title": "",
+            "popup_html": "",
+            "target_type": "popup"
+        },
+        {
+            "id": 254,
+            "label": "Compass",
+            "x": 74.1702,
+            "y": 47.1729,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 225,
+            "popup_title": "",
+            "popup_html": "",
+            "target_type": "popup"
+        },
+        {
+            "id": 255,
+            "label": "360° Scene",
+            "x": 80.2678,
+            "y": 82.4526,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 0,
+            "popup_title": "",
+            "popup_html": "",
+            "target_type": "scene",
+            "target_scene_id": 2,
+            "scene_title": "Vehicle Gate",
+            "scene_equirect": "assets/scenes/82e87e786e8d0203.jpg",
+            "scene_yaw": 151.62,
+            "scene_pitch": -3.92
+        },
+        {
+            "id": 256,
+            "label": "Gate Landmark",
+            "x": 55.0255,
+            "y": 89.7316,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 340,
+            "popup_title": "",
+            "popup_html": "",
+            "marker_image": "assets/markers/576c13d3644d172e.jpg",
+            "marker_image_url": "http://localhost/G7-4D-THESIS/organizations/immaculada-concepcion-college/assets/markers/576c13d3644d172e.jpg",
+            "target_type": "popup"
+        },
+        {
+            "id": 257,
+            "label": "Information",
+            "x": 48.7563,
+            "y": 11.9818,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 0,
+            "popup_title": "Canteen",
+            "popup_html": "Canteen",
+            "target_type": "popup"
+        },
+        {
+            "id": 258,
+            "label": "Main Building Landmark",
+            "x": 36.5871,
+            "y": 45.744,
+            "size_percent": 4,
+            "marker_type": "scene",
+            "facing_angle": 101,
+            "popup_title": "",
+            "popup_html": "",
+            "marker_image": "assets/ar_targets/manual/2f2b6a3dd1532d5c.png",
+            "marker_image_url": "http://localhost/G7-4D-THESIS/organizations/immaculada-concepcion-college/assets/ar_targets/manual/2f2b6a3dd1532d5c.png",
+            "target_type": "popup"
+        }
+    ]
+}

@@ -1,0 +1,82 @@
+---
+description: Canonical product spec for the AI-Assisted AR 360 campus system. Do not drop these features.
+alwaysApply: true
+---
+
+# Innovatech PH — Campus Navigation Product Spec
+
+The old NU Museum codebase in this folder is the **legacy system**. The new product is:
+
+**AI-Assisted AR 360° Virtual Campus Navigation and Information System for Educational Institutions**
+
+Reusable PHP + MySQL + JavaScript + A-Frame product for Innovatech PH, customizable per school client.
+
+Do not remove, skip, or silently shrink any feature below when designing schema, UI, or code.
+
+## Roles
+
+| Role | Scope |
+|------|--------|
+| **owner** | Platform (Innovatech). Landing page of the product, roles, logs, access, emails, system setup/config, institutions. Creates admin accounts and organizations. |
+| **admin** | One (or assigned) institution. Manages that school's 360 / AR / VR tour content, org settings, themes, landing mode, starting point, visual file environment. Not a coder — edits via drag-and-drop / visual tools. |
+| **staff** | Under an admin + institution. Updates information, images, floor plans, featured tour images, facilities, AI stitch/capture. Same visual tools as admin for content, not platform config. |
+| **user** | View-only. Students, applicants, visitors. Explore 360 tours, floor-plan landing, and live AR walk. |
+
+## Organization / project folders
+
+- Owner creates the **admin** role and the **institution**.
+- Creating an institution **generates a new project folder** with template files (A-Frame 360 landing, assets, theme stubs).
+- Admin then configures the organization (mode, starting point, theme).
+- Admin/staff must **not** need to edit code. Provide a visual environment: drag-and-drop 360 scenes, markers, floor-plan pins, popups, infographics, animations.
+
+## Institution landing modes (exactly two)
+
+1. **360_rotation** — Full-screen A-Frame 360 (see legacy `vtour.php` as UX reference: full-screen rotating capture). Starts at the **starting scene** set by admin.
+2. **floor_plan** — Uploaded campus floor-plan image is the landing. Circular buttons are **drag-and-dropped** onto the image. Clicking a pin opens that location's tour/info.
+
+Admin/staff choose which mode is the main landing.
+
+## Floor plans — strict responsive sizing
+
+- Floor-plan markers **must use percentage (or 0–1) coordinates**, never raw pixels as the source of truth.
+- Store original image width/height and lock aspect ratio (`object-fit: contain`).
+- Image and markers must stay aligned on every screen size. Do not let layout “break” the plan.
+- Mobile landing AR / 360 must be **landscape full-screen**.
+
+## Content model (per institution)
+
+- Buildings, rooms, campus areas, facilities.
+- 360 scenes + room-to-room hotspots (connected locations).
+- Featured images for tours.
+- Facility descriptions (manual + **AI-assisted** generation).
+- Themes: colors, popup animations, infographic look.
+
+## AI stitch / capture tools (admin + staff)
+
+Two intake paths, both produce a stitchable cubemap / equirectangular panorama:
+
+1. **Upload cubemap** (faces).
+2. **Capture in-system** with guides: top / left / right / down / front / back (mobile panorama-style). Capture may be messy; **AI stitch** still processes it.
+
+Job status, source faces, and output panorama must be persisted.
+
+## AR (do not drop)
+
+- Overlay digital information, directions, labels, interactive content on real campus views.
+- **Walk-with-camera** (Google Maps Live View style): user walks on campus; system detects they are at a mapped area.
+- Detection inputs include: floor-plan marker points (same drag-and-drop pins) **and** AR-captured / geo waypoints for that area.
+- Map floor-plan pins ↔ real-world location (lat/lng and/or visual/AR target).
+
+## Multi-school
+
+Schema and folders are tenant-scoped by `institution_id`. Innovatech deploys many school clients from one product.
+
+## Stack
+
+PHP, MySQL, JavaScript, A-Frame (360/AR web), AI services where appropriate.
+
+The Innovatech PH **product landing** is PHP (`landing/index.php`), not React. Owner manages copy/settings (`platform_settings`). Do not reintroduce Next.js for this page.
+
+## Schema file
+
+Canonical SQL: `database/schema.sql`. Extend it rather than inventing parallel tables.

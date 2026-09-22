@@ -1,0 +1,317 @@
+/* Innovatech PH - Floor Plan Studio Styles */
+
+.studio-wrapper {
+  user-select: none;
+}
+
+/* Marker Tools (button tiles with icon + label) */
+.marker-tools-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Tool color themes: tinted tile background + matching accent bar */
+.marker-tool[data-type="360"]       { --edge: #0284c7; --tint: rgba(2, 132, 199, 0.10); }
+.marker-tool[data-type="floorplan"] { --edge: #7c3aed; --tint: rgba(124, 58, 237, 0.10); }
+.marker-tool[data-type="ar"]        { --edge: #d97706; --tint: rgba(217, 119, 6, 0.10); }
+.marker-tool[data-type="compass"]   { --edge: #0d9488; --tint: rgba(13, 148, 136, 0.10); }
+.marker-tool[data-type="info"]      { --edge: #e11d48; --tint: rgba(225, 29, 72, 0.10); }
+.marker-tool[data-type="room"]      { --edge: #16a34a; --tint: rgba(22, 163, 74, 0.10); }
+.marker-tool[data-type="area"]      { --edge: #ea580c; --tint: rgba(234, 88, 12, 0.10); }
+
+.marker-tool {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--ia-border, #e2e8f0);
+  border-left: 4px solid var(--edge, #94a3b8);
+  background: var(--tint, var(--ia-surface, #fff));
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0.13, 1.5);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.marker-tool:hover {
+  transform: translateY(-1px);
+  border-color: var(--edge, #2563eb);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.marker-tool.is-active {
+  border: 2px solid #2563eb !important;
+  border-left: 4px solid #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25), 0 4px 14px rgba(0, 0, 0, 0.15) !important;
+  filter: saturate(1.15);
+  animation: pulseTool 1.6s infinite ease-in-out;
+}
+
+@keyframes pulseTool {
+  0% { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35); }
+  50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.12); }
+  100% { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35); }
+}
+
+.marker-tool .tool-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22), 0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+.marker-tool .tool-label {
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  color: #0f172a;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.marker-tool .tool-sub {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+/* Category filter chips (canvas header) */
+#marker-filter-bar .marker-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  background: rgba(255, 255, 255, .10);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  line-height: 1.5;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+#marker-filter-bar .marker-filter-chip:hover {
+  background: rgba(255, 255, 255, .18);
+  color: #fff;
+}
+#marker-filter-bar .marker-filter-chip.is-active {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, .45);
+}
+#marker-filter-bar .marker-filter-chip .mfc-count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .35);
+  color: #e2e8f0;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+}
+#marker-filter-bar .marker-filter-chip.is-active .mfc-count {
+  background: rgba(255, 255, 255, .25);
+  color: #fff;
+}
+
+/* Tool icon colors (Distinct vivid colors) */
+.tool-icon-360     { background: radial-gradient(circle at 30% 30%, #38bdf8, #0284c7); }
+.tool-icon-floorplan{ background: radial-gradient(circle at 30% 30%, #c084fc, #7c3aed); }
+.tool-icon-ar       { background: radial-gradient(circle at 30% 30%, #facc15, #d97706); }
+.tool-icon-compass  { background: radial-gradient(circle at 30% 30%, #2dd4bf, #0d9488); }
+.tool-icon-info     { background: radial-gradient(circle at 30% 30%, #fb7185, #e11d48); }
+.tool-icon-room     { background: radial-gradient(circle at 30% 30%, #4ade80, #16a34a); }
+.tool-icon-area     { background: radial-gradient(circle at 30% 30%, #fb923c, #ea580c); }
+
+/* Canvas Stage */
+.map-stage {
+  position: relative;
+  margin: 0 auto;
+  max-width: 100%;
+  aspect-ratio: var(--fp-ar, 1.777);
+  user-select: none;
+  touch-action: none;
+  border-radius: 8px;
+  overflow: visible;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  background-color: #0b0f19;
+}
+
+.map-stage.is-placing {
+  cursor: crosshair !important;
+}
+
+.map-stage-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Circular Markers on Canvas */
+.fp-marker-dot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  cursor: grab;
+  touch-action: none;
+  z-index: 10;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 0 3px rgba(255, 255, 255, 0.95);
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0.13, 1.5), box-shadow 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fp-marker-dot.is-dragging {
+  cursor: grabbing !important;
+  transform: translate(-50%, -50%) scale(1.18);
+  z-index: 50;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 0 3px #fff;
+}
+
+.fp-marker-dot.fp-selected {
+  transform: translate(-50%, -50%) scale(1.14);
+  z-index: 40;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 0 4px #2563eb, 0 0 18px rgba(37, 99, 235, 0.8) !important;
+}
+
+/* Marker distinct color gradients */
+.fp-marker-dot[data-type="360"],
+.fp-marker-dot[data-type="scene"] {
+  background: radial-gradient(circle at 30% 30%, #38bdf8, #0284c7) !important;
+}
+
+.fp-marker-dot[data-type="floorplan"] {
+  background: radial-gradient(circle at 30% 30%, #c084fc, #7c3aed) !important;
+}
+
+.fp-marker-dot[data-type="ar"] {
+  background: radial-gradient(circle at 30% 30%, #facc15, #d97706) !important;
+}
+
+.fp-marker-dot[data-type="compass"] {
+  background: radial-gradient(circle at 30% 30%, #2dd4bf, #0d9488) !important;
+}
+
+.fp-marker-dot[data-type="info"],
+.fp-marker-dot[data-type="information"] {
+  background: radial-gradient(circle at 30% 30%, #fb7185, #e11d48) !important;
+}
+
+.fp-marker-dot[data-type="room"] {
+  background: radial-gradient(circle at 30% 30%, #4ade80, #16a34a) !important;
+}
+
+.fp-marker-dot[data-type="area"] {
+  background: radial-gradient(circle at 30% 30%, #fb923c, #ea580c) !important;
+}
+
+/* Center icon badge */
+.fp-marker-dot .fp-mktype-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+/* Tooltip on hover / selected */
+.fp-marker-dot .fp-marker-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.92);
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  z-index: 60;
+}
+
+.fp-marker-dot:hover .fp-marker-tooltip,
+.fp-marker-dot.fp-selected .fp-marker-tooltip {
+  opacity: 1;
+}
+
+/* Facing Arrow Indicator — Prominent & rotating */
+.fp-facing-arrow {
+  position: absolute;
+  inset: -14px;
+  pointer-events: none;
+  transform: rotate(var(--facing, 0deg));
+  transform-origin: center center;
+  transition: transform 0.08s ease-out;
+  display: block;
+}
+
+.fp-facing-arrow::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 13px solid #facc15;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7));
+}
+
+/* Compass arrow needle */
+.fp-marker-dot[data-type="compass"] .fp-facing-arrow::after {
+  border-bottom-color: #22d3ee;
+}
+
+/* Image preview box in properties */
+.marker-img-preview-box {
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+  background: #f8fafc;
+  position: relative;
+}
+
+.marker-img-preview-box img {
+  max-width: 100%;
+  max-height: 140px;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
